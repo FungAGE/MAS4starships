@@ -54,6 +54,8 @@ USER root
 
 RUN /home/daemon/miniconda/envs/mas/bin/mod_wsgi-express install-module --modules-directory /usr/local/apache2/modules
 
+RUN mv /usr/local/apache2/modules/mod_wsgi-py38.cpython-38-x86_64-linux-gnu.so /usr/local/apache2/modules/mod_wsgi.so
+
 COPY container_setup_files/httpd.conf /usr/local/apache2/conf/httpd.conf
 
 COPY container_setup_files/httpd-foreground /usr/local/bin/httpd-foreground
