@@ -57,6 +57,7 @@ services:
       RABBITMQ_PORT: "${RABBITMQ_PORT}"
       DEVELOPER_MODE: "${DEVELOPER_MODE}"
       ALLOWED_HOST: "${ALLOWED_HOST}"
+      LD_LIBRARY_PATH: "/home/daemon/miniconda/envs/mas/lib:${LD_LIBRARY_PATH}"
       LD_PRELOAD: "/home/daemon/miniconda/envs/mas/lib/faketime/libfaketime.so.1"
       DONT_FAKE_MONOTONIC: 1
       FAKETIME_DID_REEXEC: "true"
