@@ -68,21 +68,22 @@ dependencies:
   - zlib=1.2.11=h7b6447c_3
   - zstd=1.4.5=h9ceee32_0
   - tbl2asn
-  - asgiref=3.2.10
-  - chardet=3.0.4
-  - clustergrammer=1.13.6
-  - django-crispy-forms=1.9.2
-  - django-debug-toolbar=3.1.1
-  - django-simple-history
-  - djangorestframework=3.12.1
-  - docx-mailmerge=0.5.0
-  - et-xmlfile=1.0.1
-  - idna=2.10
-  - lxml=4.6.1
-  - requests=2.24.0
-  - urllib3=1.25.11
-  - mod_wsgi
-  - celery=5.0.2
-  - luigi=3.0.2
-  - openpyxl=3.0.5
-  - libfaketime
+  - pip:
+      - asgiref==3.2.10
+      - chardet==3.0.4
+      - clustergrammer==1.13.6
+      - django-crispy-forms==1.9.2
+      - django-debug-toolbar==3.1.1
+      - django-simple-history==2.12.0
+      - djangorestframework==3.12.1
+      - docx-mailmerge==0.5.0
+      - et-xmlfile==1.0.1
+      - idna==2.10
+      - lxml==4.6.1
+      - requests==2.24.0
+      - urllib3==1.25.11
+      - mod-wsgi==4.7.1
+      - celery==5.0.2
+      - luigi==3.0.2
+      - openpyxl==3.0.5
+      - libfaketime==2.0.0

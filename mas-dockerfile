@@ -59,3 +59,6 @@ RUN mv /usr/local/apache2/modules/mod_wsgi-py38.cpython-38-x86_64-linux-gnu.so /
 COPY container_setup_files/httpd.conf /usr/local/apache2/conf/httpd.conf
 
 COPY container_setup_files/httpd-foreground /usr/local/bin/httpd-foreground
+
+RUN touch /home/daemon/miniconda/bin/conda/MAS/pidfile.pid
+RUN touch /home/daemon/miniconda/bin/conda/MAS/logfile.log
