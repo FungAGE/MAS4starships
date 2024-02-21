@@ -60,5 +60,5 @@ COPY container_setup_files/httpd.conf /usr/local/apache2/conf/httpd.conf
 
 COPY container_setup_files/httpd-foreground /usr/local/bin/httpd-foreground
 
-RUN touch /home/daemon/miniconda/bin/conda/MAS/pidfile.pid
-RUN touch /home/daemon/miniconda/bin/conda/MAS/logfile.log
+RUN touch /home/daemon/pidfile.pid
+RUN touch /home/daemon/logfile.log
