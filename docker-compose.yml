@@ -41,7 +41,7 @@ services:
     restart: always
     build:
       context: .
-      dockerfile: mas-dockerfile
+      dockerfile: Dockerfile
       args:
         MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
     depends_on:
