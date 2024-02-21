@@ -17,14 +17,7 @@ class Command(BaseCommand):
 
         # If admin user already created, we will still try to create luigi
         except IntegrityError as e:
-            # Try to change password
-            try:
-                admin = User.objects.get(username='admin')
-                admin.set_password(options['admin_password'])
-                admin.save()
-
-            except User.DoesNotExist as e:
-                pass
+            pass
 
         try:
             luigi_user = User.objects.create_user('luigi', '', options['luigi_password'])
@@ -32,11 +25,4 @@ class Command(BaseCommand):
             data_editors_group.user_set.add(luigi_user)
 
         except IntegrityError as e:
-            # Try to change password
-            try:
-                luigi_user = User.objects.get(username='luigi')
-                luigi_user.set_password(options['luigi_password'])
-                luigi_user.save()
-
-            except User.DoesNotExist as e:
-                pass
+            pass

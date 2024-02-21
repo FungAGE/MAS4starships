@@ -29,7 +29,6 @@ import tarfile
 import sys
 import subprocess
 import multiprocessing
-from collections import namedtuple
 
 from result_viewer.views import MixinForBaseTemplate, add_context_for_genome_viz
 
@@ -347,6 +346,15 @@ class Upload_Phage(Upload_Genome):
 
         if upload_form.is_valid():
 
+            # Test if blast database exists
+            for p in ["{db}.{ext}".format(db=settings.TERMINASE_DATABASE, ext=x) for x in
+                      ['phr', 'pin', 'psq']]:
+                if not os.path.isfile(p):
+                    upload_form.errors.update(
+                        circularly_permutated=': Terminase blast database does not exist. Looked for {}'.format(p)
+                    )
+                    return render(request, self.template_name, {'upload_form': upload_form})
+
             with TemporaryDirectory() as tempdir:
                 output_dest = tempdir
 
@@ -387,7 +395,11 @@ class Upload_Phage(Upload_Genome):
                                 # Test if blast database exists
                                 for p in ["{db}.{ext}".format(db=settings.TERMINASE_DATABASE, ext=x) for x in ['phr', 'pin', 'psq']]:
                                     if not os.path.isfile(p):
-                                        raise RuntimeError('Missing terminase BLAST database file {}.'.format(p))
+                                        upload_form.errors.update(
+                                            circularly_permutated=': Terminase blast database does not exist. Looked for {}'.format(p)
+                                        )
+                                        phage.delete()
+                                        return render(request, self.template_name, {'upload_form': upload_form})
 
                                 # Run blast search for terminase
                                 blast_results_path = os.path.join(tempdir, '{}.blastp_results.xml'.format(phage.genome_name))
@@ -403,12 +415,14 @@ class Upload_Phage(Upload_Genome):
 
                                 # If blast search fails return error
                                 if blast_result.returncode != 0:
-                                    raise RuntimeError(
-                                        'Blastp search returned error code {}.\nstderr = {}'.format(
+                                    upload_form.errors.update(
+                                        circularly_permutated=': Blastp search failed. Return code = {}\nstderr = {}'.format(
                                             blast_result.returncode,
                                             blast_result.stderr.decode()
                                         )
                                     )
+                                    phage.delete()
+                                    return render(request, self.template_name, {'upload_form': upload_form})
 
                                 passing_record = []
                                 for rec_i, record in enumerate(NCBIXML.parse(open(blast_results_path, 'r'))):
@@ -417,16 +431,18 @@ class Upload_Phage(Upload_Genome):
                                 length = len(passing_record)
 
                                 if length == 0:
-                                    raise RuntimeError(
-                                        'No proteins were found to have a significant terminase signal. '
-                                        'Please reorient this genome manually.'
-                                    )
+                                    upload_form.errors.update(circularly_permutated=': No proteins were found to have a significan'
+                                                                                    't terminase signal. Please resolve manually. '
+                                                                                    'Genome was not uploaded.')
+                                    phage.delete()
+                                    return render(request, self.template_name, {'upload_form': upload_form})
 
                                 if length > 2:
-                                    raise RuntimeError(
-                                        'Number of called proteins with significant terminase signal is greater than 2.'
-                                        ' Please reorient this genome manually.'
-                                    )
+                                    upload_form.errors.update(circularly_permutated=': Number of called proteins with significant '
+                                                                                    'terminase signal is greater than 2. Please'
+                                                                                    ' resolve this manually. Genome was not uploaded')
+                                    phage.delete()
+                                    return render(request, self.template_name, {'upload_form': upload_form})
 
                                 if length == 1:
                                     new_fasta_path = self.make_genome_start_from_protein(passing_record[0], phage_path, tempdir, phage)
@@ -436,19 +452,17 @@ class Upload_Phage(Upload_Genome):
                                     strand2 = passing_record[1][1].query.split('|')[3].strip()
 
                                     if strand1 != strand2:
-                                        raise RuntimeError(
-                                            'Small and large terminase on different strands. '
-                                            'Please reorient this genome manually.'
-                                        )
+                                        upload_form.errors.update(circularly_permutated=': Small and large terminase on different'
+                                                                                        'strands. Resolve manually. Genome not uploaded.')
+                                        phage.delete()
+                                        return render(request, self.template_name, {'upload_form': upload_form})
 
                                     if strand1 == '+':
-                                        new_fasta_path = self.make_genome_start_from_protein(
-                                            passing_record[0], phage_path, tempdir, phage
-                                        )
+                                        new_fasta_path = self.make_genome_start_from_protein(passing_record[0], phage_path, tempdir,
+                                                                            phage)
                                     else:
-                                        new_fasta_path = self.make_genome_start_from_protein(
-                                            passing_record[1], phage_path, tempdir, phage
-                                        )
+                                        new_fasta_path = self.make_genome_start_from_protein(passing_record[1], phage_path, tempdir,
+                                                                            phage)
 
                                 # created so the user does not have to overwrite a file
                                 new_output_dest = tempdir
@@ -488,21 +502,38 @@ class Upload_Phage(Upload_Genome):
                                     phage_t_rna, phage, upload_form.cleaned_data['assign_to'], new_annotations, new_features
                                 )
 
-                            # terminal repeat
+                            # terminal repeat features
                             if repeat > 0:
-                                repeat_objs = get_repeat_features_and_annotation(phage, repeat)
-                                if repeat_objs.annotation._state.adding:
-                                    new_annotations[repeat_objs.annotation.sequence] = repeat_objs.annotation
-                                new_features.append(repeat_objs.first_feature)
-                                new_features.append(repeat_objs.second_feature)
+                                repeat_seq = genome[:repeat]
+
+                                if genome_models.Annotation.objects.filter(sequence=repeat_seq).count() > 0:
+                                    repeat_annotation = genome_models.Annotation.objects.get(sequence=repeat_seq)
+                                else:
+                                    repeat_annotation = genome_models.Annotation()
+                                    repeat_annotation.sequence = repeat_seq
+                                    repeat_annotation.annotation = 'None'
+                                    repeat_annotation.public_notes = 'Direct terminal repeat. Detected with sequencing data ' \
+                                                                     'via coverage based methods.'
+                                    repeat_annotation.private_notes = 'This annotation was automatically generated.'
+                                    repeat_annotation.flag = 9
+                                    repeat_annotation.assigned_to = None
+                                    new_annotations[repeat_annotation.sequence] = repeat_annotation
+
+                                first_feature_repeat = genome_models.Feature(genome=phage, start=0, stop=repeat,
+                                                                             type='Repeat Region', strand='+',
+                                                                             annotation=repeat_annotation)
+                                last_feature_repeat = genome_models.Feature(genome=phage, start=len(genome) - repeat,
+                                                                            stop=len(genome), type='Repeat Region',
+                                                                            strand='+',
+                                                                            annotation=repeat_annotation)
+                                new_features.append(first_feature_repeat)
+                                new_features.append(last_feature_repeat)
 
                         add_annotations_and_features_to_db(new_annotations, new_features)
                         genome_models.genome_upload_complete.send(sender=None)
 
                 except Exception as e:
-                    upload_form.errors.update(
-                        Error=': Unable to start genome from terminase. {} Genome not uploaded.'.format(e)
-                    )
+                    upload_form.errors.update(Conflict='Exception occured upon upload: {}'.format(e))
                     context = self.get_context_data()
                     context['upload_form'] = upload_form
 
@@ -570,7 +601,6 @@ class Upload_Custom_Genome(Upload_Genome):
             assign_to = upload_form.cleaned_data['assign_to']
             organism = upload_form.cleaned_data['organism']
             translation_table = upload_form.cleaned_data['translation_table']
-            dtr_len = upload_form.cleaned_data['direct_terminal_repeat_size']
 
             with transaction.atomic():
                 with TemporaryDirectory() as tempdir:
@@ -604,14 +634,6 @@ class Upload_Custom_Genome(Upload_Genome):
                     create_custom_CDS_annotations(
                         cds_fh, translation_table, genome_obj, assign_to, new_annotations, new_features
                     )
-
-                    # terminal repeat
-                    if dtr_len > 0:
-                        repeat_objs = get_repeat_features_and_annotation(genome_obj, dtr_len)
-                        if repeat_objs.annotation._state.adding:
-                            new_annotations[repeat_objs.annotation.sequence] = repeat_objs.annotation
-                        new_features.append(repeat_objs.first_feature)
-                        new_features.append(repeat_objs.second_feature)
 
                     add_annotations_and_features_to_db(new_annotations, new_features)
 
@@ -702,7 +724,7 @@ class Feature_List(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
 
 
 # used for feature detail page
-class Feature_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailView):
+class Feature_Detail(LoginRequiredMixin, generic.DetailView):
     model = genome_models.Feature
     context_object_name = 'feature'
     template_name = 'genome/feature_detail.html'
@@ -854,7 +876,7 @@ class Confirm_Genome_Delete(LoginRequiredMixin, PermissionRequiredMixin, MixinFo
     login_url = reverse_lazy('login')
 
     def get(self, request):
-        context = super(Confirm_Genome_Delete, self).get_context_data()
+        context = {}
         genome_form = genome_forms.Genome_Delete(
             data=request.GET
         )
@@ -1292,35 +1314,3 @@ def annotation_download(request, annotation_id):
             response['Content-Disposition'] = 'attachment; filename=%s.faa' % annotation_obj.accession
 
         return response
-
-
-def get_repeat_features_and_annotation(genome: genome_models.Genome, repeat_len: int):
-    repeat_seq = genome.genome_sequence[:repeat_len]
-
-    if genome_models.Annotation.objects.filter(sequence=repeat_seq).count() > 0:
-        repeat_annotation = genome_models.Annotation.objects.get(sequence=repeat_seq)
-    else:
-        repeat_annotation = genome_models.Annotation()
-        repeat_annotation.sequence = repeat_seq
-        repeat_annotation.annotation = 'None'
-        repeat_annotation.public_notes = 'Direct terminal repeat. Detected with sequencing data ' \
-                                         'via coverage based methods.'
-        repeat_annotation.private_notes = 'This annotation was automatically generated.'
-        repeat_annotation.flag = 9
-        repeat_annotation.assigned_to = None
-
-    first_feature_repeat = genome_models.Feature(
-        genome=genome, start=0, stop=repeat_len, strand='+',
-        type='Repeat Region', annotation=repeat_annotation
-    )
-    last_feature_repeat = genome_models.Feature(
-        genome=genome, start=len(genome.genome_sequence) - repeat_len, stop=len(genome.genome_sequence), strand='+',
-        type='Repeat Region', annotation=repeat_annotation
-    )
-
-    Result = namedtuple('DTR_DB_objects', ['first_feature', 'second_feature', 'annotation'])
-    return Result(
-        first_feature=first_feature_repeat,
-        second_feature=last_feature_repeat,
-        annotation=repeat_annotation
-    )
