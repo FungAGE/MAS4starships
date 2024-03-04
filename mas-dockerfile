@@ -1,5 +1,5 @@
 # Use the official image as a parent image.
-FROM httpd:latest
+FROM httpd:2.4.51
 
 USER root
 WORKDIR /root

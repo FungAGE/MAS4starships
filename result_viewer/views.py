@@ -156,13 +156,38 @@ def add_context_for_genome_viz(context, phage, current_annotation_id=None):
         f = {}
         f['id'] = feature.id
         f['strand'] = feature.strand
-        f['flag'] = feature.annotation.get_flag_display()
+        try:
+            f['flag'] = feature.annotation.get_flag_display()
+        except AttributeError:
+            f['flag'] = 7
         f['type'] = feature.type
-        f['public_note'] = feature.annotation.public_notes
-        f['private_note'] = feature.annotation.private_notes
-        f['accession'] = feature.annotation.accession
-        f['annotation_id'] = feature.annotation.id
-        f['annotation'] = feature.annotation.annotation
+        try:
+            f['public_note'] = feature.annotation.public_notes
+        except AttributeError:
+            f['public_note'] = "nan"
+
+        try:
+            f['private_note'] = feature.annotation.private_notes
+        except AttributeError:
+            f['private_note'] = "nan"
+
+        try:
+            f['private_note'] = feature.annotation.private_notes
+        except AttributeError:
+            f['private_note'] = "nan"
+
+        try:
+            f['accession'] = feature.annotation.accession
+        except AttributeError:
+            f['accession'] = "nan"
+        try:
+            f['annotation_id'] = feature.annotation.id
+        except AttributeError:
+            f['annotation_id'] = "nan"
+        try:
+            f['annotation'] = feature.annotation.annotation
+        except AttributeError:
+            f['annotation'] = "nan"
         f['href'] = reverse('view-results', args=(f['accession'], 'GenomeNavigator', phage.genome_name))
         if f['annotation_id'] == current_annotation_id:
             features_dict['feature_id'] = f['id']
