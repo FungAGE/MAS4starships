@@ -9,3 +9,8 @@ MAS/settings/__init__.py
 mas_backup*.bundle
 MAS/settings_files/secret_key.txt
 *.sql
+*.tar.gz
+output/
+logs/
+*.pid
+*.log
