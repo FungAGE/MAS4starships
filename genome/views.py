@@ -1194,24 +1194,24 @@ def get_genome_data_dicts(genomes):
         phage_dict = {}
         phage_dict['genome_name'] = genome.genome_name
         phage_dict['organism'] = genome.organism
+        phage_dict['contigID'] = genome.contigID
+        phage_dict['elementBegin'] = genome.elementBegin
+        phage_dict['elementEnd'] = genome.elementEnd
+
         gene = genome.feature_set.filter(type='gene').count()
 
         gene_features = genome.feature_set.filter(type='gene')
         # Derived from stackoverflow.com/questions/4727327/
         flag_options_reverse = dict((v, k) for k, v in genome_models.Annotation.flag_options)
         annotations = genome_models.Annotation.objects.filter(feature__in=gene_features)
-
+        genomes = genome_models.Genome.objects
         phage_dict['unpolished_gene_count'] = annotations.exclude(annotation_id="nan").count()
         # phage_dict['unpolished_gene_count'] = annotations.filter(flag=flag_options_reverse['UNANNOTATED']).count()
         phage_dict['green_gene_count'] = annotations.filter(flag=flag_options_reverse['GREEN']).count()
         phage_dict['yellow_gene_count'] = annotations.filter(flag=flag_options_reverse['YELLOW']).count()
         phage_dict['red_gene_count'] = annotations.filter(flag=flag_options_reverse['RED']).count()
-        phage_dict['endolysin_gene_count'] = annotations.filter(flag=flag_options_reverse['ENDOLYSIN']).count()
         phage_dict['review_name_gene_count'] = annotations.filter(flag=flag_options_reverse['REVIEW NAME']).count()
         phage_dict['gene_count'] = gene
-        phage_dict['trna_count'] = genome.feature_set.filter(type='tRNA').count()
-        phage_dict['repeat_region_count'] = genome.feature_set.filter(type='Repeat Region').count()
-        phage_dict['pk'] = genome.pk
         phage_dict['genome_length'] = len(genome.genome_sequence)
         objects.append(phage_dict)
     return objects

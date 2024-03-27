@@ -39,13 +39,17 @@ class Genome(models.Model):
     genome_name = models.CharField(max_length=100, unique=True)
     genome_sequence = models.TextField(max_length=15000000)
     organism = models.CharField(max_length=100, default='phage')
+    elementBegin = models.CharField(max_length=100, unique=False)
+    elementEnd = models.CharField(max_length=100, unique=False)
+    contigID = models.CharField(max_length=100, unique=False)
 
     def __str__(self):
         return self.genome_name
 
-
+# TODO: add features of interest here?
 class Feature(models.Model):
     feature_options = (
+        ('gene', 'Gene Annotation'),
         ('CDS', 'Coding Sequence'),
         ('Repeat Region', 'Repeat Region'),
         ('tRNA', 'tRNA'),
@@ -81,10 +85,7 @@ class Annotation(models.Model):
         (3, 'REVIEW NAME'),
         (4, 'N/A'),
         (5, 'ORANGE'),
-        (6, 'ENDOLYSIN'),
-        (7, 'UNANNOTATED'),
-        (8, 'tRNA'),
-        (9, 'TERMINAL REPEAT')
+        (7, 'UNANNOTATED')
     )
     annotation = models.CharField(max_length=255, blank=True, null=True, default='No Annotation')
     #Amino Acid Sequence

@@ -17,21 +17,18 @@
 
 {% block body %}
     <div class="block">
-        <h1>Genome Details: {{ genome.genome_name }}</h1>
+        <h1>Starship Details: {{ genome.genome_name }}</h1>
             <table class="table-condensed">
             {% for genome in genome_info %}
                 <tr><td><b>ID: </b></td><td>{{ genome.pk }}</td></tr>
                 <tr><td><b>Organism: </b></td><td>{{ genome.organism }}</td></tr>
-                <tr><td><b>Genome Length: </b></td><td>{{ genome.genome_length }}</td></tr>
-                <tr><td><b># Features: </b></td> <td>{{ genome.cds_count }}</td></tr>
-                <tr><td><b># Features Unannotated: </b></td><td>{{ genome.unpolished_cds_count }}</td></tr>
-                <tr><td class="review-flag"><b># Need Review: </b></td><td>{{ genome.review_name_cds_count }}</td></tr>
-                <tr><td class="green-flag"><b># Green Flag: </b></td><td>{{ genome.green_cds_count }}</td></tr>
-                <tr><td class="yellow-flag"><b># Yellow Flag: </b></td><td>{{ genome.yellow_cds_count }}</td></tr>
-                <tr><td class="red-flag"><b># Red Flag: </b></td><td>{{ genome.red_cds_count }}</td></tr>
-                <tr><td class="endo-flag"><b># Endolysin: </b></td><td>{{ genome.endolysin_cds_count }}</td></tr>
-                <tr><td><b># tRNA: </b></td><td>{{ genome.trna_count }}</td></tr>
-                <tr><td><b># Repeat Region: </b></td><td>{{ genome.repeat_region_count }}</td></tr>
+                <tr><td><b>Starship Length: </b></td><td>{{ genome.genome_length }}</td></tr>
+                <tr><td><b># Genes: </b></td> <td>{{ genome.gene_count }}</td></tr>
+                <tr><td><b># Genes Unannotated: </b></td><td>{{ genome.unpolished_gene_count }}</td></tr>
+                <tr><td class="review-flag"><b># Need Review: </b></td><td>{{ genome.review_name_gene_count }}</td></tr>
+                <tr><td class="green-flag"><b># Green Flag: </b></td><td>{{ genome.green_gene_count }}</td></tr>
+                <tr><td class="yellow-flag"><b># Yellow Flag: </b></td><td>{{ genome.yellow_gene_count }}</td></tr>
+                <tr><td class="red-flag"><b># Red Flag: </b></td><td>{{ genome.red_gene_count }}</td></tr>
                 <tr><td><b><a href="{% url 'genome:phage_download_fasta' genome.pk %}">download fasta</a></b></td></tr>
                 <tr><td><b><a href="{% url 'genome:download_deliverables' genome.pk %}">download deliverables</a></b></td></tr>
             {% endfor %}

@@ -25,7 +25,7 @@
                 {% if upload_form.errors.name.data.0.code == 1 %}
                     <p>Continue with this name?: {{ upload_form.checkbox }}</p>
                 {% endif %}
-                    <p>Genome fasta file: {{ upload_form.upload }}</p>
+                    <p>Starship fasta file: {{ upload_form.upload }}</p>
 
                     <div id="cp">
                         <p>Re-orient genome to start from terminase?: {{ upload_form.circularly_permuted }}</p>

@@ -66,14 +66,13 @@
                 bSortClasses: false,
                 columnDefs: [
                     {
-                        targets: [11, 12], /* column index */
+                        targets: [9, 10], /* column index */
                         orderable: false, /* true or false */
                     },
                     { className: "review-flag", targets: [ 5 ] },
                     { className: "green-flag", targets: [ 6 ] },
                     { className: "yellow-flag", targets: [ 7 ] },
-                    { className: "red-flag", targets: [ 8 ] },
-                    { className: "endo-flag", targets: [ 9 ] }
+                    { className: "red-flag", targets: [ 8 ] }
                 ]
             });
 
@@ -83,10 +82,10 @@
                 processing: true,
                 columnDefs: [
                     {
-                        targets: [0, 1, 9, 10, 11], /* column index */
+                        targets: [0, 1, 9], /* column index */
                         orderable: false, /* true or false */
                     },
-                    { className: "centered", targets: [ 9, 10, 11 ] }
+                    { className: "centered", targets: [ 9] }
                 ]
             });
             $('table').on('click', 'tbody > tr > td > div.aa-control', function() {

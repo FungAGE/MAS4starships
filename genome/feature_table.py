@@ -62,7 +62,7 @@ def GetFeatureTable(phage_name, genome):
 
         dna = get_dna_sequence(feature_obj.start, feature_obj.stop, feature_obj.strand, genome)
         blastp_result_string = ''
-        if feature_obj.type == 'CDS':
+        if feature_obj.type == 'CDS' | feature_obj.type == 'gene':
             prot = get_protein_sequence(feature_obj.start, feature_obj.stop, feature_obj.strand, genome)
             # try:
             #     #TODO: For downloading excel files for telework

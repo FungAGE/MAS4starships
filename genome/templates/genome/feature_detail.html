@@ -20,7 +20,7 @@
         <h1> Feature Details: {{ feature }}</h1>
             <table class="table-condensed">
                 <tr><td><b>ID: </b></td><td>{{ feature.id }}</td></tr>
-                <tr><td><b>Genome Name: </b></td><td><a href="{% url 'genome:phage_detail' feature.genome.id %}">{{ feature.genome }}</a></td></tr>
+                <tr><td><b>Starship Name: </b></td><td><a href="{% url 'genome:phage_detail' feature.genome.id %}">{{ feature.genome }}</a></td></tr>
                 <tr><td><b>Start: </b></td><td>{{ feature.start }}</td></tr>
                 <tr><td><b>Stop: </b></td><td>{{ feature.stop }}</td></tr>
                 <tr><td><b>Strand: </b></td><td>{{ feature.strand }}</td></tr>

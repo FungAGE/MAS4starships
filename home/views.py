@@ -4,7 +4,7 @@ from django.views import generic
 
 from result_viewer.views import MixinForBaseTemplate
 from result_viewer.models import Annotation
-
+from result_viewer.models import Genome
 
 class HomePageView(MixinForBaseTemplate, generic.TemplateView):
     template_name = 'home/index.html'
@@ -28,5 +28,8 @@ class HomePageView(MixinForBaseTemplate, generic.TemplateView):
                 history_type='~'
             )
             context['annotated_last_week'] = last_weeks_annotations.values('id').distinct().count()
+
+            ship_count = Genome.values('id').distinct.count()
+            context['ship_count'] = ship_count
 
         return context

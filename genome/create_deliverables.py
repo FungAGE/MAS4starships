@@ -238,9 +238,9 @@ def collect_merge_values_for_docx(df, phage_name, genome):
             if 'hypothetical' in row['Manual Annotation'].lower():
                 num_hypothetical += 1
 
-            # output anything not flagged as GREEN, N/A, tRNA, or TERMINAL REPEAT to notable genes
+            # output anything not flagged as GREEN, N/A to notable genes
             if row['Flag']:
-                if row['Flag'] not in ['GREEN', 'N/A', 'tRNA', 'TERMINAL REPEAT', 'ENDOLYSIN']:
+                if row['Flag'] not in ['GREEN', 'N/A']:
                     gene_info = '{}\n  - Flagged as {}'.format(row['Manual Annotation'], row['Flag'])
                     if row['Public Notes']:
                         gene_info = '{}\n  - {}'.format(gene_info, row['Public Notes'])

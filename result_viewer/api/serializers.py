@@ -13,6 +13,7 @@ class GenomeSeqSerializer(serializers.Serializer):
     genome_name = serializers.CharField(max_length=Genome._meta.get_field('genome_name').max_length)
     genome_sequence = serializers.CharField(max_length=Genome._meta.get_field('genome_sequence').max_length)
     num_cds = serializers.IntegerField()
+    num_gene = serializers.IntegerField()
     num_trna = serializers.IntegerField()
     len_dtr = serializers.IntegerField()
 
@@ -154,15 +155,17 @@ class DataTablesServerSideSerializer(serializers.Serializer):
 class GenomeDataSerializer(serializers.Serializer):
     genome_name = serializers.CharField(max_length=Genome._meta.get_field('genome_name').max_length)
     organism = serializers.CharField(max_length=Genome._meta.get_field('organism').max_length)
+    contigID = serializers.CharField(max_length=Genome._meta.get_field('contigID').max_length)
+    elementBegin = serializers.CharField(max_length=Genome._meta.get_field('elementBegin').max_length)
+    elementEnd = serializers.CharField(max_length=Genome._meta.get_field('elementEnd').max_length)
     genome_length = serializers.IntegerField()
     num_cds = serializers.IntegerField()
+    num_gene = serializers.IntegerField()
     num_unannotated = serializers.IntegerField()
     num_review = serializers.IntegerField()
     num_green = serializers.IntegerField()
     num_yellow = serializers.IntegerField()
     num_red = serializers.IntegerField()
-    num_endo = serializers.IntegerField()
-    num_trna = serializers.IntegerField()
     download = serializers.CharField(max_length=100)
     navigator = serializers.CharField(max_length=100)
 

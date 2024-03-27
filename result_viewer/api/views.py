@@ -117,6 +117,7 @@ class GetGenomeView(PipelineAPIMixin, APIView):
             counts = genome_features.aggregate(
                 tRNAs=Count('id', filter=Q(type='tRNA')),
                 repeats=Count('id', filter=Q(type='Repeat Region')),
+                gene=Count('id', filter=Q(type='gene')),
                 cds=Count('id', filter=Q(type='CDS'))
             )
             if counts['repeats'] > 0:
@@ -131,6 +132,7 @@ class GetGenomeView(PipelineAPIMixin, APIView):
             'genome_name': genome.genome_name,
             'genome_sequence': genome.genome_sequence,
             'num_cds': counts['cds'],
+            'num_gene': counts['gene'],
             'num_trna': counts['tRNAs'],
             'len_dtr': DTR_length
         })
@@ -179,13 +181,15 @@ class GenomeData:
         self.organism = genome.organism
         self.genome_length = len(genome.genome_sequence)
         self.num_cds = genome.num_cds
+        self.num_gene = genome.num_gene
         self.num_unannotated = genome.num_unannotated
         self.num_review = genome.num_review
         self.num_green = genome.num_green
         self.num_yellow = genome.num_yellow
         self.num_red = genome.num_red
-        self.num_endo = genome.num_endo
-        self.num_trna = genome.num_trna
+        self.contigID = genome.contigID
+        self.elementBegin = genome.elementBegin
+        self.elementEnd = genome.elementEnd
         self.download = '<a href="{}">download fasta</a>'.format(
             reverse('genome:phage_download_fasta', kwargs={'genome_id': genome.id})
         )
@@ -200,17 +204,16 @@ class GetPhageDataView(APIView):
 
         flag_options_reverse = dict((v, k) for k, v in Annotation.flag_options)
         cds = Count('feature', filter=Q(feature__type= 'CDS'))
-        trna = Count('feature', filter=Q(feature__type= 'tRNA'))
+        gene = Count('feature', filter=Q(feature__type= 'gene'))
         green = Count('feature__annotation__flag', filter=Q(feature__annotation__flag=flag_options_reverse['GREEN']))
         yellow = Count('feature__annotation__flag', filter=Q(feature__annotation__flag=flag_options_reverse['YELLOW']))
         red = Count('feature__annotation__flag', filter=Q(feature__annotation__flag=flag_options_reverse['RED']))
         unannotated = Count('feature__annotation__flag', filter=Q(feature__annotation__flag=flag_options_reverse['UNANNOTATED']))
-        endolysin = Count('feature__annotation__flag', filter=Q(feature__annotation__flag=flag_options_reverse['ENDOLYSIN']))
         review = Count('feature__annotation__flag', filter=Q(feature__annotation__flag=flag_options_reverse['REVIEW NAME']))
 
         genomes = Genome.objects.annotate(num_green=green).annotate(num_yellow=yellow).annotate(num_red=red).\
-            annotate(num_unannotated=unannotated).annotate(num_endo=endolysin).annotate(num_review=review).\
-            annotate(num_cds=cds).annotate(num_trna=trna)
+            annotate(num_unannotated=unannotated).annotate(num_review=review).\
+            annotate(num_cds=cds).annotate(num_gene=gene)
 
         total_num_genomes = genomes.count()
 
@@ -251,7 +254,7 @@ class GetPhageDataView(APIView):
         elif order_col == 2:
             return Length('genome_sequence').asc() if order_dir == 'asc' else Length('genome_sequence').desc()
         elif order_col == 3:
-            return 'num_cds' if order_dir == 'asc' else '-num_cds'
+            return 'num_gene' if order_dir == 'asc' else '-num_gene'
         elif order_col == 4:
             return 'num_unannotated' if order_dir == 'asc' else '-num_unannotated'
         elif order_col == 5:
@@ -263,10 +266,12 @@ class GetPhageDataView(APIView):
         elif order_col == 8:
             return 'num_red' if order_dir == 'asc' else '-num_red'
         elif order_col == 9:
-            return 'num_endo' if order_dir == 'asc' else '-num_endo'
+            return 'contigID' if order_dir == 'asc' else '-contigID'
         elif order_col == 10:
-            return 'num_trna' if order_dir == 'asc' else '-num_trna'
-
+            return 'elementBegin' if order_dir == 'asc' else '-elementBegin'
+        elif order_col == 11:
+            return 'elementEnd' if order_dir == 'asc' else '-elementEnd'
+        
 
 class AnnotationData:
     def __init__(self, annotation, genome_name=None):

@@ -17,33 +17,35 @@
         <th>Starship Name</th>
         <th>Organism</th>
         <th>Starship Length</th>
-        <th># CDS</th>
-        <th># CDS Unannotated</th>
+        <th># Genes</th>
+        <th># Genes Unannotated</th>
         <th># Needs Review</th>
         <th># Green Flag</th>
         <th># Yellow Flag</th>
         <th># Red Flag</th>
-        <th># Endolysin</th>
-        <th># tRNA</th>
         <th>Download Sequence</th>
         <th>Nav</th>
+        <th>Genome Contig</th>
+        <th>Start Coordinates</th>
+        <th>End Coordinates</th>
       </tr>
     </thead>
     <tfoot>
       <tr>
-        <th>Genome Name</th>
+        <th>Starship Name</th>
         <th>Organism</th>
-        <th>Genome Length</th>
-        <th># CDS</th>
-        <th># CDS Unannotated</th>
+        <th>Starship Length</th>
+        <th># Genes</th>
+        <th># Genes Unannotated</th>
         <th># Needs Review</th>
         <th># Green Flag</th>
         <th># Yellow Flag</th>
         <th># Red Flag</th>
-        <th># Endolysin</th>
-        <th># tRNA</th>
         <th>Download Sequence</th>
         <th>Nav</th>
+        <th>Genome Contig</th>
+        <th>Start Coordinates</th>
+        <th>End Coordinates</th>
       </tr>
     </tfoot>
   </table>
@@ -69,27 +71,27 @@
               { "data": "genome_name" },
               { "data": "organism" },
               { "data": "genome_length" },
-              { "data": "num_cds" },
+              { "data": "num_gene" },
               { "data": "num_unannotated" },
               { "data": "num_review" },
               { "data": "num_green" },
               { "data": "num_yellow" },
               { "data": "num_red" },
-              { "data": "num_endo" },
-              { "data": "num_trna" },
               { "data": "download" },
-              { "data": "navigator" }
+              { "data": "navigator" },
+              { "data": "contigID"},
+              { "data": "elementBegin"},
+              { "data": "elementEnd"}
           ],
           columnDefs: [
               {
-                  targets: [11, 12], /* column index */
+                  targets: [9, 10], /* column index */
                   orderable: false, /* true or false */
               },
               { className: "review-flag", targets: [ 5 ] },
               { className: "green-flag", targets: [ 6 ] },
               { className: "yellow-flag", targets: [ 7 ] },
-              { className: "red-flag", targets: [ 8 ] },
-              { className: "endo-flag", targets: [ 9 ] }
+              { className: "red-flag", targets: [ 8 ] }
           ]
       });
   });
