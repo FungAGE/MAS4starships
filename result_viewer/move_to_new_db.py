@@ -81,7 +81,7 @@ def move_phage_and_features():
         for feature in phage_features.all():
             # Find annotation associated with feature
             ftype = None
-            if feature.type == 'CDS':
+            if feature.type == 'CDS' | feature.type == 'gene':
                 sequence = get_protein_sequence(
                     feature.start,
                     feature.stop,

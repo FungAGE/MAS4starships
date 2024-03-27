@@ -3,19 +3,20 @@
 <table id="genome-table" class="table table-hover table-striped" width="100%">
   <thead>
     <tr>
-      <th>Genome Name</th>
+      <th>Starship Name</th>
       <th>Organism</th>
-      <th>Genome Length</th>
-      <th># CDS</th>
-      <th># CDS Unannotated</th>
+      <th>Starship Length</th>
+      <th># Genes</th>
+      <th># Genes Unannotated</th>
       <th># Needs Review</th>
       <th># Green Flag</th>
       <th># Yellow Flag</th>
       <th># Red Flag</th>
-      <th># Endolysin</th>
-      <th># tRNA</th>
       <th>Download Sequence</th>
       <th>Nav</th>
+      <th>Genome Contig</th>
+      <th>Start Coordinates</th>
+      <th>End Coordinates</th>
     </tr>
   </thead>
   <tbody>
@@ -28,14 +29,12 @@
       </td>
       <td>{{ genome.organism }}</td>
       <td>{{ genome.genome_length }}</td>
-      <td>{{ genome.cds_count }}</td>
-      <td>{{ genome.unpolished_cds_count }}</td>
-      <td class="review-flag">{{ genome.review_name_cds_count }}</td>
-      <td class="green-flag">{{ genome.green_cds_count }}</td>
-      <td class="yellow-flag">{{ genome.yellow_cds_count }}</td>
-      <td class="red-flag">{{ genome.red_cds_count }}</td>
-      <td class="endo-flag">{{ genome.endolysin_cds_count }}</td>
-      <td>{{ genome.trna_count }}</td>
+      <td>{{ genome.gene_count }}</td>
+      <td>{{ genome.unpolished_gene_count }}</td>
+      <td class="review-flag">{{ genome.review_name_gene_count }}</td>
+      <td class="green-flag">{{ genome.green_gene_count }}</td>
+      <td class="yellow-flag">{{ genome.yellow_gene_count }}</td>
+      <td class="red-flag">{{ genome.red_gene_count }}</td>
       <td>
         <a href="{% url 'genome:phage_download_fasta' genome.pk %}"
           >download fasta</a
@@ -46,6 +45,9 @@
           <div class="glyphicon glyphicon-hand-right"></div>
         </a>
       </td>
+      <td>{{ genome.contigID }}</td>
+      <td>{{ genome.elementBegin }}</td>
+      <td>{{ genome.elementEnd }}</td>
     </tr>
     {% endfor %}
   </tbody>

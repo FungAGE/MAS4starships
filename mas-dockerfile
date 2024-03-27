@@ -23,13 +23,15 @@ USER daemon
 RUN curl https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh > Miniconda3-latest-Linux-x86_64.sh
 RUN bash Miniconda3-latest-Linux-x86_64.sh -b -p /home/daemon/miniconda
 
-# Copy project to image
-COPY --chown=daemon:daemon . ./MAS
+COPY --chown=daemon:daemon container_setup_files/mas-environment.yml /home/daemon/MAS/container_setup_files/
 
 # Create mas conda environment
 RUN /home/daemon/miniconda/bin/conda env create --file /home/daemon/MAS/container_setup_files/mas-environment.yml
 RUN /home/daemon/miniconda/bin/conda init
 RUN /home/daemon/miniconda/bin/conda clean -a -y
+
+# Copy project to image
+COPY --chown=daemon:daemon . ./MAS
 
 # Generate Secret Key
 RUN cat /proc/sys/kernel/random/entropy_avail
