@@ -13,4 +13,5 @@ MAS/settings_files/secret_key.txt
 output/
 logs/
 *.pid
-*.log
+logfile.log
+databases/**
