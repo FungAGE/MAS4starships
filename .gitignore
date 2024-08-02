@@ -15,3 +15,5 @@ logs/
 *.pid
 logfile.log
 databases/**
+celerybeat*
+*.log

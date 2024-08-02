@@ -17,6 +17,9 @@
       <th>Genome Contig</th>
       <th>Start Coordinates</th>
       <th>End Coordinates</th>
+      <th>Starship family</th>
+      <th>Starship navis</th>
+      <th>Starship haplotype</th>
     </tr>
   </thead>
   <tbody>
@@ -48,6 +51,9 @@
       <td>{{ genome.contigID }}</td>
       <td>{{ genome.elementBegin }}</td>
       <td>{{ genome.elementEnd }}</td>
+      <td>{{ genome.starship_family}}</td>
+      <td>{{ genome.starship_navis}}</td>
+      <td>{{ genome.starship_haplotype}}</td>
     </tr>
     {% endfor %}
   </tbody>

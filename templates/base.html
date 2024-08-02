@@ -136,31 +136,19 @@
 {###################### ADDITIONAL NAVIGATION ITEMS ######################}
         <nav id="additional-navbar" class="navbar navbar-default dropdown-navbar" style="display: none">
             <ul class="nav navbar-nav navbar-left">
-{#           ########## UPLOAD PHAGE GENOME ###########}
-                {% comment %} <li>
-                    <a href="{% url 'genome:upload_phage' %}">
-                        Upload Phage Genome
-                    </a>
-                </li> {% endcomment %}
-{#           ########## UPLOAD BACTERIAL GENOME ###########}
-                {% comment %} <li>
-                    <a href="{% url 'genome:upload_bacterial_genome' %}">
-                        Upload Bacterial Genome
-                    </a>
-                </li> {% endcomment %}
-{#           ########## UPLOAD CUSTOM GENOME ###########}
+{#           ########## UPLOAD STARSHIP ###########}
                 <li>
-                    <a href="{% url 'genome:upload_custom_genome' %}">
+                    <a href="{% url 'genome:upload_genome' %}">
                         Upload Starship
                     </a>
                 </li>
-{#           ########## DELETE GENOME ###########}
+{#           ########## DELETE STARSHIP ###########}
                 <li>
                     <a href="{% url 'genome:phage_delete' %}">
                         Delete Starship
                     </a>
                 </li>
-{#           ########## GENOME LIST ###########}
+{#           ########## STARSHIP LIST ###########}
                 <li>
                     <a href="{% url 'genome:phage_list' %}">
                         Starship List

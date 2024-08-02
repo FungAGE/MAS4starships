@@ -578,7 +578,7 @@ class Upload_Phage(Upload_Genome):
 
 
 class Upload_Custom_Genome(Upload_Genome):
-    template_name = 'genome/upload_custom_genome.html'
+    template_name = 'genome/upload_genome.html'
 
     def get(self, request):
         upload_form = genome_forms.Custom_Genome_Upload_Form()
@@ -1197,16 +1197,17 @@ def get_genome_data_dicts(genomes):
         phage_dict['contigID'] = genome.contigID
         phage_dict['elementBegin'] = genome.elementBegin
         phage_dict['elementEnd'] = genome.elementEnd
-
+        phage_dict["starship_family"] = genome.starship_family
+        phage_dict["starship_navis"] = genome.starship_navis
+        phage_dict["starship_haplotype"] = genome.starship_haplotype
         gene = genome.feature_set.filter(type='gene').count()
-
         gene_features = genome.feature_set.filter(type='gene')
         # Derived from stackoverflow.com/questions/4727327/
         flag_options_reverse = dict((v, k) for k, v in genome_models.Annotation.flag_options)
         annotations = genome_models.Annotation.objects.filter(feature__in=gene_features)
         genomes = genome_models.Genome.objects
-        phage_dict['unpolished_gene_count'] = annotations.exclude(annotation_id="nan").count()
-        # phage_dict['unpolished_gene_count'] = annotations.filter(flag=flag_options_reverse['UNANNOTATED']).count()
+        # phage_dict['unpolished_gene_count'] = Annotation.objects.filter(phage=phage).exclude(annotation_id="nan").count()
+        phage_dict['unpolished_gene_count'] = annotations.filter(flag=flag_options_reverse['UNANNOTATED']).count()
         phage_dict['green_gene_count'] = annotations.filter(flag=flag_options_reverse['GREEN']).count()
         phage_dict['yellow_gene_count'] = annotations.filter(flag=flag_options_reverse['YELLOW']).count()
         phage_dict['red_gene_count'] = annotations.filter(flag=flag_options_reverse['RED']).count()
@@ -1277,7 +1278,7 @@ def download_deliverables(request, genome_id):
                     return new_name
                 return file
 
-            file_list = [rename_extension(f) for f in os.listdir(tempdir) if os.path.isfile(os.path.join(tempdir, f)) and not f[-4:] in ['.txt', '.sqn', '.tbl']]
+            file_list = [rename_extension(f) for f in os.listdir(tempdir) if os.path.isfile(os.path.join(tempdir, f)) and f[-4:] not in ['.txt', '.sqn', '.tbl']]
             tar_path = os.path.join(tempdir, '%s_deliverables.tar.gz' % genome_name)
 
             with tarfile.open(tar_path, mode='w:gz') as tar:
