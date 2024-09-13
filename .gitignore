@@ -17,3 +17,6 @@ logfile.log
 databases/**
 celerybeat*
 *.log
+logfile.log
+logs
+celerybeat-schedule.dat
