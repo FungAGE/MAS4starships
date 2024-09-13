@@ -563,3 +563,10 @@ class Confirm_Upload_Annotation(forms.Form):
         #     # 'public_notes'
         #     # 'flag'
         # )
+
+# displayed in starfish.html
+class Starfish_Form(forms.Form):
+    species = forms.CharField(label="Species", max_length=100)
+    accession = forms.CharField(label="Accession", max_length=100)
+    model = forms.CharField(label="Model", max_length=100)
+    n_cpu = forms.IntegerField(label="Number of CPUs", min_value=1)

@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views import generic
 from django.urls import reverse_lazy
 from django.forms import modelformset_factory, formset_factory
@@ -39,7 +39,7 @@ from genome.forms import get_file_handle
 from genome import forms as genome_forms
 from genome import models as genome_models
 from genome.tasks import upload_bacterial_genome, create_CDS_annotations, \
-    create_trna_annotations, add_annotations_and_features_to_db, create_custom_CDS_annotations
+    create_trna_annotations, add_annotations_and_features_to_db, create_custom_CDS_annotations, RunStarfish
 
 # Annotation history information
 class Annotation_History(LoginRequiredMixin, MixinForBaseTemplate, generic.View):
@@ -1082,6 +1082,30 @@ class Annotation_Bulk(LoginRequiredMixin, generic.View):
 
         # return render(request, self.template_name, context)
 
+class starfish_annotation():
+    template_name = 'genome/starfish.html'
+
+    def get(self, request):
+        upload_form = genome_forms.Starfish_Form()
+
+        return render(request, self.template_name)
+
+    def post(self, request):
+        upload_form = genome_forms.Starfish_Form(request.POST, request.FILES)
+
+        if upload_form.is_valid():
+            # Extract form data
+            nr_cpu = upload_form.cleaned_data['nr_cpu']
+            # species = upload_form.cleaned_data['species']
+            # accession = upload_form.cleaned_data['accession']
+            # model = upload_form.cleaned_data['model']
+            
+            # Trigger the Celery task to run the pipeline
+            RunStarfish.delay(nr_cpu)
+            
+            # Redirect to a success page (you can modify this)
+            msg = JsonResponse({'status': 'Pipeline started successfully'})
+            return render(request, self.template_name, msg)
 
 # used to show user the correct template for uploading annotations
 def download_excel_template(request):

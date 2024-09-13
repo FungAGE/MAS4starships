@@ -23,6 +23,8 @@ from genome.forms import parse_prots_from_coords
 
 from MAS.celery import app
 
+from AnnotationToolPipeline.AnnotationToolPipeline.pipeline import RunStarfish
+
 
 def on_genome_uploaded_or_removed(
     sender, **kwargs
@@ -204,6 +206,14 @@ def upload_bacterial_genome(name, genome_sequence, assignment_user):
             genome_models.genome_upload_complete.send(sender=None)
 
 
+@shared_task
+def RunStarfish(species, accession, model, nr_cpu):
+    import luigi
+    # Trigger the Luigi task
+    luigi.build([RunStarfish(species=species, accession=accession, model=model, nr_cpu=nr_cpu)], 
+                local_scheduler=True)
+
+    
 # Create new annotation objects and associated features for CDS
 def create_CDS_annotations(
     glimmer_results_file_path, genome, assign_to, new_annotations, new_features

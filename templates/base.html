@@ -54,6 +54,14 @@
                         </a>
                     </li>
 
+{#           ########## STARFISH ###########}
+                    <li id="show-starfish" class="dropdown">
+                        <a href="#" role="button">
+                            Show Options for Running STARFISH <span class="caret"></span>
+                        </a>
+                    </li>
+
+
                 </ul>
 
 {#           ########## USER MANAGEMENT ###########}
@@ -175,6 +183,18 @@
             </ul>
         </nav>
 
+{###################### ADDITIONAL NAVIGATION ITEMS ######################}
+        <nav id="starfish" class="navbar navbar-default dropdown-navbar" style="display: none">
+            <ul class="nav navbar-nav navbar-left">
+{#           ########## RUN STARFISH ###########}
+                <li>
+                    <a href="{% url 'annotation:starfish' %}">
+                        Run STARFISH
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
         {% block body %}{% endblock %}
 
          <!-- Load universal javascript -->
@@ -230,10 +250,11 @@
                 });
 
                 $('#show-nav-options').click(function () {
-                    if ($('#show-additional-nav-options').hasClass('open')) {
+                    if ($('#show-additional-nav-options').hasClass('open') or $('#show-starfish').hasClass('open')) {
                         $('#additional-navbar').hide();
                         $('#primary-navbar').css('margin-bottom', '20px');
                         $('#show-additional-nav-options').removeClass('open');
+                        $('#show-starfish').removeClass('open');
                     }
 
                     if ($(this).hasClass('open')) {
@@ -248,10 +269,11 @@
                 });
 
                 $('#show-additional-nav-options').click(function () {
-                    if ($('#show-nav-options').hasClass('open')) {
+                    if ($('#show-nav-options').hasClass('open') or $('#show-starfish').hasClass('open')) {
                         $('#navigation-navbar').hide();
                         $('#primary-navbar').css('margin-bottom', '20px');
                         $('#show-nav-options').removeClass('open');
+                        $('#show-starfish').removeClass('open');
                     }
 
                     if ($(this).hasClass('open')) {
@@ -262,6 +284,24 @@
                         $('#additional-navbar').show();
                         $('#primary-navbar').css('margin-bottom', '0px');
                         $('#show-additional-nav-options').addClass('open');
+                    }
+                });
+                $('#show-starfish').click(function () {
+                    if ($('#show-nav-options').hasClass('open') or $('#show-additional-nav-options').hasClass('open')) {
+                        $('#navigation-navbar').hide();
+                        $('#primary-navbar').css('margin-bottom', '20px');
+                        $('#show-nav-options').removeClass('open');
+                        $('#show-additional-nav-options').removeClass('open');
+                    }
+
+                    if ($(this).hasClass('open')) {
+                        $('#additional-navbar').hide();
+                        $('#primary-navbar').css('margin-bottom', '20px');
+                        $('#show-starfish').removeClass('open');
+                    } else {
+                        $('#additional-navbar').show();
+                        $('#primary-navbar').css('margin-bottom', '0px');
+                        $('#show-starfish').addClass('open');
                     }
                 });
             });

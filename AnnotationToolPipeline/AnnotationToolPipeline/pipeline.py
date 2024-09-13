@@ -642,101 +642,56 @@ class HHsearch(PipelineTask):
         )
 
 
-"""
-**********   Result Submission   **********
-"""
+class RunStarfish(PipelineTask):
+    """
+    Test run of starfish
+    """
 
+    nr_cpu = luigi.IntParameter(
+        default=20
+    )  # Override the nr_cpu parameter from base class
 
-class Send_Results_To_MAS(PipelineTask):
-    annotation_accession = luigi.Parameter(default="")
-    database = luigi.Parameter()
-    tool = luigi.Parameter()
-    run_time = luigi.DateSecondParameter(default=datetime.now())
-    run_locally = True
-
-    def requires(self):
-        if self.tool == "blastp":
-            return Blastp(
-                annotation_accession=self.annotation_accession,
-                database=self.database,
-                run_time=self.run_time,
-                mas_server=self.mas_server,
-            )
-
-        elif self.tool == "hhsearch":
-            return HHsearch(
-                annotation_accession=self.annotation_accession,
-                database=self.database,
-                run_time=self.run_time,
-                mas_server=self.mas_server,
-            )
-
-        elif self.tool == "rpsblast":
-            return RPSBlast(
-                annotation_accession=self.annotation_accession,
-                database=self.database,
-                run_time=self.run_time,
-                mas_server=self.mas_server,
-            )
+    # TODO: implement my own wrapper script which will accept the following inputs:
+    # species = luigi.Parameter()
+    # genus = luigi.Parameter()
+    # GENOME_PATH = luigi.Parameter()
+    # run_name = luigi.Parameter()
+    # MISSING = luigi.Parameter()
+    # MAXCOPY = luigi.Parameter()
+    # PID = luigi.Parameter()
+    # HSP = luigi.Parameter()
+    # FLANK = luigi.Parameter()
+    # model = luigi.Parameter()
 
     def out_file_path(self, temp=False):
-        return {}
-
-    def out_dir(self, temp=False):
-        folder = "{}-temp".format(self.database) if temp else self.database
-        return os.path.join(
-            self.pipeline_out_dir(), self.task_family, self.tool, folder
+        """
+        Defines the expected output of the task. Replace with the appropriate output files.
+        """
+        output_file = os.path.join(
+            self.out_dir(temp=temp), f"{self.accession}_done.txt"
         )
+        return {"output": output_file}
 
     def do_task(self):
-        r = requests.post(
-            self.mas_server + reverse("upload_results"),
-            auth=(self.g.MAS_USERNAME, self.g.MAS_PASSWORD),
-            files=[("result", open(self.input()["results"].path))],
-            data={
-                "tool": self.tool,
-                "accession": self.annotation_accession,
-                "database": self.database,
-                "status": 0,
-            },
-            verify=self.g.MAS_CRT,
-        )
+        """
+        The core logic of the task, which executes the shell script with the given parameters.
+        """
+        # Construct the shell command with the parameters
+        shell_script_path = "/mnt/sda/johannesson_lab/adrian/bin/starfish/test.sh"
+        command_params = [
+            shell_script_path,
+            self.nr_cpu,
+            # self.species,
+            # self.genus,
+            # self.GENOME_PATH,
+            # self.run_name,
+            # self.MISSING,
+            # self.MAXCOPY,
+            # self.PID,
+            # self.HSP,
+            # self.FLANK,
+            # self.model,
+        ]
 
-        if r.status_code != 200:
-            raise requests.ConnectionError(
-                "Request to post results to MAS server failed (status code = %i):\n%s"
-                % (r.status_code, r.text)
-            )
-
-
-# @Send_Results_To_MAS.event_handler(luigi.Event.SUCCESS)
-# def cleanup(task):
-#     '''
-#     After results successfully uploaded to MAS, we can delete output
-#     '''
-#     task.logger.info('Pipeline complete: Cleaning up.')
-#
-#     # Remove entire pipeline directory
-#     shutil.rmtree(task.pipeline_out_dir())
-
-
-class Run_Pipeline_For_Proteins(luigi.WrapperTask):
-    input_list = luigi.ListParameter()
-    run_time = luigi.DateSecondParameter(default=datetime.now())
-    mas_server = luigi.Parameter()
-
-    def requires(self):
-        job_array = []
-        for search_params in self.input_list:
-            if set(search_params) != {"accession", "tool", "database"}:
-                raise KeyError("Incorrect dict keys for pipeline parameters")
-
-            job_array.append(
-                Send_Results_To_MAS(
-                    mas_server=self.mas_server,
-                    annotation_accession=search_params["accession"],
-                    database=search_params["database"],
-                    tool=search_params["tool"],
-                )
-            )
-        return job_array
+        # Use the inherited _run_command method from the base class to execute the command
+        self._run_command(command_params)
