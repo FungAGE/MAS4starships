@@ -93,7 +93,8 @@ def get_file_handle(instance, mode='rb'):
     else:
         raise ValidationError('%s may not be a file.' % instance.name)
 
-
+# TODO: write/edit method to accept general feature annotations (so it does not fail if perfect CDS regions are not given)
+# TODO: handle upload of GFF files?
 def parse_prots_from_coords(cds_fh, genome_rec, selected_table):
     for cds_line in cds_fh:
         # Get coordinates

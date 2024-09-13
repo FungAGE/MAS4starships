@@ -4,7 +4,10 @@ from urllib.error import URLError
 import subprocess
 import json
 from datetime import datetime, timedelta
+import requests
+from django.urls import reverse
 
+from AnnotationToolPipeline.AnnotationToolPipeline.global_config import global_config
 from MAS.celery import app
 from result_viewer.models import *
 # from AnnotationToolPipeline.RunSearchForProtein import run_search_for_protein
@@ -148,20 +151,11 @@ def is_luigi_server_functional():
 
 
 def is_mas_reachable_from_worker(site):
-    from AnnotationToolPipeline.AnnotationToolPipeline.global_config import global_config
-    from django.urls import reverse
-    import requests
-
-    r = requests.get(
-        site + reverse('test_connection'),
-        auth=(global_config.MAS_USERNAME, global_config.MAS_PASSWORD),
-        verify=global_config.MAS_CRT
-    )
-    if r.status_code != 200:
-        message = 'Unable to connect to MAS server from celery worker. ' \
-                  'Response status code = {}. Response text = {}.'.format(r.status_code, r.text)
-        print(message)
-        return False
-
-    else:
+    try:
+        url = site + reverse('test_connection')
+        response = requests.get(url, auth=(global_config.MAS_USERNAME, global_config.MAS_PASSWORD), verify=global_config.MAS_CRT)
+        response.raise_for_status()  # Raise an exception for non-200 status codes
         return True
+    except requests.RequestException as e:
+        print(f"Error connecting to MAS server from celery worker: {e}")
+        return False

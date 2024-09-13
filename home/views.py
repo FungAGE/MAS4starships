@@ -29,7 +29,8 @@ class HomePageView(MixinForBaseTemplate, generic.TemplateView):
             )
             context['annotated_last_week'] = last_weeks_annotations.values('id').distinct().count()
 
-            ship_count = Genome.values('id').distinct.count()
-            context['ship_count'] = ship_count
+            # TODO: use a unique ID to count instead
+            # ship_count = Genome.values('genome_name').distinct.count()
+            # context['ship_count'] = ship_count
 
         return context

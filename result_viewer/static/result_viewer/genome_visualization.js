@@ -154,14 +154,14 @@ $(document).ready(function () {
         if (feature_data["feature_id"] == d.id) return "fuchsia"
         else if (d.flag === "N/A" || d.flag === "UNANNOTATED") {
           return "grey"
-        } else if (d.flag === "ENDOLYSIN") {
-          return "blue"
+        // } else if (d.flag === "ENDOLYSIN") {
+        //   return "blue"
         } else if (d.flag === "REVIEW NAME") {
           return "#C21460"
-        } else if (d.flag === "tRNA") {
-          return "#008080"
-        } else if (d.flag === "TERMINAL REPEAT") {
-          return "purple"
+        // } else if (d.flag === "tRNA") {
+        //   return "#008080"
+        // } else if (d.flag === "TERMINAL REPEAT") {
+        //   return "purple"
         } else if (d.flag === "RED") {
           return "red"
         } else if (d.flag === "YELLOW") {
@@ -256,21 +256,21 @@ $(document).ready(function () {
     .style("fill", "black")
     .text("Color represented by flag; black is hypothetical protein")
 
-  legend
-    .append("circle")
-    .attr("class", "tRNA")
-    .attr("cx", 0)
-    .attr("cy", 10)
-    .attr("r", "5")
-    .style("fill", "#008080")
+  // legend
+  //   .append("circle")
+  //   .attr("class", "tRNA")
+  //   .attr("cx", 0)
+  //   .attr("cy", 10)
+  //   .attr("r", "5")
+  //   .style("fill", "#008080")
 
-  legend
-    .append("circle")
-    .attr("class", "repeat-region")
-    .attr("cx", 0)
-    .attr("cy", 25)
-    .attr("r", "5")
-    .style("fill", "purple")
+  // legend
+  //   .append("circle")
+  //   .attr("class", "repeat-region")
+  //   .attr("cx", 0)
+  //   .attr("cy", 25)
+  //   .attr("r", "5")
+  //   .style("fill", "purple")
 
   legend
     .append("circle")
@@ -288,13 +288,13 @@ $(document).ready(function () {
     .style("fill", "grey")
     .text("Unannotated, N/A")
 
-  legend
-    .append("circle")
-    .attr("class", "other")
-    .attr("cx", 0)
-    .attr("cy", 55)
-    .attr("r", "5")
-    .style("fill", "blue")
+  // legend
+  //   .append("circle")
+  //   .attr("class", "other")
+  //   .attr("cx", 0)
+  //   .attr("cy", 55)
+  //   .attr("r", "5")
+  //   .style("fill", "blue")
 
   legend
     .append("circle")

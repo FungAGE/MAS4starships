@@ -38,8 +38,7 @@ from genome import create_deliverables
 from genome.forms import get_file_handle
 from genome import forms as genome_forms
 from genome import models as genome_models
-from genome.tasks import upload_bacterial_genome, create_CDS_annotations, \
-    create_trna_annotations, add_annotations_and_features_to_db, create_custom_CDS_annotations
+from genome.tasks import create_CDS_annotations, create_trna_annotations, add_annotations_and_features_to_db, create_custom_CDS_annotations
 
 # Annotation history information
 class Annotation_History(LoginRequiredMixin, MixinForBaseTemplate, generic.View):
@@ -298,283 +297,283 @@ class Upload_Genome(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTem
     login_url = reverse_lazy('login')
 
 
-class Upload_Bacterial_Genome(Upload_Genome):
-    template_name = 'genome/upload_bacterial_genome.html'
-    # context_object_name = 'bacterial_genome'
+# class Upload_Bacterial_Genome(Upload_Genome):
+#     template_name = 'genome/upload_bacterial_genome.html'
+#     # context_object_name = 'bacterial_genome'
 
-    def get(self, request):
-        upload_form = genome_forms.Bacterial_Genome_Upload_Form()
-        context = self.get_context_data()
-        context['upload_form'] = upload_form
-        return render(request, self.template_name, context)
+#     def get(self, request):
+#         upload_form = genome_forms.Bacterial_Genome_Upload_Form()
+#         context = self.get_context_data()
+#         context['upload_form'] = upload_form
+#         return render(request, self.template_name, context)
 
-    def post(self, request):
-        upload_form = genome_forms.Bacterial_Genome_Upload_Form(request.POST, request.FILES)
-        if upload_form.is_valid():
-            genome_sequence = SeqIO.read(get_file_handle(upload_form.cleaned_data['upload'], mode='r'), 'fasta').seq.__str__().upper()
+#     def post(self, request):
+#         upload_form = genome_forms.Bacterial_Genome_Upload_Form(request.POST, request.FILES)
+#         if upload_form.is_valid():
+#             genome_sequence = SeqIO.read(get_file_handle(upload_form.cleaned_data['upload'], mode='r'), 'fasta').seq.__str__().upper()
 
-            upload_bacterial_genome.delay(
-                upload_form.cleaned_data['name'],
-                genome_sequence,
-                upload_form.cleaned_data['assign_to']
-            )
+#             upload_bacterial_genome.delay(
+#                 upload_form.cleaned_data['name'],
+#                 genome_sequence,
+#                 upload_form.cleaned_data['assign_to']
+#             )
 
-            return redirect('genome:phage_list')
-        else:
-            context = self.get_context_data()
-            context['upload_form'] = upload_form
+#             return redirect('genome:phage_list')
+#         else:
+#             context = self.get_context_data()
+#             context['upload_form'] = upload_form
 
-            return render(request, self.template_name, context)
+#             return render(request, self.template_name, context)
 
 
-class Upload_Phage(Upload_Genome):
-    template_name = 'genome/upload_phage.html'
-    # context_object_name = 'phage'
+# class Upload_Phage(Upload_Genome):
+    # template_name = 'genome/upload_phage.html'
+    # # context_object_name = 'phage'
 
-    def get(self, request):
-        upload_form = genome_forms.Phage_Upload_Form()
+    # def get(self, request):
+    #     upload_form = genome_forms.Phage_Upload_Form()
 
-        context = self.get_context_data()
-        context['upload_form'] = upload_form
+    #     context = self.get_context_data()
+    #     context['upload_form'] = upload_form
 
-        return render(request, self.template_name, context)
+    #     return render(request, self.template_name, context)
 
-    def post(self, request):
-        new_annotations = {}  # Annotation objects keyed by sequence
-        new_features = []
-        upload_form = genome_forms.Phage_Upload_Form(request.POST, request.FILES)
+    # def post(self, request):
+    #     new_annotations = {}  # Annotation objects keyed by sequence
+    #     new_features = []
+    #     upload_form = genome_forms.Phage_Upload_Form(request.POST, request.FILES)
 
-        if upload_form.is_valid():
+    #     if upload_form.is_valid():
 
-            # Test if blast database exists
-            for p in ["{db}.{ext}".format(db=settings.TERMINASE_DATABASE, ext=x) for x in
-                      ['phr', 'pin', 'psq']]:
-                if not os.path.isfile(p):
-                    upload_form.errors.update(
-                        circularly_permutated=': Terminase blast database does not exist. Looked for {}'.format(p)
-                    )
-                    return render(request, self.template_name, {'upload_form': upload_form})
+    #         # Test if blast database exists
+    #         for p in ["{db}.{ext}".format(db=settings.TERMINASE_DATABASE, ext=x) for x in
+    #                   ['phr', 'pin', 'psq']]:
+    #             if not os.path.isfile(p):
+    #                 upload_form.errors.update(
+    #                     circularly_permutated=': Terminase blast database does not exist. Looked for {}'.format(p)
+    #                 )
+    #                 return render(request, self.template_name, {'upload_form': upload_form})
 
-            with TemporaryDirectory() as tempdir:
-                output_dest = tempdir
+    #         with TemporaryDirectory() as tempdir:
+    #             output_dest = tempdir
 
-                file = get_file_handle(request.FILES['upload'], mode='r')
-                genome = SeqIO.read(file, 'fasta').seq.__str__().upper()
-                name = request.POST['name']
+    #             file = get_file_handle(request.FILES['upload'], mode='r')
+    #             genome = SeqIO.read(file, 'fasta').seq.__str__().upper()
+    #             name = request.POST['name']
 
-                terminal_repeat = request.POST['terminal_repeat']
+    #             terminal_repeat = request.POST['terminal_repeat']
 
-                phage_path = request.FILES['upload'].temporary_file_path()
-                syspath = sys.path
-                print(syspath)
-                phage_cds = gene_calling.run_glimmer(phage_path, name, output_dest)
+    #             phage_path = request.FILES['upload'].temporary_file_path()
+    #             syspath = sys.path
+    #             print(syspath)
+    #             phage_cds = gene_calling.run_glimmer(phage_path, name, output_dest)
 
-                phage = None
-                feature_saved_list = []
-                protein_list = []
-                repeat = int(terminal_repeat)
+    #             phage = None
+    #             feature_saved_list = []
+    #             protein_list = []
+    #             repeat = int(terminal_repeat)
 
-                try:
-                    with transaction.atomic():
-                        phage = genome_models.Genome(genome_name=name, genome_sequence=genome, organism='phage')
-                        # needs to be saved before features, so you can access the pk
-                        phage.save()
+    #             try:
+    #                 with transaction.atomic():
+    #                     phage = genome_models.Genome(genome_name=name, genome_sequence=genome, organism='phage')
+    #                     # needs to be saved before features, so you can access the pk
+    #                     phage.save()
 
-                        # if the phage is circularly permuted then get all the proteins from the phage and place them in temp file.
-                        if upload_form.cleaned_data['circularly_permuted'] is True:
-                            if phage_cds:
-                                for cds in gene_calling.parse_glimmer_results(phage_cds):
-                                    sequence = Seq(genome, IUPAC.ambiguous_dna)
-                                    protein = get_protein_sequence(cds.start, cds.stop, cds.strand, sequence)
-                                    record = SeqRecord(Seq(protein._data, generic_protein), id="%s | " % phage.genome_name,
-                                                       description="%s | %s | %s | CDS" % (cds.start, cds.stop, cds.strand))
-                                    protein_list.append(record)
-                                file_path = os.path.join(tempdir, "proteins.fasta")
-                                SeqIO.write(protein_list, file_path, "fasta")
+    #                     # if the phage is circularly permuted then get all the proteins from the phage and place them in temp file.
+    #                     if upload_form.cleaned_data['circularly_permuted'] is True:
+    #                         if phage_cds:
+    #                             for cds in gene_calling.parse_glimmer_results(phage_cds):
+    #                                 sequence = Seq(genome, IUPAC.ambiguous_dna)
+    #                                 protein = get_protein_sequence(cds.start, cds.stop, cds.strand, sequence)
+    #                                 record = SeqRecord(Seq(protein._data, generic_protein), id="%s | " % phage.genome_name,
+    #                                                    description="%s | %s | %s | CDS" % (cds.start, cds.stop, cds.strand))
+    #                                 protein_list.append(record)
+    #                             file_path = os.path.join(tempdir, "proteins.fasta")
+    #                             SeqIO.write(protein_list, file_path, "fasta")
 
-                                # Test if blast database exists
-                                for p in ["{db}.{ext}".format(db=settings.TERMINASE_DATABASE, ext=x) for x in ['phr', 'pin', 'psq']]:
-                                    if not os.path.isfile(p):
-                                        upload_form.errors.update(
-                                            circularly_permutated=': Terminase blast database does not exist. Looked for {}'.format(p)
-                                        )
-                                        phage.delete()
-                                        return render(request, self.template_name, {'upload_form': upload_form})
+    #                             # Test if blast database exists
+    #                             for p in ["{db}.{ext}".format(db=settings.TERMINASE_DATABASE, ext=x) for x in ['phr', 'pin', 'psq']]:
+    #                                 if not os.path.isfile(p):
+    #                                     upload_form.errors.update(
+    #                                         circularly_permutated=': Terminase blast database does not exist. Looked for {}'.format(p)
+    #                                     )
+    #                                     phage.delete()
+    #                                     return render(request, self.template_name, {'upload_form': upload_form})
 
-                                # Run blast search for terminase
-                                blast_results_path = os.path.join(tempdir, '{}.blastp_results.xml'.format(phage.genome_name))
-                                blast_result = subprocess.run([
-                                    'blastp',
-                                    '-query', file_path,
-                                    '-db', settings.TERMINASE_DATABASE,
-                                    '-evalue', '0.00001',
-                                    '-outfmt', '5',
-                                    '-out', blast_results_path,
-                                    '-num_threads', str(multiprocessing.cpu_count())
-                                ], stderr=subprocess.PIPE)
+    #                             # Run blast search for terminase
+    #                             blast_results_path = os.path.join(tempdir, '{}.blastp_results.xml'.format(phage.genome_name))
+    #                             blast_result = subprocess.run([
+    #                                 'blastp',
+    #                                 '-query', file_path,
+    #                                 '-db', settings.TERMINASE_DATABASE,
+    #                                 '-evalue', '0.00001',
+    #                                 '-outfmt', '5',
+    #                                 '-out', blast_results_path,
+    #                                 '-num_threads', str(multiprocessing.cpu_count())
+    #                             ], stderr=subprocess.PIPE)
 
-                                # If blast search fails return error
-                                if blast_result.returncode != 0:
-                                    upload_form.errors.update(
-                                        circularly_permutated=': Blastp search failed. Return code = {}\nstderr = {}'.format(
-                                            blast_result.returncode,
-                                            blast_result.stderr.decode()
-                                        )
-                                    )
-                                    phage.delete()
-                                    return render(request, self.template_name, {'upload_form': upload_form})
+    #                             # If blast search fails return error
+    #                             if blast_result.returncode != 0:
+    #                                 upload_form.errors.update(
+    #                                     circularly_permutated=': Blastp search failed. Return code = {}\nstderr = {}'.format(
+    #                                         blast_result.returncode,
+    #                                         blast_result.stderr.decode()
+    #                                     )
+    #                                 )
+    #                                 phage.delete()
+    #                                 return render(request, self.template_name, {'upload_form': upload_form})
 
-                                passing_record = []
-                                for rec_i, record in enumerate(NCBIXML.parse(open(blast_results_path, 'r'))):
-                                    if len(record.alignments) > 3:
-                                        passing_record.append((rec_i, record))
-                                length = len(passing_record)
+    #                             passing_record = []
+    #                             for rec_i, record in enumerate(NCBIXML.parse(open(blast_results_path, 'r'))):
+    #                                 if len(record.alignments) > 3:
+    #                                     passing_record.append((rec_i, record))
+    #                             length = len(passing_record)
 
-                                if length == 0:
-                                    upload_form.errors.update(circularly_permutated=': No proteins were found to have a significan'
-                                                                                    't terminase signal. Please resolve manually. '
-                                                                                    'Genome was not uploaded.')
-                                    phage.delete()
-                                    return render(request, self.template_name, {'upload_form': upload_form})
+    #                             if length == 0:
+    #                                 upload_form.errors.update(circularly_permutated=': No proteins were found to have a significan'
+    #                                                                                 't terminase signal. Please resolve manually. '
+    #                                                                                 'Genome was not uploaded.')
+    #                                 phage.delete()
+    #                                 return render(request, self.template_name, {'upload_form': upload_form})
 
-                                if length > 2:
-                                    upload_form.errors.update(circularly_permutated=': Number of called proteins with significant '
-                                                                                    'terminase signal is greater than 2. Please'
-                                                                                    ' resolve this manually. Genome was not uploaded')
-                                    phage.delete()
-                                    return render(request, self.template_name, {'upload_form': upload_form})
+    #                             if length > 2:
+    #                                 upload_form.errors.update(circularly_permutated=': Number of called proteins with significant '
+    #                                                                                 'terminase signal is greater than 2. Please'
+    #                                                                                 ' resolve this manually. Genome was not uploaded')
+    #                                 phage.delete()
+    #                                 return render(request, self.template_name, {'upload_form': upload_form})
 
-                                if length == 1:
-                                    new_fasta_path = self.make_genome_start_from_protein(passing_record[0], phage_path, tempdir, phage)
+    #                             if length == 1:
+    #                                 new_fasta_path = self.make_genome_start_from_protein(passing_record[0], phage_path, tempdir, phage)
 
-                                else:
-                                    strand1 = passing_record[0][1].query.split('|')[3].strip()
-                                    strand2 = passing_record[1][1].query.split('|')[3].strip()
+    #                             else:
+    #                                 strand1 = passing_record[0][1].query.split('|')[3].strip()
+    #                                 strand2 = passing_record[1][1].query.split('|')[3].strip()
 
-                                    if strand1 != strand2:
-                                        upload_form.errors.update(circularly_permutated=': Small and large terminase on different'
-                                                                                        'strands. Resolve manually. Genome not uploaded.')
-                                        phage.delete()
-                                        return render(request, self.template_name, {'upload_form': upload_form})
+    #                                 if strand1 != strand2:
+    #                                     upload_form.errors.update(circularly_permutated=': Small and large terminase on different'
+    #                                                                                     'strands. Resolve manually. Genome not uploaded.')
+    #                                     phage.delete()
+    #                                     return render(request, self.template_name, {'upload_form': upload_form})
 
-                                    if strand1 == '+':
-                                        new_fasta_path = self.make_genome_start_from_protein(passing_record[0], phage_path, tempdir,
-                                                                            phage)
-                                    else:
-                                        new_fasta_path = self.make_genome_start_from_protein(passing_record[1], phage_path, tempdir,
-                                                                            phage)
+    #                                 if strand1 == '+':
+    #                                     new_fasta_path = self.make_genome_start_from_protein(passing_record[0], phage_path, tempdir,
+    #                                                                         phage)
+    #                                 else:
+    #                                     new_fasta_path = self.make_genome_start_from_protein(passing_record[1], phage_path, tempdir,
+    #                                                                         phage)
 
-                                # created so the user does not have to overwrite a file
-                                new_output_dest = tempdir
+    #                             # created so the user does not have to overwrite a file
+    #                             new_output_dest = tempdir
 
-                                new_phage_cds = gene_calling.run_glimmer(new_fasta_path, name, new_output_dest)
-                                new_phage_t_rna = gene_calling.run_trnascan_se(new_fasta_path, name, new_output_dest)
+    #                             new_phage_cds = gene_calling.run_glimmer(new_fasta_path, name, new_output_dest)
+    #                             new_phage_t_rna = gene_calling.run_trnascan_se(new_fasta_path, name, new_output_dest)
 
-                                if new_phage_cds:
-                                    create_CDS_annotations(
-                                        new_phage_cds,
-                                        phage,
-                                        upload_form.cleaned_data['assign_to'],
-                                        new_annotations,
-                                        new_features
-                                    )
+    #                             if new_phage_cds:
+    #                                 create_CDS_annotations(
+    #                                     new_phage_cds,
+    #                                     phage,
+    #                                     upload_form.cleaned_data['assign_to'],
+    #                                     new_annotations,
+    #                                     new_features
+    #                                 )
 
-                                if new_phage_t_rna:
-                                    create_trna_annotations(
-                                        new_phage_t_rna,
-                                        phage,
-                                        upload_form.cleaned_data['assign_to'],
-                                        new_annotations,
-                                        new_features
-                                    )
+    #                             if new_phage_t_rna:
+    #                                 create_trna_annotations(
+    #                                     new_phage_t_rna,
+    #                                     phage,
+    #                                     upload_form.cleaned_data['assign_to'],
+    #                                     new_annotations,
+    #                                     new_features
+    #                                 )
 
-                        else:
-                            # cds features
-                            if phage_cds:
-                                create_CDS_annotations(
-                                    phage_cds, phage, upload_form.cleaned_data['assign_to'], new_annotations, new_features
-                                )
+    #                     else:
+    #                         # cds features
+    #                         if phage_cds:
+    #                             create_CDS_annotations(
+    #                                 phage_cds, phage, upload_form.cleaned_data['assign_to'], new_annotations, new_features
+    #                             )
 
-                            # tRNA features and annotations
-                            phage_t_rna = gene_calling.run_trnascan_se(phage_path, name, output_dest)
-                            if phage_t_rna:
-                                create_trna_annotations(
-                                    phage_t_rna, phage, upload_form.cleaned_data['assign_to'], new_annotations, new_features
-                                )
+    #                         # tRNA features and annotations
+    #                         phage_t_rna = gene_calling.run_trnascan_se(phage_path, name, output_dest)
+    #                         if phage_t_rna:
+    #                             create_trna_annotations(
+    #                                 phage_t_rna, phage, upload_form.cleaned_data['assign_to'], new_annotations, new_features
+    #                             )
 
-                            # terminal repeat features
-                            if repeat > 0:
-                                repeat_seq = genome[:repeat]
+    #                         # terminal repeat features
+    #                         if repeat > 0:
+    #                             repeat_seq = genome[:repeat]
 
-                                if genome_models.Annotation.objects.filter(sequence=repeat_seq).count() > 0:
-                                    repeat_annotation = genome_models.Annotation.objects.get(sequence=repeat_seq)
-                                else:
-                                    repeat_annotation = genome_models.Annotation()
-                                    repeat_annotation.sequence = repeat_seq
-                                    repeat_annotation.annotation = 'None'
-                                    repeat_annotation.public_notes = 'Direct terminal repeat. Detected with sequencing data ' \
-                                                                     'via coverage based methods.'
-                                    repeat_annotation.private_notes = 'This annotation was automatically generated.'
-                                    repeat_annotation.flag = 9
-                                    repeat_annotation.assigned_to = None
-                                    new_annotations[repeat_annotation.sequence] = repeat_annotation
+    #                             if genome_models.Annotation.objects.filter(sequence=repeat_seq).count() > 0:
+    #                                 repeat_annotation = genome_models.Annotation.objects.get(sequence=repeat_seq)
+    #                             else:
+    #                                 repeat_annotation = genome_models.Annotation()
+    #                                 repeat_annotation.sequence = repeat_seq
+    #                                 repeat_annotation.annotation = 'None'
+    #                                 repeat_annotation.public_notes = 'Direct terminal repeat. Detected with sequencing data ' \
+    #                                                                  'via coverage based methods.'
+    #                                 repeat_annotation.private_notes = 'This annotation was automatically generated.'
+    #                                 repeat_annotation.flag = 9
+    #                                 repeat_annotation.assigned_to = None
+    #                                 new_annotations[repeat_annotation.sequence] = repeat_annotation
 
-                                first_feature_repeat = genome_models.Feature(genome=phage, start=0, stop=repeat,
-                                                                             type='Repeat Region', strand='+',
-                                                                             annotation=repeat_annotation)
-                                last_feature_repeat = genome_models.Feature(genome=phage, start=len(genome) - repeat,
-                                                                            stop=len(genome), type='Repeat Region',
-                                                                            strand='+',
-                                                                            annotation=repeat_annotation)
-                                new_features.append(first_feature_repeat)
-                                new_features.append(last_feature_repeat)
+    #                             first_feature_repeat = genome_models.Feature(genome=phage, start=0, stop=repeat,
+    #                                                                          type='Repeat Region', strand='+',
+    #                                                                          annotation=repeat_annotation)
+    #                             last_feature_repeat = genome_models.Feature(genome=phage, start=len(genome) - repeat,
+    #                                                                         stop=len(genome), type='Repeat Region',
+    #                                                                         strand='+',
+    #                                                                         annotation=repeat_annotation)
+    #                             new_features.append(first_feature_repeat)
+    #                             new_features.append(last_feature_repeat)
 
-                        add_annotations_and_features_to_db(new_annotations, new_features)
-                        genome_models.genome_upload_complete.send(sender=None)
+    #                     add_annotations_and_features_to_db(new_annotations, new_features)
+    #                     genome_models.genome_upload_complete.send(sender=None)
 
-                except Exception as e:
-                    upload_form.errors.update(Conflict='Exception occured upon upload: {}'.format(e))
-                    context = self.get_context_data()
-                    context['upload_form'] = upload_form
+    #             except Exception as e:
+    #                 upload_form.errors.update(Conflict='Exception occured upon upload: {}'.format(e))
+    #                 context = self.get_context_data()
+    #                 context['upload_form'] = upload_form
 
-                    return render(request, self.template_name, context)
+    #                 return render(request, self.template_name, context)
 
-            return redirect('genome:phage_list')
-        else:
-            context = self.get_context_data()
-            context['upload_form'] = upload_form
+    #         return redirect('genome:phage_list')
+    #     else:
+    #         context = self.get_context_data()
+    #         context['upload_form'] = upload_form
 
-            return render(request, self.template_name, context)
+    #         return render(request, self.template_name, context)
 
-    def make_genome_start_from_protein(self, record, fasta_path, output_dest, phage):
-        """
-        :param record:
-        :param fasta_path:  file path to your temp file with the fasta info
-        :param output_dest
-        :param phage_name
-        :return:
-        """
-        genome_rec = SeqIO.read(open(fasta_path), 'fasta')
+    # def make_genome_start_from_protein(self, record, fasta_path, output_dest, phage):
+    #     """
+    #     :param record:
+    #     :param fasta_path:  file path to your temp file with the fasta info
+    #     :param output_dest
+    #     :param phage_name
+    #     :return:
+    #     """
+    #     genome_rec = SeqIO.read(open(fasta_path), 'fasta')
 
-        # Find location to start from
-        loci_info = record[1].query.split('|')[1].strip()
-        strand = record[1].query.split('|')[3].strip()
-        start = int(loci_info)
+    #     # Find location to start from
+    #     loci_info = record[1].query.split('|')[1].strip()
+    #     strand = record[1].query.split('|')[3].strip()
+    #     start = int(loci_info)
 
-        new_seq = genome_rec.seq[start:] + genome_rec.seq[:start]
+    #     new_seq = genome_rec.seq[start:] + genome_rec.seq[:start]
 
-        if strand == '-':
-            new_seq = new_seq.reverse_complement()
+    #     if strand == '-':
+    #         new_seq = new_seq.reverse_complement()
 
-        # Save fasta with new sequence
-        new_fasta_path = os.path.join(output_dest, '{}.fasta'.format(phage.genome_name))
-        genome_rec.seq = new_seq
-        SeqIO.write(genome_rec, new_fasta_path, 'fasta')
+    #     # Save fasta with new sequence
+    #     new_fasta_path = os.path.join(output_dest, '{}.fasta'.format(phage.genome_name))
+    #     genome_rec.seq = new_seq
+    #     SeqIO.write(genome_rec, new_fasta_path, 'fasta')
 
-        phage.genome_sequence = str(new_seq)
-        phage.save()
+    #     phage.genome_sequence = str(new_seq)
+    #     phage.save()
 
-        return new_fasta_path
+    #     return new_fasta_path
 
 
 class Upload_Custom_Genome(Upload_Genome):
@@ -1205,8 +1204,8 @@ def get_genome_data_dicts(genomes):
         flag_options_reverse = dict((v, k) for k, v in genome_models.Annotation.flag_options)
         annotations = genome_models.Annotation.objects.filter(feature__in=gene_features)
         genomes = genome_models.Genome.objects
-        phage_dict['unpolished_gene_count'] = annotations.exclude(annotation_id="nan").count()
-        # phage_dict['unpolished_gene_count'] = annotations.filter(flag=flag_options_reverse['UNANNOTATED']).count()
+        # phage_dict['unpolished_gene_count'] = annotations.exclude(annotation_id="nan").count()
+        phage_dict['unpolished_gene_count'] = annotations.filter(flag=flag_options_reverse['UNANNOTATED']).count()
         phage_dict['green_gene_count'] = annotations.filter(flag=flag_options_reverse['GREEN']).count()
         phage_dict['yellow_gene_count'] = annotations.filter(flag=flag_options_reverse['YELLOW']).count()
         phage_dict['red_gene_count'] = annotations.filter(flag=flag_options_reverse['RED']).count()
