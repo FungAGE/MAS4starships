@@ -7,18 +7,20 @@ docker exec mas-sql-server sh -c 'exec mysqldump -uroot -p"changeme" mas' > ./ma
 docker exec -w /home/daemon/MAS -u daemon mas sh -c 'tar -czkO media' > ./mas-media-backup.tar.gz
 
 if [[ -s ./mas-db-backup.sql ]]; then
-  rclone sync -P --create-empty-src-dirs ./mas-db-backup.sql gdrive:
+  rsync -av ./mas-db-backup.sql adrian@130.238.82.31:/volume1/homes/adrian/MAS/
+  # rclone sync -P --create-empty-src-dirs ./mas-db-backup.sql gdrive:
   if [[ $? -eq 0 ]]; then
     rm -f ./mas-db-backup.sql
   fi
 fi
 
 if [[ -s ./mas-media-backup.tar.gz ]]; then
-  rclone sync -P --create-empty-src-dirs ./mas-media-backup.tar.gz gdrive:
-  if [[ $? -eq 0 ]]; then
-    # If rclone sync was successful, remove the file
-    rm -f ./mas-media-backup.tar.gz
-  fi
+rsync -av ./mas-media-backup.tar.gz  adrian@130.238.82.31:/volume1/homes/adrian/MAS/
+#  rclone sync -P --create-empty-src-dirs ./mas-media-backup.tar.gz gdrive:
+ if [[ $? -eq 0 ]]; then
+   # If rclone sync was successful, remove the file
+   rm -f ./mas-media-backup.tar.gz
+ fi
 fi
 
 # docker exec -i mas-sql-server sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" mas' < /path/to/your/backup_dir/mas-db-backup.sql
