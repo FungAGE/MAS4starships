@@ -27,15 +27,13 @@ services:
         volume:
           nocopy: true
     ports:
-      - target: 3306
-        published: 3307
-        protocol: tcp
-        mode: host
+      - "3307:3306" # Host port 3307 maps to container port 3306
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
       MYSQL_DATABASE: "mas"
     networks:
       - masnet
+    command: ["mysqld", "--bind-address=0.0.0.0"] # Allow external connections
 
   mas:
     restart: always
