@@ -224,11 +224,10 @@
                 genome_nav.change(function () {
                     console.log(this);
                     var genome_name = $(this).children("option:selected").text();
-                    {# Solution found on stackoverflow.com/questions/17832194/ to use javascript variable in Django URL #}
-                    location.href = '{% url 'phage-nav-redirect' 12345 %}'.replace(/12345/, genome_name);
-                    {#location.href = '/viewer/GenomeNavigator-' + $(this).children("option:selected").text();#}
+                    var encoded_genome_name = encodeURIComponent(genome_name);
+                    location.href = '{% url 'phage-nav-redirect' 12345 %}'.replace(/12345/, encoded_genome_name);
                 });
-
+                
                 $('#show-nav-options').click(function () {
                     if ($('#show-additional-nav-options').hasClass('open')) {
                         $('#additional-navbar').hide();
