@@ -42,8 +42,10 @@ WORKDIR /home/daemon/MAS
 RUN mkdir static-files
 RUN /home/daemon/miniconda/envs/mas/bin/python manage.py collectstatic --noinput
 
+# TODO: this is where we would pull starbase blastdbs?
+# RUN git clone https://github.com/FungAGE/Starships.git
 # Create Terminase blast database
-RUN /home/daemon/miniconda/envs/mas/bin/makeblastdb -dbtype prot -in /home/daemon/MAS/databases/terminase/phage_terminases.fasta -input_type fasta -title "Terminase Database" -out /home/daemon/MAS/databases/terminase/terminase_db
+# RUN /home/daemon/miniconda/envs/mas/bin/makeblastdb -dbtype prot -in /home/daemon/MAS/databases/terminase/phage_terminases.fasta -input_type fasta -title "Terminase Database" -out /home/daemon/MAS/databases/terminase/terminase_db
 
 # Download PDB chain info. It will be loaded into django db on MAS container start-up.
 RUN curl ftp://ftp.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt.gz > pdb_seqres.txt.gz

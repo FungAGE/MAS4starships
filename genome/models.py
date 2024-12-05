@@ -13,14 +13,18 @@ def validate_genome_name(value):
     if settings.GENOME_NAME_FORMAT:
         pattern = re.compile(settings.GENOME_NAME_FORMAT)
         if pattern.match(value) is None:
-            raise ValidationError("%s is not a valid phage name. Would You like to continue with this name?" % value, code=1)
+            raise ValidationError(
+                "%s is not a valid phage name. Would You like to continue with this name?"
+                % value,
+                code=1,
+            )
 
 
 def validate_phage_error(option):
-    if option != 'Yes':
+    if option != "Yes":
         raise ValidationError("Genome was not accepted", code=2)
     else:
-        redirect('genome:phage_list')
+        redirect("genome:phage_list")
 
 
 def validate_duplicate_name(name):
@@ -38,27 +42,38 @@ genome_upload_complete = django.dispatch.Signal()
 class Genome(models.Model):
     genome_name = models.CharField(max_length=100, unique=True)
     genome_sequence = models.TextField(max_length=15000000)
-    organism = models.CharField(max_length=100, default='phage')
+    organism = models.CharField(max_length=100, default="phage")
     elementBegin = models.CharField(max_length=100, unique=False)
     elementEnd = models.CharField(max_length=100, unique=False)
     contigID = models.CharField(max_length=100, unique=False)
+    starship_family = models.CharField(max_length=100, unique=False)
+    starship_navis = models.CharField(max_length=100, unique=False)
+    starship_haplotype = models.CharField(max_length=100, unique=False)
 
     def __str__(self):
         return self.genome_name
 
+
+class ShipFeatures(models.Model):
+    contigID = models.CharField(max_length=100)
+    starshipID = models.CharField(max_length=100, unique=True)
+    elementBegin = models.IntegerField(default=0)
+    elementEnd = models.IntegerField(default=0)
+
+
 # TODO: add features of interest here?
 class Feature(models.Model):
     feature_options = (
-        ('gene', 'Gene Annotation'),
-        ('CDS', 'Coding Sequence'),
-        ('Repeat Region', 'Repeat Region'),
-        ('tRNA', 'tRNA'),
+        ("gene", "Gene Annotation"),
+        ("CDS", "Coding Sequence"),
+        ("Repeat Region", "Repeat Region"),
+        ("tRNA", "tRNA"),
     )
 
     """
     on_delete=models.CASCADE() - deletes features of a phage when a phage is deleted
     """
-    genome = models.ForeignKey('Genome', on_delete=models.CASCADE)
+    genome = models.ForeignKey("Genome", on_delete=models.CASCADE)
 
     start = models.IntegerField(default=0)
     stop = models.IntegerField(default=0)
@@ -70,28 +85,40 @@ class Feature(models.Model):
     strand = models.CharField(max_length=1)
 
     # obtain information from the phage annotations
-    annotation = models.ForeignKey('Annotation', blank=True, null=True, on_delete=models.PROTECT)
+    annotation = models.ForeignKey(
+        "Annotation", blank=True, null=True, on_delete=models.PROTECT
+    )
 
     def __str__(self):
-        return "%s: %s %s..%s %s" % (self.type, self.genome, self.start, self.stop, self.strand)
+        return "%s: %s %s..%s %s" % (
+            self.type,
+            self.genome,
+            self.start,
+            self.stop,
+            self.strand,
+        )
 
 
 class Annotation(models.Model):
     # if you update this, you need to update the flag dict in confirm_upload_annotations in genome views
     flag_options = (
-        (0, 'GREEN'),
-        (1, 'YELLOW'),
-        (2, 'RED'),
-        (3, 'REVIEW NAME'),
-        (4, 'N/A'),
-        (5, 'ORANGE'),
-        (7, 'UNANNOTATED')
+        (0, "GREEN"),
+        (1, "YELLOW"),
+        (2, "RED"),
+        (3, "REVIEW NAME"),
+        (4, "N/A"),
+        (5, "ORANGE"),
+        (7, "UNANNOTATED"),
     )
-    annotation = models.CharField(max_length=255, blank=True, null=True, default='No Annotation')
-    #Amino Acid Sequence
+    annotation = models.CharField(
+        max_length=255, blank=True, null=True, default="No Annotation"
+    )
+    # Amino Acid Sequence
     sequence = models.TextField(max_length=10000, unique=True)
-    public_notes = models.TextField(max_length=30000, blank=True, null=True, default='')
-    private_notes = models.TextField(max_length=30000, blank=True, null=True, default='')
+    public_notes = models.TextField(max_length=30000, blank=True, null=True, default="")
+    private_notes = models.TextField(
+        max_length=30000, blank=True, null=True, default=""
+    )
     # default 7 for unannotated phage
     flag = models.IntegerField(default=7, choices=flag_options)
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
@@ -99,9 +126,9 @@ class Annotation(models.Model):
 
     @property
     def accession(self):
-        chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         integer = abs(self.id)
-        result = ''
+        result = ""
         padding = []
 
         while integer > 0:
@@ -109,11 +136,10 @@ class Annotation(models.Model):
             padding.insert(0, chars[remainder])
         if len(padding) < 5:
             while len(padding) < 5:
-                padding.insert(0, '0')
+                padding.insert(0, "0")
         for i in padding:
             result = result + i
         return result
 
     def __str__(self):
         return "%s | %s" % (self.annotation, self.get_flag_display())
-

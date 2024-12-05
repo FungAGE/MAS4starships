@@ -4,19 +4,19 @@
 {% load crispy_forms_tags %}
 
 {% block css %}
-    <link rel="stylesheet" href="{%  static "genome/upload_custom_genome.css" %}">
+    <link rel="stylesheet" href="{%  static "genome/upload_genome.css" %}">
 {% endblock %}
 
 {% block head %}
 <meta charset="UTF-8">
-<title>MAS | Upload Custom Genome</title>
+<title>MAS | Upload Starship</title>
 {% endblock %}
 
 
 {% block body %}
     <div class="block">
         <div id="upload-form-spacer">
-            <h1>Upload Genome</h1>
+            <h1>Upload Starship Sequence</h1>
             <form name="Form" id="form" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 {{ upload_form|crispy }}

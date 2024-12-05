@@ -190,6 +190,9 @@ class GenomeData:
         self.contigID = genome.contigID
         self.elementBegin = genome.elementBegin
         self.elementEnd = genome.elementEnd
+        self.starship_family = genome.starship_family
+        self.starship_navis = genome.starship_navis
+        self.starship_haplotype = genome.starship_haplotype
         self.download = '<a href="{}">download fasta</a>'.format(
             reverse('genome:phage_download_fasta', kwargs={'genome_id': genome.id})
         )
@@ -271,6 +274,12 @@ class GetPhageDataView(APIView):
             return 'elementBegin' if order_dir == 'asc' else '-elementBegin'
         elif order_col == 11:
             return 'elementEnd' if order_dir == 'asc' else '-elementEnd'
+        elif order_col == 12:
+            return 'starship_family' if order_dir == 'asc' else '-starship_family'
+        elif order_col == 13:
+            return 'starship_navis' if order_dir == 'asc' else '-starship_navis'
+        elif order_col == 14:
+            return 'starship_haplotype' if order_dir == 'asc' else '-starship_haplotype'
         
 
 class AnnotationData:
