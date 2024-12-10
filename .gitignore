@@ -14,3 +14,4 @@ output/
 logs/
 *.pid
 *.log
+databases/**
