@@ -48,7 +48,7 @@ RUN /home/daemon/miniconda/envs/mas/bin/python manage.py collectstatic --noinput
 # RUN /home/daemon/miniconda/envs/mas/bin/makeblastdb -dbtype prot -in /home/daemon/MAS/databases/terminase/phage_terminases.fasta -input_type fasta -title "Terminase Database" -out /home/daemon/MAS/databases/terminase/terminase_db
 
 # Download PDB chain info. It will be loaded into django db on MAS container start-up.
-RUN curl ftp://ftp.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt.gz > pdb_seqres.txt.gz
+RUN curl https://files.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt.gz > pdb_seqres.txt.gz
 RUN gzip -d pdb_seqres.txt.gz
 
 # Create directory for luigi logs
