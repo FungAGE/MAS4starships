@@ -60,14 +60,8 @@ services:
       DONT_FAKE_MONOTONIC: 1
       FAKETIME_DID_REEXEC: "true"
     ports:
-      - target: 80
-        published: 8080
-        protocol: tcp
-        mode: host
-      - target: 8082
-        published: 8082
-        protocol: tcp
-        mode: host
+      - "8080:80"
+      - "8082:8082"
     volumes:
       - type: volume
         source: masmedia
