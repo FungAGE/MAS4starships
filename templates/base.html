@@ -35,63 +35,80 @@
 
 {#           ########## MAS LOGO ###########}
                 <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse" aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
                     <a class="navbar-brand" href="{% url 'home' %}">M.A.S. For Starships</a>
                 </div>
 
-                <ul class="nav navbar-nav navbar-left">
+                <div class="collapse navbar-collapse" id="navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                                Navigation Options <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="#" id="show-flag-nav">Navigate by Flag</a></li>
+                                <li><a href="#" id="show-genome-nav">Navigate by Starship</a></li>
+                                <li><a href="#" id="show-reviewer-nav">Navigate by Reviewer</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                                Management <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="{% url 'genome:upload_custom_genome' %}"><i class="fa fa-upload"></i> Upload Starship</a></li>
+                                <li><a href="{% url 'genome:phage_delete' %}"><i class="fa fa-trash"></i> Delete Starship</a></li>
+                                <li><a href="{% url 'genome:phage_list' %}"><i class="fa fa-list"></i> Starship List</a></li>
+                                <li role="separator" class="divider"></li>
+                                <li><a href="{% url 'genome:upload_annotations' %}"><i class="fa fa-file-excel-o"></i> Upload Annotations</a></li>
+                                <li><a href="{% url 'genome:annotation_list' %}"><i class="fa fa-tags"></i> Annotation List</a></li>
+                            </ul>
+                        </li>
+                    </ul>
 
-{#           ########## RESULT NAVIGATION OPTIONS ###########}
-                    <li id="show-nav-options" class="dropdown">
-                        <a href="#" role="button">
-                            Show Result Navigation Options <span class="caret"></span>
-                        </a>
-                    </li>
-
-{#           ########## ADDITIONAL NAVIGATION OPTIONS ###########}
-                    <li id="show-additional-nav-options" class="dropdown">
-                        <a href="#" role="button">
-                            Show Additional Navigation Options <span class="caret"></span>
-                        </a>
-                    </li>
-
-                </ul>
-
-{#           ########## USER MANAGEMENT ###########}
-                <ul class="nav navbar-nav navbar-right">
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">
-                            {% if user.is_authenticated %}
-                                {{ user.get_username }}
-                            {% else %}
-                                Guest
-                            {% endif %}
-                            <span class="caret"></span>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a href="{% url 'login' %}">Login</a></li>
-                            <li><a href="{% url 'logout' %}">Logout</a></li>
-                            <li><a href="{% url 'password_change' %}">Change Password</a></li>
-                        </ul>
-                    </li>
-                </ul>
-{#           ########## TOGGLE THEME ###########}
-                <ul class="nav navbar-nav navbar-right">
-                    <li>
-                        <a href="#" id="toggle-theme">
-                            {% if dark_mode %}
-                               <i class="fa fa-sun-o fa-lg"></i>
-                            {% else %}
-                                <i class="fa fa-moon-o fa-lg"></i>
-                            {% endif %}
-                        </a>
-                    </li>
-                </ul>
-{#           ########## INACTIVE WORKER WARNING ###########}
-                {% if not worker_active %}
                     <ul class="nav navbar-nav navbar-right">
-                        <p class="navbar-text" style="color: #ff0500;">WARNING: No worker detected!</p>
-                    <ul>
-                {% endif %}
+                        {% if not worker_active %}
+                            <li>
+                                <p class="navbar-text" style="color: #ff0500;">
+                                    <i class="fa fa-exclamation-triangle"></i> No worker detected!
+                                </p>
+                            </li>
+                        {% endif %}
+
+                        <li>
+                            <a href="#" id="toggle-theme" data-toggle="tooltip" data-placement="bottom" title="Toggle theme">
+                                {% if dark_mode %}
+                                    <i class="fa fa-sun-o fa-lg"></i>
+                                {% else %}
+                                    <i class="fa fa-moon-o fa-lg"></i>
+                                {% endif %}
+                            </a>
+                        </li>
+
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                                {% if user.is_authenticated %}
+                                    <i class="fa fa-user"></i> {{ user.get_username }}
+                                {% else %}
+                                    <i class="fa fa-user-o"></i> Guest
+                                {% endif %}
+                                <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="{% url 'login' %}"><i class="fa fa-sign-in"></i> Login</a></li>
+                                <li><a href="{% url 'logout' %}"><i class="fa fa-sign-out"></i> Logout</a></li>
+                                <li role="separator" class="divider"></li>
+                                <li><a href="{% url 'password_change' %}"><i class="fa fa-key"></i> Change Password</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </nav>
 
@@ -138,7 +155,7 @@
             <ul class="nav navbar-nav navbar-left">
 {#           ########## UPLOAD STARSHIP ###########}
                 <li>
-                    <a href="{% url 'genome:upload_genome' %}">
+                    <a href="{% url 'genome:upload_custom_genome' %}">
                         Upload Starship
                     </a>
                 </li>
@@ -203,65 +220,42 @@
             };
 
             $(document).ready(function() {
+                // Initialize tooltips
+                $('[data-toggle="tooltip"]').tooltip();
 
-                $('#toggle-theme').click(function () {
+                // Handle theme toggle
+                $('#toggle-theme').click(function(e) {
+                    e.preventDefault();
                     $.ajax({
                         url: "{% url 'change-theme' %}",
                         type: 'post',
                         headers: {'X-CSRFToken': getCookie('csrftoken')},
-                        success: function () { location.reload(); }
+                        success: function() { 
+                            location.reload();
+                        }
                     });
                 });
 
-                var genome_nav = $('#id_search_genome')
-
-                genome_nav.select2({
-                    multiple: false,
-                    placeholder: 'Navigate by Starship Name',
-                    dropdownAutoWidth: true
+                // Navigation panel handling
+                $('#show-flag-nav').click(function(e) {
+                    e.preventDefault();
+                    $('.dropdown-navbar').hide();
+                    $('#navigation-navbar').show();
+                    $('#flag-nav-section').show();
                 });
 
-                genome_nav.change(function () {
-                    console.log(this);
-                    var genome_name = $(this).children("option:selected").text();
-                    var encoded_genome_name = encodeURIComponent(genome_name);
-                    location.href = '{% url 'phage-nav-redirect' 12345 %}'.replace(/12345/, encoded_genome_name);
-                });
-                
-                $('#show-nav-options').click(function () {
-                    if ($('#show-additional-nav-options').hasClass('open')) {
-                        $('#additional-navbar').hide();
-                        $('#primary-navbar').css('margin-bottom', '20px');
-                        $('#show-additional-nav-options').removeClass('open');
-                    }
-
-                    if ($(this).hasClass('open')) {
-                        $('#navigation-navbar').hide();
-                        $('#primary-navbar').css('margin-bottom', '20px');
-                        $('#show-nav-options').removeClass('open');
-                    } else {
-                        $('#navigation-navbar').show();
-                        $('#primary-navbar').css('margin-bottom', '0');
-                        $('#show-nav-options').addClass('open');
-                    }
+                $('#show-genome-nav').click(function(e) {
+                    e.preventDefault();
+                    $('.dropdown-navbar').hide();
+                    $('#navigation-navbar').show();
+                    $('#genome-nav-section').show();
                 });
 
-                $('#show-additional-nav-options').click(function () {
-                    if ($('#show-nav-options').hasClass('open')) {
-                        $('#navigation-navbar').hide();
-                        $('#primary-navbar').css('margin-bottom', '20px');
-                        $('#show-nav-options').removeClass('open');
-                    }
-
-                    if ($(this).hasClass('open')) {
-                        $('#additional-navbar').hide();
-                        $('#primary-navbar').css('margin-bottom', '20px');
-                        $('#show-additional-nav-options').removeClass('open');
-                    } else {
-                        $('#additional-navbar').show();
-                        $('#primary-navbar').css('margin-bottom', '0px');
-                        $('#show-additional-nav-options').addClass('open');
-                    }
+                $('#show-reviewer-nav').click(function(e) {
+                    e.preventDefault();
+                    $('.dropdown-navbar').hide();
+                    $('#navigation-navbar').show();
+                    $('#reviewer-nav-section').show();
                 });
             });
 

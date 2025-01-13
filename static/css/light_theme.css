@@ -80,11 +80,17 @@ div.details-control.shown {
 
 .navbar-default {
     background-color: var(--secondary-background);
-    border: unset;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .navbar-default .navbar-nav > li > a {
-    color: #000000;
+    color: #333;
+    transition: color 0.2s ease;
+}
+
+.navbar-default .navbar-nav > li > a:hover {
+    color: #337ab7;
 }
 
 .navbar-brand {
@@ -101,7 +107,19 @@ div.details-control.shown {
 }
 
 .dropdown-menu {
-    background-color: var(--forground-light);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.dropdown-menu > li > a {
+    padding: 8px 20px;
+    transition: background-color 0.2s ease;
+}
+
+.dropdown-menu > li > a i {
+    margin-right: 8px;
+    width: 16px;
+    text-align: center;
 }
 
 .select2-container--default .select2-selection--single {
@@ -173,4 +191,8 @@ td.red-flag {
 td.endo-flag {
     background-color: #6060de;
     color: var(--forground-light);
+}
+
+.navbar-toggle .icon-bar {
+    background-color: #333;
 }
