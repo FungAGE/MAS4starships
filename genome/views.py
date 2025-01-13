@@ -577,7 +577,7 @@ class Upload_Genome(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTem
 
 
 class Upload_Custom_Genome(Upload_Genome):
-    template_name = 'genome/upload_genome.html'
+    template_name = 'genome/upload_custom_genome.html'
 
     def get(self, request):
         upload_form = genome_forms.Custom_Genome_Upload_Form()
