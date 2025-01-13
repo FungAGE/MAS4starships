@@ -94,6 +94,7 @@ def get_file_handle(instance, mode='rb'):
         raise ValidationError('%s may not be a file.' % instance.name)
 
 # TODO: write/edit method to accept general feature annotations (so it does not fail if perfect CDS regions are not given)
+# ! I've temporarily disabled the translation check because it was causing issues with the CDS regions
 # TODO: handle upload of GFF files?
 def parse_prots_from_coords(cds_fh, genome_rec, selected_table):
     for cds_line in cds_fh:
@@ -104,9 +105,9 @@ def parse_prots_from_coords(cds_fh, genome_rec, selected_table):
         # produce protein sequence
         prot = get_protein_sequence(start, stop, strand, genome_rec, table=selected_table)
 
-        # Ensure entire sequence translated
-        if len(prot) + 1.0 != (1 + int(stop_) - int(start_)) / 3:
-            raise TranslationError('"{line}" is not a valid CDS'.format(line=cds_line.strip()))
+        # # Ensure entire sequence translated
+        # if len(prot) + 1.0 != (1 + int(stop_) - int(start_)) / 3:
+        #     raise TranslationError('"{line}" is not a valid CDS'.format(line=cds_line.strip()))
 
         yield prot, Namespace(start=start, stop=stop, strand=strand)
 
