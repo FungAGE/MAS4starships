@@ -150,62 +150,6 @@ def create_internal_protein_blastdb():
     )
 
 
-# @shared_task
-# def upload_bacterial_genome(name, genome_sequence, assignment_user):
-#     with transaction.atomic():
-#         with TemporaryDirectory() as tempdir:
-#             # Create fasta to run glimmer and trnascan
-#             record = SeqRecord(
-#                 Seq(genome_sequence),
-#                 id=name,
-#                 name=name,
-#                 description="",
-#             )
-#             fasta_path = os.path.join(tempdir, '{}.fasta'.format(name))
-#             SeqIO.write(record, fasta_path, 'fasta')
-
-#             # Run glimmer on genome to find CDS
-#             glimmer_output = gene_calling.run_glimmer(fasta_path, name, tempdir, 150)
-
-#             # Run trnascan-se to find tRNAs
-#             trnascan_output = gene_calling.run_trnascan_se(fasta_path, name, tempdir)
-
-#             # Create Genome object
-#             bacterial_genome = genome_models.Genome(
-#                 genome_name=name,
-#                 genome_sequence=genome_sequence,
-#                 organism='bacteria'
-#             )
-#             bacterial_genome.save()
-
-#             # Containers to hold objects until read for bulk commit
-#             new_annotations = {}
-#             new_features = []
-
-#             # Create CDS objects
-#             if glimmer_output:
-#                 create_CDS_annotations(
-#                     glimmer_output,
-#                     bacterial_genome,
-#                     assignment_user,
-#                     new_annotations,
-#                     new_features
-#                 )
-
-#             # Create tRNA objects
-#             if trnascan_output:
-#                 create_trna_annotations(
-#                     trnascan_output,
-#                     bacterial_genome,
-#                     assignment_user,
-#                     new_annotations,
-#                     new_features
-#                 )
-
-#             add_annotations_and_features_to_db(new_annotations, new_features)
-#             genome_models.genome_upload_complete.send(sender=None)
-
-
 # Create new annotation objects and associated features for CDS
 def create_CDS_annotations(
     glimmer_results_file_path, genome, assign_to, new_annotations, new_features
