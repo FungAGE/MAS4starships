@@ -92,13 +92,13 @@ class FlagNavigator(Navigator):
 
 
 class GenomeNavigator(Navigator):
-    def __init__(self, genome_name, accession=None):
-        self.nav_arg = genome_name
+    def __init__(self, starship_name, accession=None):
+        self.nav_arg = starship_name
 
-        phage_obj = Genome.objects.get(genome_name=genome_name)
-        self.queryset = Annotation.objects.filter(feature__genome=phage_obj).order_by('feature__start').distinct() # TODO: DISTINCT DOES NOT WORK BECUASE OF OREDERBY ON RELATED TABLE
+        phage_obj = Starship.objects.get(starship_name=starship_name)
+        self.queryset = Annotation.objects.filter(feature__starship=phage_obj).order_by('feature__start').distinct()
         self.size = self.queryset.count()
-        self.description = 'You are navigating {}'.format(genome_name)
+        self.description = 'You are navigating {}'.format(starship_name)
 
         if accession:
             pk = int(accession, 36)
@@ -112,7 +112,7 @@ class GenomeNavigator(Navigator):
             try:
                 self.queryset.get(pk=pk)
             except ObjectDoesNotExist:
-                raise ObjectDoesNotExist('Genome navigator can not be created because object does not exist.')
+                raise ObjectDoesNotExist('Starship navigator can not be created because object does not exist.')
 
         else:
             self.idx = 0

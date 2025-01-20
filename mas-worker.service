@@ -4,12 +4,12 @@ After=network.target
 
 [Service]
 Type=forking
-User={USER YOU INSTALLED MAS UNDER}
+User=adrian
 Group={ABOVE USER'S GROUP}
-WorkingDirectory={YOUR PATH HERE}/MAS
-ExecStart=/bin/sh -c '{YOUR PATH HERE}/MAS/mas-worker.sh start'
-ExecStop=/bin/sh -c '{YOUR PATH HERE}/MAS/mas-worker.sh stop'
-ExecReload=/bin/sh -c '{YOUR PATH HERE}/MAS/mas-worker.sh restart'
+WorkingDirectory=/mnt/sda/johannesson_lab/adrian/bin/MAS
+ExecStart=/bin/sh -c '/mnt/sda/johannesson_lab/adrian/bin/MAS/mas-worker.sh start'
+ExecStop=/bin/sh -c '/mnt/sda/johannesson_lab/adrian/bin/MAS/mas-worker.sh stop'
+ExecReload=/bin/sh -c '/mnt/sda/johannesson_lab/adrian/bin/MAS/mas-worker.sh restart'
 Restart=always
 
 [Install]

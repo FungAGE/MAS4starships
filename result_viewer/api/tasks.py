@@ -69,13 +69,17 @@ def run_single_search(accession, tool, database, site):
 
 
 @shared_task
-def run_multiple_search(genome_name, rerun, tools_and_databases, site):
+def run_multiple_search(starship_name, rerun, tools_and_databases, site):
     if is_luigi_server_functional() and is_mas_reachable_from_worker(site):
         # Get list of phage's annotations
-        genome_obj = Genome.objects.get(genome_name=genome_name)
+        starship_obj = Starship.objects.get(starship_name=starship_name)
 
         # Iterate through phage's annotations, selecting which ones to run searches for
-        annotation_objs = Annotation.objects.filter(feature__genome=genome_obj).order_by('feature__start').distinct()
+        annotation_objs = (
+            Annotation.objects.filter(feature__starship=starship_obj)
+            .order_by("feature__start")
+            .distinct()
+        )
 
         searches_to_run = []
         for tool in tools_and_databases:

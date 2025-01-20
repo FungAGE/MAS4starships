@@ -10,3 +10,5 @@ mas_backup*.bundle
 MAS/settings_files/secret_key.txt
 *.sql
 *.tar.gz
+*.log
+databases/*

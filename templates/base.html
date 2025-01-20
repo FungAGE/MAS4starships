@@ -38,7 +38,33 @@
                     <a class="navbar-brand" href="{% url 'home' %}">M.A.S. For Starships</a>
                 </div>
 
-                <ul class="nav navbar-nav navbar-left">
+                <div class="collapse navbar-collapse" id="navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                                Navigation Options <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="#" id="show-flag-nav">Navigate by Flag</a></li>
+                                <li><a href="#" id="show-genome-nav">Navigate by Starship</a></li>
+                                <li><a href="#" id="show-reviewer-nav">Navigate by Reviewer</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                                Management <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="{% url 'starship:upload_custom_starship' %}"><i class="fa fa-upload"></i> Upload Starship</a></li>
+                                <li><a href="{% url 'starship:phage_delete' %}"><i class="fa fa-trash"></i> Delete Starship</a></li>
+                                <li><a href="{% url 'starship:phage_list' %}"><i class="fa fa-list"></i> Starship List</a></li>
+                                <li role="separator" class="divider"></li>
+                                <li><a href="{% url 'starship:upload_annotations' %}"><i class="fa fa-file-excel-o"></i> Upload Annotations</a></li>
+                                <li><a href="{% url 'starship:annotation_list' %}"><i class="fa fa-tags"></i> Annotation List</a></li>
+                            </ul>
+                        </li>
+                    </ul>
 
 {#           ########## RESULT NAVIGATION OPTIONS ###########}
                     <li id="show-nav-options" class="dropdown">
@@ -114,7 +140,7 @@
 {#           ########## GENOME NAV SELECTOR ###########}
             <form class="navbar-form navbar-left">
                 <div class="form-group" id="genome-nav-form">
-                    {{ genome_search_form.search_genome }}
+                    {{ starship_search_form.search_starship }}
                 </div>
             </form>
 
@@ -150,31 +176,31 @@
                 </li> {% endcomment %}
 {#           ########## UPLOAD CUSTOM GENOME ###########}
                 <li>
-                    <a href="{% url 'genome:upload_custom_genome' %}">
+                    <a href="{% url 'starship:upload_custom_starship' %}">
                         Upload Starship
                     </a>
                 </li>
 {#           ########## DELETE GENOME ###########}
                 <li>
-                    <a href="{% url 'genome:phage_delete' %}">
+                    <a href="{% url 'starship:phage_delete' %}">
                         Delete Starship
                     </a>
                 </li>
 {#           ########## GENOME LIST ###########}
                 <li>
-                    <a href="{% url 'genome:phage_list' %}">
+                    <a href="{% url 'starship:phage_list' %}">
                         Starship List
                     </a>
                 </li>
 {#           ########## UPLOAD ANNOTATIONS ###########}
                 <li>
-                    <a href="{% url 'genome:upload_annotations' %}">
+                    <a href="{% url 'starship:upload_annotations' %}">
                         Upload Annotations From Excel
                     </a>
                 </li>
 {#           ########## LIST ANNOTATIONS ###########}
                 <li>
-                    <a href="{% url 'genome:annotation_list' %}">
+                    <a href="{% url 'starship:annotation_list' %}">
                         Annotation List
                     </a>
                 </li>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Genome Visualization Test</title>
+    <style>
+        .chart {
+            border: 1px solid #ccc;
+            margin: 20px;
+        }
+        .feature-detail-panel {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            background: white;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .zoom-controls {
+            cursor: pointer;
+        }
+        .zoom-reset {
+            fill: #eee;
+            stroke: #666;
+        }
+        .zoom-reset:hover {
+            fill: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <svg class="chart"></svg>
+    
+    <!-- Mock data -->
+    <script id="feature_data" type="application/json">
+        {
+            "features": [
+                {
+                    "id": 1,
+                    "start": 100,
+                    "stop": 200,
+                    "strand": "+",
+                    "annotation": "Test gene 1",
+                    "flag": "N/A",
+                    "href": "#",
+                    "public_note": "Test note",
+                    "private_note": "Private note"
+                },
+                {
+                    "id": 2,
+                    "start": 300,
+                    "stop": 450,
+                    "strand": "-",
+                    "annotation": "Test gene 2",
+                    "flag": "REVIEW NAME",
+                    "href": "#",
+                    "public_note": "Test note 2"
+                }
+                // Add more test features as needed
+            ],
+            "feature_id": 1
+        }
+    </script>
+
+    <!-- Required libraries -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+    
+    <!-- Constants that would normally come from Django -->
+    <script>
+        const STARSHIP_LENGTH = 1000;
+    </script>
+    
+    <!-- Your visualization code -->
+    <script src="result_viewer/starship_visualization.js"></script>
+</body>
+</html>

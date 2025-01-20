@@ -13,14 +13,53 @@
 
 {% if user.is_authenticated %}
 <div class="block">
-  <div style="padding: 20px 0px 30px 40px">
-    <h4>{{ ship_count }} Starships in database.</h4>
-    <h4>
-      {{ annotated_this_week }} Starship proteins have been annotated this week.
-    </h4>
-    <h4>
-      {{ annotated_last_week }} Starship proteins were annotated last week.
-    </h4>
+  <div style="padding: 20px 40px">
+    <div class="row">
+      <div class="col-md-4">
+        <div class="well text-center">
+          <h2>{{ ship_count }}</h2>
+          <h4>Total Starships</h4>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="well text-center">
+          <h2>{{ annotated_this_week }}</h2>
+          <h4>Annotations This Week</h4>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="well text-center">
+          <h2>{{ annotated_last_week }}</h2>
+          <h4>Annotations Last Week</h4>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 30px">
+      <h4>Quick Actions</h4>
+      <div class="row" style="margin-top: 15px">
+        <div class="col-md-3">
+          <a href="{% url 'starship:upload_custom_starship' %}" class="btn btn-primary btn-block">
+            <i class="fa fa-upload"></i> Upload Starship
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a href="{% url 'starship:phage_list' %}" class="btn btn-default btn-block">
+            <i class="fa fa-list"></i> View Starship List
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a href="{% url 'starship:annotation_list' %}" class="btn btn-default btn-block">
+            <i class="fa fa-tags"></i> View Annotations
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a href="{% url 'starship:upload_annotations' %}" class="btn btn-default btn-block">
+            <i class="fa fa-file-excel-o"></i> Upload Annotations
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endif %} {% endblock %}

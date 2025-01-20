@@ -2,8 +2,8 @@ from django import forms
 from django.db import models
 from django.contrib.auth.models import User
 
-# from result_viewer.models import Annotation, Genome
-from genome.models import Annotation, Genome
+# from result_viewer.models import Annotation, Starship
+from starship.models import Annotation, Starship
 
 def is_ascii(string):
     '''
@@ -43,8 +43,8 @@ class AnnotationForm(forms.ModelForm):
 
 
 class GenomeSearchForm(forms.Form):
-    search_genome = forms.ModelChoiceField(
-        queryset=Genome.objects.order_by('genome_name'),
+    search_starship = forms.ModelChoiceField(
+        queryset=Starship.objects.order_by('starship_name'),
         empty_label='',
         required=False
     )

@@ -24,7 +24,7 @@
     <div class="block" id="nav">
         {{ navigator.description }}
         {% if navigator.type == "GenomeNavigator" %}
-            <a href="{% url 'genome:phage_detail' pk=genome_id %}">
+            <a href="{% url 'starship:phage_detail' pk=starship_id %}">
 {#                <div class="glyphicon glyphicon-hand-right"></div>#}
                 <i class="fa fa-share"></i>
             </a>
@@ -47,7 +47,7 @@
         {% endif %}
     </div>
 
-{#   **********   Genome Searcher   **********  #}
+{#   **********   Starship Searcher   **********  #}
     {% if navigator.type == "GenomeNavigator" %}
     <div class="block" id="bulk-run">
         <div class="db-selection-row" id="blastp-dbs">
@@ -101,7 +101,7 @@
                     {{ field.errors }}
                 {% endfor %}
             </div>
-            {% if perms.genome.change_annotation %}
+            {% if perms.starship.change_annotation %}
                 <div role="toolbar" style="justify-content: space-between; display: flex; padding: 0 10px 10px 10px; align-items: flex-end;">
                     <div role="group">
                         <button type="submit" class="btn btn-primary" id="submit-form" disabled>Submit</button>
@@ -128,7 +128,7 @@
 
 {#   **********   HISTORY   **********  #}
     <div id='history-block' class="block" style="padding: 10px 20px 10px 20px; display: none" >
-        {% include 'genome/annotation_history_table.html' %}
+        {% include 'starship/annotation_history_table.html' %}
     </div>
 
     {% if form.initial.flag != 8 and form.initial.flag != 9 %}
@@ -344,8 +344,8 @@
     <script type="text/javascript" src="{% static 'DataTables/datatables.min.js' %}"></script>
     <script type="application/javascript" src="{% static "js/d3.min.js" %}" ></script>
     <script>
-        {% if genome_length %}
-            var GENOME_LENGTH = {{ genome_length }};
+        {% if starship_length %}
+            var STARSHIP_LENGTH = {{ starship_length }};
         {% endif %}
         var WORKER_ACTIVE = {{ worker_active|yesno:"true,false" }};
         var QUERY_LEN = {{ query_len|safe }};
@@ -361,5 +361,5 @@
         var rpsblast_alignment_data = JSON.parse(document.getElementById("rpsblast_alignment_data").textContent);
     </script>
     <script type="application/javascript" src="{% static "result_viewer/view_results.js" %}" ></script>
-    <script type="application/javascript" src="{% static "result_viewer/genome_visualization.js" %}" ></script>
+    <script type="application/javascript" src="{% static "result_viewer/starship_visualization.js" %}" ></script>
 {% endblock %}

@@ -1,5 +1,5 @@
 from result_viewer.models import *
-from genome.models import *
+from starship.models import *
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
@@ -245,7 +245,7 @@ def glimmer_to_db_standard(start, stop, strand):
     return start, stop, strand
 
 
-def db_standard_to_gff(start, stop, strand, genome_length):
+def db_standard_to_gff(start, stop, strand, starship_length):
     '''
     GFF version 3 results are:
       - 1-based
@@ -258,12 +258,12 @@ def db_standard_to_gff(start, stop, strand, genome_length):
     # Handle forward wrap arounds
     if strand == '+' and start > stop:
         begin = start + 1
-        end = genome_length + stop
+        end = starship_length + stop
 
     return begin, end, strand
 
 
-def db_standard_to_tbl_text(start, stop, strand, genome_length, feature_type):
+def db_standard_to_tbl_text(start, stop, strand, starship_length, feature_type):
     '''
     Outputs text version of coordinates for tbl files.
     Tbl results are:
@@ -279,10 +279,10 @@ def db_standard_to_tbl_text(start, stop, strand, genome_length, feature_type):
         stop += 1
 
     if start < stop and strand == '-':
-        return '%i\t1\t%s\n%i\t%i\n' % (start, feature_type, genome_length, stop)
+        return '%i\t1\t%s\n%i\t%i\n' % (start, feature_type, starship_length, stop)
 
     elif start > stop and strand == '+':
-        return '%i\t%i\t%s\n1\t%i\n' % (start, genome_length, feature_type, stop)
+        return '%i\t%i\t%s\n1\t%i\n' % (start, starship_length, feature_type, stop)
 
     else:
         return '%i\t%i\t%s\n' % (start, stop, feature_type)

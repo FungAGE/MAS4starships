@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from simple_history.models import HistoricalRecords
 
-from genome.models import *
+from starship.models import *
 
 import os
 
@@ -35,7 +35,7 @@ class HHSearch_Result(models.Model):
     status = models.IntegerField(default=0, choices=search_status_options)
 
     class Meta:
-        # db_table = 'genome_hhsearch_result'
+        # db_table = 'starship_hhsearch_result'
         unique_together = ['annotation', 'database']
 
 
@@ -53,7 +53,7 @@ class Blastp_Result(models.Model):
     status = models.IntegerField(default=0, choices=search_status_options)
 
     class Meta:
-        # db_table = 'genome_blastp_result'
+        # db_table = 'starship_blastp_result'
         unique_together = ['annotation', 'database']
 
 
@@ -69,7 +69,7 @@ class RPSBlast_Result(models.Model):
     status = models.IntegerField(default=0, choices=search_status_options)
 
     class Meta:
-        # db_table = 'genome_rpsblast_result'
+        # db_table = 'starship_rpsblast_result'
         unique_together = ['annotation', 'database']
 
 
