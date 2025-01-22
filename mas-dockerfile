@@ -39,7 +39,7 @@ RUN /home/daemon/miniconda/envs/mas/bin/python -c 'from django.core.management.u
 
 # Collect static files
 WORKDIR /home/daemon/MAS
-RUN mkdir static-files
+RUN mkdir -p static-files
 RUN /home/daemon/miniconda/envs/mas/bin/python manage.py collectstatic --noinput
 
 # Create Terminase blast database
