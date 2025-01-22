@@ -392,6 +392,130 @@ class StarshipUpload(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTe
         )
         new_features.extend([first_feature_repeat, last_feature_repeat])
 
+    def process_annotation_file(self, annotation_file, starship, assign_to, new_annotations, new_features):
+        """
+        Process uploaded BED or GFF annotation files
+        
+        Args:
+            annotation_file: The uploaded file object
+            starship: Starship model instance
+            assign_to: User to assign annotations to
+            new_annotations: Dict to store new annotations
+            new_features: List to store new features
+        """
+        file_content = annotation_file.read().decode('utf-8')
+        file_extension = os.path.splitext(annotation_file.name)[1].lower()
+        
+        if file_extension == '.gff' or file_extension == '.gff3':
+            self._parse_gff_file(file_content, starship, assign_to, new_annotations, new_features)
+        elif file_extension == '.bed':
+            self._parse_bed_file(file_content, starship, assign_to, new_annotations, new_features)
+        else:
+            raise ValueError(f"Unsupported file format: {file_extension}")
+
+    def _parse_gff_file(self, file_content, starship, assign_to, new_annotations, new_features):
+        """Parse GFF format file"""
+        for line in file_content.split('\n'):
+            if not line or line.startswith('#'):
+                continue
+            
+            fields = line.strip().split('\t')
+            if len(fields) != 9:
+                continue
+            
+            # GFF fields: seqid, source, type, start, end, score, strand, phase, attributes
+            feature_type = fields[2]
+            if feature_type.lower() not in ['cds', 'gene']:
+                continue
+            
+            start = int(fields[3]) - 1  # Convert to 0-based
+            end = int(fields[4])
+            strand = fields[6]
+            
+            # Extract gene name/id from attributes
+            attributes = dict(attr.split('=') for attr in fields[8].split(';') if '=' in attr)
+            gene_name = attributes.get('Name', attributes.get('ID', 'Unknown'))
+            
+            # Create annotation and feature
+            self._create_annotation_and_feature(
+                starship=starship,
+                start=start,
+                end=end,
+                strand=strand,
+                feature_type=feature_type,
+                gene_name=gene_name,
+                assign_to=assign_to,
+                new_annotations=new_annotations,
+                new_features=new_features
+            )
+
+    def _parse_bed_file(self, file_content, starship, assign_to, new_annotations, new_features):
+        """Parse BED format file"""
+        for line in file_content.split('\n'):
+            if not line or line.startswith('#'):
+                continue
+            
+            fields = line.strip().split('\t')
+            if len(fields) < 6:  # Require at least 6 BED fields
+                continue
+            
+            # BED fields: chrom, start, end, name, score, strand
+            start = int(fields[1])  # BED is 0-based
+            end = int(fields[2])
+            gene_name = fields[3]
+            strand = fields[5]
+            
+            # Create annotation and feature
+            self._create_annotation_and_feature(
+                starship=starship,
+                start=start,
+                end=end,
+                strand=strand,
+                feature_type='CDS',  # Default to CDS for BED files
+                gene_name=gene_name,
+                assign_to=assign_to,
+                new_annotations=new_annotations,
+                new_features=new_features
+            )
+
+    def _create_annotation_and_feature(self, starship, start, end, strand, feature_type, 
+                                     gene_name, assign_to, new_annotations, new_features):
+        """Helper method to create annotation and feature objects"""
+        # Get the sequence for this feature
+        sequence = self._get_feature_sequence(starship.starship_sequence, start, end, strand)
+        
+        # Create or get annotation
+        if sequence in new_annotations:
+            annotation = new_annotations[sequence]
+        else:
+            annotation = starship_models.Annotation()
+            annotation.sequence = sequence
+            annotation.annotation = gene_name
+            annotation.public_notes = f'Imported from annotation file'
+            annotation.private_notes = 'Automatically generated from file import'
+            annotation.flag = 9  # Set appropriate flag value
+            annotation.assigned_to = assign_to
+            new_annotations[sequence] = annotation
+        
+        # Create feature
+        feature = starship_models.Feature(
+            starship=starship,
+            start=start,
+            stop=end,
+            type=feature_type,
+            strand=strand,
+            annotation=annotation
+        )
+        new_features.append(feature)
+
+    def _get_feature_sequence(self, genome_sequence, start, end, strand):
+        """Extract and return the feature sequence"""
+        sequence = genome_sequence[start:end]
+        if strand == '-':
+            # Convert to Seq object for reverse complement
+            sequence = Seq(sequence).reverse_complement().__str__()
+        return sequence
+
 # returns the list of starships
 class Starship_List(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
     model = starship_models.Starship
