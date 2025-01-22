@@ -46,7 +46,7 @@
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a href="#" id="show-flag-nav">Navigate by Flag</a></li>
-                                <li><a href="#" id="show-genome-nav">Navigate by Starship</a></li>
+                                <li><a href="#" id="show-starship-nav">Navigate by Starship</a></li>
                                 <li><a href="#" id="show-reviewer-nav">Navigate by Reviewer</a></li>
                             </ul>
                         </li>
@@ -56,9 +56,9 @@
                                 Management <span class="caret"></span>
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a href="{% url 'starship:upload_custom_starship' %}"><i class="fa fa-upload"></i> Upload Starship</a></li>
-                                <li><a href="{% url 'starship:phage_delete' %}"><i class="fa fa-trash"></i> Delete Starship</a></li>
-                                <li><a href="{% url 'starship:phage_list' %}"><i class="fa fa-list"></i> Starship List</a></li>
+                                <li><a href="{% url 'starship:upload_starship' %}"><i class="fa fa-upload"></i> Upload Starship</a></li>
+                                <li><a href="{% url 'starship:starship_delete' %}"><i class="fa fa-trash"></i> Delete Starship</a></li>
+                                <li><a href="{% url 'starship:starship_list' %}"><i class="fa fa-list"></i> Starship List</a></li>
                                 <li role="separator" class="divider"></li>
                                 <li><a href="{% url 'starship:upload_annotations' %}"><i class="fa fa-file-excel-o"></i> Upload Annotations</a></li>
                                 <li><a href="{% url 'starship:annotation_list' %}"><i class="fa fa-tags"></i> Annotation List</a></li>
@@ -139,7 +139,7 @@
 
 {#           ########## GENOME NAV SELECTOR ###########}
             <form class="navbar-form navbar-left">
-                <div class="form-group" id="genome-nav-form">
+                <div class="form-group" id="starship-nav-form">
                     {{ starship_search_form.search_starship }}
                 </div>
             </form>
@@ -162,33 +162,21 @@
 {###################### ADDITIONAL NAVIGATION ITEMS ######################}
         <nav id="additional-navbar" class="navbar navbar-default dropdown-navbar" style="display: none">
             <ul class="nav navbar-nav navbar-left">
-{#           ########## UPLOAD PHAGE GENOME ###########}
-                {% comment %} <li>
-                    <a href="{% url 'genome:upload_phage' %}">
-                        Upload Phage Genome
-                    </a>
-                </li> {% endcomment %}
-{#           ########## UPLOAD BACTERIAL GENOME ###########}
-                {% comment %} <li>
-                    <a href="{% url 'genome:upload_bacterial_genome' %}">
-                        Upload Bacterial Genome
-                    </a>
-                </li> {% endcomment %}
-{#           ########## UPLOAD CUSTOM GENOME ###########}
+{#           ########## UPLOAD STARSHIP ###########}
                 <li>
-                    <a href="{% url 'starship:upload_custom_starship' %}">
+                    <a href="{% url 'starship:upload_starship' %}">
                         Upload Starship
                     </a>
                 </li>
-{#           ########## DELETE GENOME ###########}
+{#           ########## DELETE STARSHIP ###########}
                 <li>
-                    <a href="{% url 'starship:phage_delete' %}">
+                    <a href="{% url 'starship:starship_delete' %}">
                         Delete Starship
                     </a>
                 </li>
-{#           ########## GENOME LIST ###########}
+{#           ########## STARSHIP LIST ###########}
                 <li>
-                    <a href="{% url 'starship:phage_list' %}">
+                    <a href="{% url 'starship:starship_list' %}">
                         Starship List
                     </a>
                 </li>
@@ -204,12 +192,6 @@
                         Annotation List
                     </a>
                 </li>
-{#           ########## GENOME SIMILARITY MATRIX ###########}
-{#                <li>#}
-{#                    <a href="{% url 'similarity' %}">#}
-{#                        Genome Similarity Matrix#}
-{#                    </a>#}
-{#                </li>#}
             </ul>
         </nav>
 

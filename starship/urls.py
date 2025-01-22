@@ -7,13 +7,13 @@ from starship import views
 app_name = 'starship'
 
 urlpatterns = [
-    path('starship/detail/<int:pk>', views.Starship_Detail.as_view(), name='phage_detail'),
-    path('starship/list/', views.Starship_List_SS.as_view(), name='phage_list'),
-    path('starship/download/fasta/<int:starship_id>', views.starship_download_fasta, name='phage_download_fasta'),
+    path('starship/detail/<int:pk>', views.Starship_Detail.as_view(), name='starship_detail'),
+    path('starship/list/', views.Starship_List_SS.as_view(), name='starship_list'),
+    path('starship/download/fasta/<int:starship_id>', views.starship_download_fasta, name='starship_download_fasta'),
     path('starship/download/deliverables/<int:starship_id>', views.download_deliverables, name='download_deliverables'),
     path('starship/upload/', views.Upload_Starship.as_view(), name='upload_starship'),
-    path('starship/delete/', views.Starship_Delete.as_view(), name='phage_delete'),
-    path('starship/delete/confirm/', views.Confirm_Starship_Delete.as_view(), name='confirm_phage_delete'),
+    path('starship/<int:pk>/delete/', views.Starship_Delete.as_view(), name='starship_delete'),
+    path('starship/delete/confirm/', views.Confirm_Starship_Delete.as_view(), name='confirm_starship_delete'),
     path('feature/detail/<int:pk>', views.Feature_Detail.as_view(), name='feature_detail'),
     path('annotation/list/', views.Annotation_List_Serverside.as_view(), name='annotation_list'),
     path('annotation/detail/<int:pk>', views.Annotation_Detail.as_view(), name='annotation_detail'),

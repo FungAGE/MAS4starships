@@ -77,7 +77,7 @@ $(document).ready(function() {
     });
 });
 
-$('div.genome-control').click(function() {
+$('div.starship-control').click(function() {
     var table_id = $(this).closest('table').attr('id');
 
     var row = t.table("#"+table_id).row($(this).closest('tr'));

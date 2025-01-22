@@ -123,5 +123,5 @@ CELERY_WORKERS = ['mas-worker@host']
 
 LUIGI_CFG = os.path.join(BASE_DIR, 'AnnotationToolPipeline', 'luigi.cfg')
 
-GENOME_NAME_FORMAT = ""
+STARSHIP_NAME_FORMAT = ""
 # GENOME_NAME_FORMAT = r"(?:AMD|INT)_[A-Z]_[a-z]+_[0-9A-Z]+_Phi_[0-9]{3}$"
