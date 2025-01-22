@@ -12,3 +12,7 @@ MAS/settings_files/secret_key.txt
 *.tar.gz
 *.log
 databases/*
+celerybeat-schedule.bak
+celerybeat-schedule.dat
+celerybeat-schedule.dir
+logfile.log
