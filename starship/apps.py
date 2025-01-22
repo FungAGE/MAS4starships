@@ -1,5 +1,5 @@
 from django.apps import AppConfig
 
 
-class StarshipConfig(AppConfig):
+class StarshipsConfig(AppConfig):
     name = "starship"

@@ -35,7 +35,7 @@ INSTALLED_APPS = [
     # 'blast_viewer.apps.BlastViewerConfig',
     'result_viewer.apps.ResultViewerConfig',
     # 'similarity_viewer.apps.SimilarityViewerConfig',
-    'genome.apps.GenomesConfig',
+    'starship.apps.StarshipsConfig',
     'home.apps.HomeConfig',
     'simple_history',
     'crispy_forms',
