@@ -1,8 +1,11 @@
 #!/bin/bash
 
+# * note that this script is not meant for testing celery worker/luigi tasks
+
 # Start required Docker services
-# echo "Starting database container..."
-# sudo docker compose up -d messagebroker db
+echo "Starting database container..."
+echo "Please enter your sudo password:"
+sudo -S docker compose up -d messagebroker db < /dev/tty
 
 # Check if conda environment exists and create if it doesn't
 if ! conda env list | grep -q "^mas-env "; then
