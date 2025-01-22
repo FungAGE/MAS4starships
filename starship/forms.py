@@ -201,10 +201,8 @@ class DynamicChoiceField(forms.ChoiceField):
     def validate(self, value):
         super(forms.ChoiceField, self).validate(value)
 
-
-class Custom_Starship_Upload_Form(forms.Form):
-    user_choices = User.objects.none()
-
+# displayed in upload_starship.html
+class StarshipUploadForm(forms.Form):
     name = forms.CharField(
         validators=[
             starship_models.validate_starship_name,
@@ -214,195 +212,36 @@ class Custom_Starship_Upload_Form(forms.Form):
         required=True,
     )
 
-    starship_upload = forms.FileField(
+    upload = forms.FileField(
         validators=[validate_fasta_file],
-        help_text="Upload a fasta file containing the species's genome sequence.",
+        help_text='Must be a single FASTA file!',
     )
 
-    cds_upload = forms.FileField(
-        validators=[validate_coordinate_file],
-        help_text=format_lazy(
-            'Upload a file containing all CDS positions. This file should contain one line per CDS and each line '
-            'should have strain (+ or -), start site (integer), and stop site (integer) separated by whitespace. '
-            '<a href="{example_file}" download>Click here</a> to download an example file (Contains CDS for Lambda '
-            'phage: <a href={lambda_genbank}">J02459.1</a>)',
-            example_file=static('misc/J02459_cds.coords'),
-            lambda_genbank='https://www.ncbi.nlm.nih.gov/nuccore/J02459.1/'
-        )
+    annotation_file = forms.FileField(
+        required=False,
+        help_text='Optional: BED or GFF file containing gene annotations'
     )
 
-    table_choices = (
-        (1, '1. The Standard Code'),
-        (2, '2. The Vertebrate Mitochondrial Code'),
-        (3, '3. The Yeast Mitochondrial Code'),
-        (4, '4. The Mold, Protozoan, and Coelenterate Mitochondrial Code and the Mycoplasma / Spiroplasma Code'),
-        (5, '5. The Invertebrate Mitochondrial Code'),
-        (6, '6. The Ciliate, Dasycladacean and Hexamita Nuclear Code'),
-        (9, '9. The Echinoderm and Flatworm Mitochondrial Code'),
-        (10, '10. The Euplotid Nuclear Code'),
-        (11, '11. The Bacterial, Archaeal and Plant Plastid Code'),
-        (12, '12. The Alternative Yeast Nuclear Code'),
-        (13, '13. The Ascidian Mitochondrial Code'),
-        (14, '14. The Alternative Flatworm Mitochondrial Code'),
-        (16, '16. Chlorophycean Mitochondrial Code'),
-        (21, '21. Trematode Mitochondrial Code'),
-        (22, '22. Scenedesmus obliquus Mitochondrial Code'),
-        (23, '23. Thraustochytrium Mitochondrial Code'),
-        (24, '24. Rhabdopleuridae Mitochondrial Code'),
-        (25, '25. Candidate Division SR1 and Gracilibacteria Code'),
-        (26, '26. Pachysolen tannophilus Nuclear Code'),
-        (27, '27. Karyorelict Nuclear Code'),
-        (28, '28. Condylostoma Nuclear Code'),
-        (29, '29. Mesodinium Nuclear Code'),
-        (30, '30. Peritrich Nuclear Code'),
-        (31, '31. Blastocrithidia Nuclear Code'),
-        (33, '33. Cephalodiscidae Mitochondrial UAA-Tyr Code'),
-    )
-    translation_table = forms.ChoiceField(choices=table_choices)
-
-    species = DynamicChoiceField(
-        choices=lazy(
-            get_set_of_used_speciess,
-            tuple
-        )
+    terminal_repeat = forms.IntegerField(
+        required=False,
+        initial=0,
+        help_text='Length of terminal repeat if known'
     )
 
-    run_trnascan = forms.BooleanField(required=False)
+    species = forms.CharField(
+        max_length=100,
+        required=True,
+        help_text='Species name'
+    )
 
     assign_to = forms.ModelChoiceField(
-        queryset=user_choices,
+        queryset=User.objects.none(),
         required=False,
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # User choices should be limited to those with permissions to change annotations
         self.fields['assign_to'].queryset = starship_views.get_annotation_editors()
-
-    def clean(self):
-        cleaned_data = super().clean()
-        starship_file = cleaned_data.get("starship_upload")
-        cds_file = cleaned_data.get("cds_upload")
-        selected_table = cleaned_data.get("translation_table")
-
-        try:
-            if starship_file and cds_file:
-                starship_fh = get_file_handle(starship_file, mode='r')
-                cds_fh = get_file_handle(cds_file, mode='r')
-
-                starship_rec = SeqIO.read(starship_fh, "fasta")
-
-                for prot, cds in parse_prots_from_coords(cds_fh, starship_rec, selected_table):
-                    pass
-
-        except (TypeError, TranslationError) as e:
-            raise ValidationError(e)
-
-        return cleaned_data
-
-
-# displayed in starship_upload.html
-class Starship_Upload_Form(forms.Form):
-    user_choices = User.objects.none()
-    error_css_class = 'error'
-    required_css_class = 'required'
-
-    name = forms.CharField(
-        validators=[
-            starship_models.validate_starship_name,
-            starship_models.validate_duplicate_name
-        ],
-        max_length=100,
-        required=True,
-
-    )
-
-    upload = forms.FileField(
-        validators=[validate_fasta_file],
-        help_text='Must be a single fasta file!',
-    )
-
-    terminal_repeat = forms.IntegerField(
-        required=True,
-        initial=0,
-    )
-
-    error_choices = [
-        ('Yes', 'Yes'),
-        ('No', 'No')
-    ]
-
-    checkbox = forms.ChoiceField(choices=error_choices, validators=[starship_models.validate_starship_error])
-
-    circularly_permuted = forms.BooleanField(
-        # widget=CheckboxInput(attrs={'class': 'confirm_delete'}),
-        required=False,
-        initial=False
-    )
-
-    assign_to = forms.ModelChoiceField(
-        queryset=user_choices,
-        required=False,
-    )
-
-    def __init__(self, *args, **kwargs):
-        super(Starship_Upload_Form, self).__init__(*args, **kwargs)
-        # User choices should be limited to those with permissions to change annotations
-        self.fields['assign_to'].queryset = starship_views.get_annotation_editors()
-
-    def is_valid(self):
-        # runs the checks for each field in Starship_Upload_Form
-        is_valid = super(Starship_Upload_Form, self).is_valid()
-
-        # checks if the upload information is good
-        if self.cleaned_data['terminal_repeat'] != 0 and self.cleaned_data['circularly_permuted']:
-            if 'checkbox' in self.errors:
-                self.errors.pop('checkbox')
-            self.errors.update(Conflict=': Can not have terminal repeat and be cicularly permuted')
-            return False
-
-        elif 'name' in self.cleaned_data and 'upload' in self.cleaned_data and self.cleaned_data['terminal_repeat'] > 0:
-            # parse genome
-            file = get_file_handle(self.cleaned_data['upload'], mode='r')
-            genome = SeqIO.read(file, 'fasta').seq.__str__().upper()
-            # Ensure both ends of starship match at given length
-            if genome[:self.cleaned_data['terminal_repeat']] != genome[-self.cleaned_data['terminal_repeat']:]:
-                self.errors.update(terminal_repeat=': Incorrect terminal repeat size')
-                self.errors.pop('checkbox')
-                return False
-            else:
-                self.errors.pop('checkbox')
-                return True
-
-        elif 'name' in self.cleaned_data and 'upload' in self.cleaned_data and self.cleaned_data['terminal_repeat'] == 0:
-            self.errors.pop('checkbox')
-            return True
-
-        elif 'upload' in self.cleaned_data and 'checkbox' in self.cleaned_data and \
-                self.cleaned_data['checkbox'] == 'Yes' and self.cleaned_data['terminal_repeat'] > 0:
-            # parse genome
-            file = get_file_handle(self.cleaned_data['upload'], mode='r')
-            genome = SeqIO.read(file, 'fasta').seq.__str__().upper()
-            # Ensure both ends of starship match at given length
-            if genome[:self.cleaned_data['terminal_repeat']] != genome[-self.cleaned_data['terminal_repeat']:]:
-                self.errors.update(terminal_repeat=': Incorrect terminal repeat size')
-                self.errors.pop('name')
-                return False
-            else:
-                self.errors.pop('name')
-            return True
-
-        elif 'upload' in self.cleaned_data and 'checkbox' in self.cleaned_data and \
-                self.cleaned_data['checkbox'] == 'Yes' and self.cleaned_data['terminal_repeat'] == 0:
-            self.errors.pop('name')
-            return True
-        elif 'upload' in self.cleaned_data and 'checkbox' in self.cleaned_data and \
-                self.cleaned_data['checkbox'] == 'Yes' and 'circularly_permuted' in self.cleaned_data:
-            self.errors.pop('name')
-            return True
-        else:
-            return False
-
 
 class Starship_Delete(forms.Form):
     starship = forms.ModelMultipleChoiceField(

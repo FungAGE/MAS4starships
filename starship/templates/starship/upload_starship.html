@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block css %}
+    <link rel="stylesheet" href="{% static 'starship/upload_starship.css' %}">
+{% endblock %}
+
+{% block head %}
+    <meta charset="UTF-8">
+    <title>MAS | Upload Starship</title>
+{% endblock %}
+
+{% block body %}
+    <div class="block">
+        <div id="upload-form-spacer">
+            <h1>Upload Starship Sequence</h1>
+            
+            <form name="Form" id="form" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {% if upload_form.errors %}
+                    <div class="alert alert-danger">
+                        {{ upload_form.errors }}
+                    </div>
+                {% endif %}
+
+                <div class="form-section">
+                    <h3>Required Information</h3>
+                    {{ upload_form.name|crispy }}
+                    {{ upload_form.upload|crispy }}
+                    {{ upload_form.species|crispy }}
+                </div>
+
+                <div class="form-section">
+                    <h3>Optional Information</h3>
+                    {{ upload_form.terminal_repeat|crispy }}
+                    {{ upload_form.annotation_file|crispy }}
+                    {{ upload_form.assign_to|crispy }}
+                </div>
+
+                <button class="btn btn-success" type="submit">Upload Starship</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascript %}
+    <script>
+        $(document).ready(function() {
+            // Initialize any JavaScript enhancements here
+        });
+    </script>
+{% endblock %} 

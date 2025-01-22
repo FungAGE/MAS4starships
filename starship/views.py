@@ -35,7 +35,7 @@ from result_viewer.views import MixinForBaseTemplate, add_context_for_starship_v
 from starship import gene_calling
 from starship.genomic_loci_conversions import *
 from starship import create_deliverables
-from starship.forms import get_file_handle
+from starship.forms import get_file_handle, StarshipUploadForm
 from starship import forms as starship_forms
 from starship import models as starship_models
 from starship.tasks import create_CDS_annotations, create_trna_annotations, add_annotations_and_features_to_db, create_custom_CDS_annotations
@@ -297,337 +297,114 @@ class Upload_Starship(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseT
     login_url = reverse_lazy('login')
 
 
-class Upload_Starship(Upload_Starship):
+class StarshipUpload(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTemplate, generic.View):
     template_name = 'starship/upload_starship.html'
-    # context_object_name = 'starship'
-
+    permission_required = 'starship.add_starship'
+    
     def get(self, request):
-        upload_form = starship_forms.Starship_Upload_Form()
-
+        upload_form = StarshipUploadForm()
         context = self.get_context_data()
         context['upload_form'] = upload_form
-
         return render(request, self.template_name, context)
 
     def post(self, request):
-        new_annotations = {}  # Annotation objects keyed by sequence
-        new_features = []
-        upload_form = starship_forms.Starship_Upload_Form(request.POST, request.FILES)
-
+        upload_form = StarshipUploadForm(request.POST, request.FILES)
+        
         if upload_form.is_valid():
-
-            # Test if blast database exists
-            for p in ["{db}.{ext}".format(db=settings.TERMINASE_DATABASE, ext=x) for x in
-                      ['phr', 'pin', 'psq']]:
-                if not os.path.isfile(p):
-                    upload_form.errors.update(
-                        circularly_permutated=': Terminase blast database does not exist. Looked for {}'.format(p)
-                    )
-                    return render(request, self.template_name, {'upload_form': upload_form})
-
-            with TemporaryDirectory() as tempdir:
-                output_dest = tempdir
-
-                file = get_file_handle(request.FILES['upload'], mode='r')
-                genome = SeqIO.read(file, 'fasta').seq.__str__().upper()
-                name = request.POST['name']
-
-                terminal_repeat = request.POST['terminal_repeat']
-
-                starship_path = request.FILES['upload'].temporary_file_path()
-                syspath = sys.path
-                print(syspath)
-                starship_cds = gene_calling.run_glimmer(starship_path, name, output_dest)
-
-                starship = None
-                feature_saved_list = []
-                protein_list = []
-                repeat = int(terminal_repeat)
-
-                try:
-                    with transaction.atomic():
-                        starship = starship_models.Starship(starship_name=name, starship_sequence=genome, species='starship')
-                        # needs to be saved before features, so you can access the pk
-                        starship.save()
-
-                        # if the starship is circularly permuted then get all the proteins from the starship and place them in temp file.
-                        if upload_form.cleaned_data['circularly_permuted'] is True:
-                            if starship_cds:
-                                for cds in gene_calling.parse_glimmer_results(starship_cds):
-                                    sequence = Seq(genome, IUPAC.ambiguous_dna)
-                                    protein = get_protein_sequence(cds.start, cds.stop, cds.strand, sequence)
-                                    record = SeqRecord(Seq(protein._data, generic_protein), id="%s | " % starship.starship_name,
-                                                       description="%s | %s | %s | CDS" % (cds.start, cds.stop, cds.strand))
-                                    protein_list.append(record)
-                                file_path = os.path.join(tempdir, "proteins.fasta")
-                                SeqIO.write(protein_list, file_path, "fasta")
-
-                                # Test if blast database exists
-                                for p in ["{db}.{ext}".format(db=settings.TERMINASE_DATABASE, ext=x) for x in ['phr', 'pin', 'psq']]:
-                                    if not os.path.isfile(p):
-                                        upload_form.errors.update(
-                                            circularly_permutated=': Terminase blast database does not exist. Looked for {}'.format(p)
-                                        )
-                                        starship.delete()
-                                        return render(request, self.template_name, {'upload_form': upload_form})
-
-                                # Run blast search for terminase
-                                blast_results_path = os.path.join(tempdir, '{}.blastp_results.xml'.format(starship.starship_name))
-                                blast_result = subprocess.run([
-                                    'blastp',
-                                    '-query', file_path,
-                                    '-db', settings.TERMINASE_DATABASE,
-                                    '-evalue', '0.00001',
-                                    '-outfmt', '5',
-                                    '-out', blast_results_path,
-                                    '-num_threads', str(multiprocessing.cpu_count())
-                                ], stderr=subprocess.PIPE)
-
-                                # If blast search fails return error
-                                if blast_result.returncode != 0:
-                                    upload_form.errors.update(
-                                        circularly_permutated=': Blastp search failed. Return code = {}\nstderr = {}'.format(
-                                            blast_result.returncode,
-                                            blast_result.stderr.decode()
-                                        )
-                                    )
-                                    starship.delete()
-                                    return render(request, self.template_name, {'upload_form': upload_form})
-
-                                passing_record = []
-                                for rec_i, record in enumerate(NCBIXML.parse(open(blast_results_path, 'r'))):
-                                    if len(record.alignments) > 3:
-                                        passing_record.append((rec_i, record))
-                                length = len(passing_record)
-
-                                if length == 0:
-                                    upload_form.errors.update(circularly_permutated=': No proteins were found to have a significan'
-                                                                                    't terminase signal. Please resolve manually. '
-                                                                                    'Starship was not uploaded.')
-                                    starship.delete()
-                                    return render(request, self.template_name, {'upload_form': upload_form})
-
-                                if length > 2:
-                                    upload_form.errors.update(circularly_permutated=': Number of called proteins with significant '
-                                                                                    'terminase signal is greater than 2. Please'
-                                                                                    ' resolve this manually. Starship was not uploaded')
-                                    starship.delete()
-                                    return render(request, self.template_name, {'upload_form': upload_form})
-
-                                if length == 1:
-                                    new_fasta_path = self.make_starship_start_from_protein(passing_record[0], starship_path, tempdir, starship)
-
-                                else:
-                                    strand1 = passing_record[0][1].query.split('|')[3].strip()
-                                    strand2 = passing_record[1][1].query.split('|')[3].strip()
-
-                                    if strand1 != strand2:
-                                        upload_form.errors.update(circularly_permutated=': Small and large terminase on different'
-                                                                                        'strands. Resolve manually. Starship not uploaded.')
-                                        starship.delete()
-                                        return render(request, self.template_name, {'upload_form': upload_form})
-
-                                    if strand1 == '+':
-                                        new_fasta_path = self.make_starship_start_from_protein(passing_record[0], starship_path, tempdir,
-                                                                            starship)
-                                    else:
-                                        new_fasta_path = self.make_starship_start_from_protein(passing_record[1], starship_path, tempdir,
-                                                                            starship)
-
-                                # created so the user does not have to overwrite a file
-                                new_output_dest = tempdir
-
-                                new_starship_cds = gene_calling.run_glimmer(new_fasta_path, name, new_output_dest)
-                                new_starship_t_rna = gene_calling.run_trnascan_se(new_fasta_path, name, new_output_dest)
-
-                                if new_starship_cds:
-                                    create_CDS_annotations(
-                                        new_starship_cds,
-                                        starship,
-                                        upload_form.cleaned_data['assign_to'],
-                                        new_annotations,
-                                        new_features
-                                    )
-
-                                if new_starship_t_rna:
-                                    create_trna_annotations(
-                                        new_starship_t_rna,
-                                        starship,
-                                        upload_form.cleaned_data['assign_to'],
-                                        new_annotations,
-                                        new_features
-                                    )
-
-                        else:
-                            # cds features
-                            if starship_cds:
-                                create_CDS_annotations(
-                                    starship_cds, starship, upload_form.cleaned_data['assign_to'], new_annotations, new_features
-                                )
-
-                            # tRNA features and annotations
-                            starship_t_rna = gene_calling.run_trnascan_se(starship_path, name, output_dest)
-                            if starship_t_rna:
-                                create_trna_annotations(
-                                    starship_t_rna, starship, upload_form.cleaned_data['assign_to'], new_annotations, new_features
-                                )
-
-                            # terminal repeat features
-                            if repeat > 0:
-                                repeat_seq = genome[:repeat]
-
-                                if starship_models.Annotation.objects.filter(sequence=repeat_seq).count() > 0:
-                                    repeat_annotation = starship_models.Annotation.objects.get(sequence=repeat_seq)
-                                else:
-                                    repeat_annotation = starship_models.Annotation()
-                                    repeat_annotation.sequence = repeat_seq
-                                    repeat_annotation.annotation = 'None'
-                                    repeat_annotation.public_notes = 'Direct terminal repeat. Detected with sequencing data ' \
-                                                                     'via coverage based methods.'
-                                    repeat_annotation.private_notes = 'This annotation was automatically generated.'
-                                    repeat_annotation.flag = 9
-                                    repeat_annotation.assigned_to = None
-                                    new_annotations[repeat_annotation.sequence] = repeat_annotation
-
-                                first_feature_repeat = starship_models.Feature(genome=starship, start=0, stop=repeat,
-                                                                             type='Repeat Region', strand='+',
-                                                                             annotation=repeat_annotation)
-                                last_feature_repeat = starship_models.Feature(genome=starship, start=len(genome) - repeat,
-                                                                            stop=len(genome), type='Repeat Region',
-                                                                            strand='+',
-                                                                            annotation=repeat_annotation)
-                                new_features.append(first_feature_repeat)
-                                new_features.append(last_feature_repeat)
-
-                        add_annotations_and_features_to_db(new_annotations, new_features)
-                        starship_models.starship_upload_complete.send(sender=None)
-
-                except Exception as e:
-                    upload_form.errors.update(Conflict='Exception occured upon upload: {}'.format(e))
-                    context = self.get_context_data()
-                    context['upload_form'] = upload_form
-
-                    return render(request, self.template_name, context)
-
-            return redirect('starship:starship_list')
-        else:
-            context = self.get_context_data()
-            context['upload_form'] = upload_form
-
-            return render(request, self.template_name, context)
-
-    def make_starship_start_from_protein(self, record, fasta_path, output_dest, starship):
-        """
-        :param record:
-        :param fasta_path:  file path to your temp file with the fasta info
-        :param output_dest
-        :param starship_name
-        :return:
-        """
-        starship_rec = SeqIO.read(open(fasta_path), 'fasta')
-
-        # Find location to start from
-        loci_info = record[1].query.split('|')[1].strip()
-        strand = record[1].query.split('|')[3].strip()
-        start = int(loci_info)
-
-        new_seq = starship_rec.seq[start:] + starship_rec.seq[:start]
-
-        if strand == '-':
-            new_seq = new_seq.reverse_complement()
-
-        # Save fasta with new sequence
-        new_fasta_path = os.path.join(output_dest, '{}.fasta'.format(starship.starship_name))
-        starship_rec.seq = new_seq
-        SeqIO.write(starship_rec, new_fasta_path, 'fasta')
-
-        starship.starship_sequence = str(new_seq)
-        starship.save()
-
-        return new_fasta_path
-
-
-class Upload_Custom_Starship(Upload_Starship):
-    template_name = 'starship/upload_custom_starship.html'
-
-    def get(self, request):
-        upload_form = starship_forms.Custom_Starship_Upload_Form()
-
-        context = self.get_context_data()
-        context['upload_form'] = upload_form
-
-        return render(request, self.template_name, context)
-
-    def post(self, request):
-        upload_form = starship_forms.Custom_Starship_Upload_Form(request.POST, request.FILES)
-
-        if upload_form.is_valid():
-            new_annotations = {}  # Annotation objects keyed by sequence
+            new_annotations = {}
             new_features = []
-            starship_rec = SeqIO.read(get_file_handle(upload_form.cleaned_data['starship_upload'], mode='r'), 'fasta')
-            starship_sequence = starship_rec.seq.__str__().upper()
-            cds_fh = get_file_handle(upload_form.cleaned_data['cds_upload'], mode='r')
-            name = upload_form.cleaned_data['name']
-            assign_to = upload_form.cleaned_data['assign_to']
-            species = upload_form.cleaned_data['species']
-            translation_table = upload_form.cleaned_data['translation_table']
 
             with transaction.atomic():
                 with TemporaryDirectory() as tempdir:
+                    # Read FASTA file
+                    file = get_file_handle(upload_form.cleaned_data['upload'], mode='r')
+                    genome = SeqIO.read(file, 'fasta').seq.__str__().upper()
+                    name = upload_form.cleaned_data['name']
+                    species = upload_form.cleaned_data['species']
+
                     # Create Starship object
-                    starship_obj = starship_models.Starship(
+                    starship = starship_models.Starship(
                         starship_name=name,
-                        starship_sequence=starship_sequence,
+                        starship_sequence=genome,
                         species=species
                     )
-                    starship_obj.save()
+                    starship.save()
 
-                    # Create genome fasta in tempdir
-                    record = SeqRecord(
-                        Seq(starship_sequence),
-                        id=name,
-                        name=name,
-                        description="",
-                    )
-                    fasta_path = os.path.join(tempdir, '{}.fasta'.format(name))
-                    SeqIO.write(record, fasta_path, 'fasta')
+                    # Handle terminal repeats if provided
+                    tr_length = upload_form.cleaned_data.get('terminal_repeat_length')
+                    tr_sequence = upload_form.cleaned_data.get('terminal_repeat_sequence')
+                    
+                    if tr_length and tr_sequence:
+                        self.process_terminal_repeats(tr_sequence, starship, new_annotations, new_features)
 
-                    # Run trnascan-se to find tRNAs if option selected
-                    if upload_form.cleaned_data['run_trnascan']:
-                        trnascan_output = gene_calling.run_trnascan_se(fasta_path, name, tempdir)
-                        if trnascan_output:
-                            create_trna_annotations(
-                                trnascan_output, starship_sequence, assign_to, new_annotations, new_features
-                            )
-
-                    # Parse coordinate file and create annotation + feature objects for each CDS
-                    create_custom_CDS_annotations(
-                        cds_fh, translation_table, starship_obj, assign_to, new_annotations, new_features
-                    )
+                    # Process annotation file if provided
+                    if 'annotation_file' in request.FILES:
+                        self.process_annotation_file(
+                            request.FILES['annotation_file'],
+                            starship,
+                            upload_form.cleaned_data['assign_to'],
+                            new_annotations,
+                            new_features
+                        )
+                    else:
+                        # Run metaeuk for gene prediction
+                        self.run_metaeuk_prediction(tempdir, starship, new_annotations, new_features)
 
                     add_annotations_and_features_to_db(new_annotations, new_features)
+                    starship_models.starship_upload_complete.send(sender=None)
 
             return redirect('starship:starship_list')
+        
+        context = self.get_context_data()
+        context['upload_form'] = upload_form
+        return render(request, self.template_name, context)
+
+    def process_terminal_repeats(self, repeat_seq, starship, new_annotations, new_features):
+        """Process terminal repeat annotations and features"""
+        if starship_models.Annotation.objects.filter(sequence=repeat_seq).count() > 0:
+            repeat_annotation = starship_models.Annotation.objects.get(sequence=repeat_seq)
         else:
-            context = self.get_context_data()
-            context['upload_form'] = upload_form
+            repeat_annotation = starship_models.Annotation()
+            repeat_annotation.sequence = repeat_seq
+            repeat_annotation.annotation = 'None'
+            repeat_annotation.public_notes = 'Direct terminal repeat'
+            repeat_annotation.private_notes = 'This annotation was automatically generated.'
+            repeat_annotation.flag = 9
+            repeat_annotation.assigned_to = None
+            new_annotations[repeat_annotation.sequence] = repeat_annotation
 
-            return render(request, self.template_name, context)
+        # Create features for start and end repeats
+        first_feature_repeat = starship_models.Feature(
+            genome=starship, 
+            start=0, 
+            stop=len(repeat_seq),
+            type='Repeat Region', 
+            strand='+',
+            annotation=repeat_annotation
+        )
+        last_feature_repeat = starship_models.Feature(
+            genome=starship, 
+            start=len(starship.starship_sequence) - len(repeat_seq),
+            stop=len(starship.starship_sequence), 
+            type='Repeat Region',
+            strand='+',
+            annotation=repeat_annotation
+        )
+        new_features.extend([first_feature_repeat, last_feature_repeat])
 
-
-# returns the list of genomes
+# returns the list of starships
 class Starship_List(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
     model = starship_models.Starship
-    context_object_name = 'genomes'
+    context_object_name = 'starships'
     template_name = 'starship/starship_list.html'
 
     def get_context_data(self,  **kwargs):
         context = super(Starship_List, self).get_context_data(**kwargs)
-        genomes = starship_models.Starship.objects.all().prefetch_related(
+        starships = starship_models.Starship.objects.all().prefetch_related(
             'feature_set__annotation')
 
         # calculate number of unpolished CDS in starship
-        context['starship_info'] = get_starship_data_dicts(genomes)
+        context['starship_info'] = get_starship_data_dicts(starships)
 
         return context
 
@@ -652,7 +429,7 @@ class Starship_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailVi
         context = add_context_for_starship_viz(context, context['starship'])
 
         context['features'] = starship_models.Feature.objects.filter(
-            genome=context['starship']
+            starship=context['starship']
         ).prefetch_related('annotation', 'starship')
 
         context['annotations'] = starship_models.Annotation.objects.filter(
@@ -757,10 +534,10 @@ class Annotation_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.Detail
 
     def get_context_data(self, **kwargs):
         context = super(Annotation_Detail, self).get_context_data(**kwargs)
-        genomes = starship_models.Starship.objects.none()
+        starships = starship_models.Starship.objects.none()
         for feature in context['annotation'].feature_set.all():
-            genomes = genomes | starship_models.Starship.objects.filter(id=feature.starship_id)
-        context['starship_info'] = get_starship_data_dicts(genomes)
+            starships = starships | starship_models.Starship.objects.filter(id=feature.starship_id)
+        context['starship_info'] = get_starship_data_dicts(starships)
 
         context['exact_names'] = starship_models.Annotation.objects.filter(
             annotation__iexact=context['annotation'].annotation
@@ -856,11 +633,11 @@ class Confirm_Starship_Delete(LoginRequiredMixin, PermissionRequiredMixin, Mixin
             return render(request, 'starship/starship_delete.html', context)
         # context = {}
 
-        genomes = starship_form.cleaned_data['starship']
-        features = starship_models.Feature.objects.filter(starship__in=genomes)
+        starships = starship_form.cleaned_data['starship']
+        features = starship_models.Feature.objects.filter(starship__in=starships)
         annotations = starship_models.Annotation.objects.filter(feature__in=features)
 
-        starships_not_being_deleted = starship_models.Starship.objects.all().exclude(pk__in=genomes)
+        starships_not_being_deleted = starship_models.Starship.objects.all().exclude(pk__in=starships)
         annotations_to_keep = annotations.filter(feature__starship__in=list(starships_not_being_deleted)).distinct()
 
         annotations = annotations.exclude(pk__in=annotations_to_keep) # difference(annotations_to_keep) <- can't do this because can't filter resulting QS
@@ -877,13 +654,13 @@ class Confirm_Starship_Delete(LoginRequiredMixin, PermissionRequiredMixin, Mixin
         )
 
         total_features = 0
-        for genome in genomes:
+        for starship in starships:
             amount = starship.feature_set.all()
             total_features = total_features + amount.count()
 
         # display info of items being deleted
         context['total_features'] = total_features
-        context['total_starships'] = genomes.count()
+        context['total_starships'] = starships.count()
         context['anno_auto_delete'] = annotations_to_delete.count()
 
         context['annotations_to_check_form'] = annotations_to_check_form
@@ -909,7 +686,7 @@ class Confirm_Starship_Delete(LoginRequiredMixin, PermissionRequiredMixin, Mixin
         if not annotations_to_confirm_form.is_valid():
             return redirect('starship:starship_delete')
 
-        genomes = starship_form.cleaned_data['starship']
+        starships = starship_form.cleaned_data['starship']
 
         if 'annotations' in annotations_to_delete_form.cleaned_data:
             annotations_to_delete = annotations_to_delete_form.cleaned_data['annotations']
@@ -919,7 +696,7 @@ class Confirm_Starship_Delete(LoginRequiredMixin, PermissionRequiredMixin, Mixin
         annotations_to_confirm = annotations_to_confirm_form.cleaned_data
 
         with transaction.atomic():
-            for genome in genomes:
+            for starship in starships:
                 starship.delete()
 
             # delete annotations that were not checked
@@ -1158,9 +935,9 @@ def download_unannotated_annotations(request):
 
 
 # used in starship list class
-def get_starship_data_dicts(genomes):
+def get_starship_data_dicts(starships):
     objects = []
-    for genome in genomes:
+    for starship in starships:
         starship_dict = {}
         starship_dict['starship_name'] = starship.starship_name
         starship_dict['species'] = starship.species
@@ -1209,7 +986,7 @@ def get_annotation_editors():
 def starship_download_fasta(request, starship_id):
     if request.user.is_authenticated:
         context = {}
-        genome = starship_models.Starship.objects.get(pk=starship_id)
+        starship = starship_models.Starship.objects.get(pk=starship_id)
         starship_name = starship.starship_name
         nucleotide = starship.starship_sequence
         sequence = SeqRecord(Seq(nucleotide, IUPAC.ambiguous_dna), id=starship_name, description=starship_name)

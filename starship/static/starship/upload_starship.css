@@ -1,0 +1,33 @@
+#upload-form-spacer {
+    padding: 20px 30px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-section {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 25px;
+}
+
+.form-section h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #495057;
+    font-size: 1.5em;
+}
+
+.alert {
+    margin-bottom: 20px;
+}
+
+.btn-success {
+    margin-top: 10px;
+}
+
+/* Optional: Add some hover effects to the submit button */
+.btn-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+} 
