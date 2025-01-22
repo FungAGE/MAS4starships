@@ -74,7 +74,7 @@ def move_phage_and_features():
             genome_name=phage.phage_name,
             genome_sequence=phage.genome
         )
-        genome.save(using='default')
+        starship.save(using='default')
 
         phage_features = old_Feature.objects.using('old-mas').filter(phage__phage_name=phage.phage_name)
 
@@ -86,7 +86,7 @@ def move_phage_and_features():
                     feature.start,
                     feature.stop,
                     feature.strand,
-                    Seq(genome.genome_sequence, IUPAC.unambiguous_dna)
+                    Seq(starship.genome_sequence, IUPAC.unambiguous_dna)
                 )
                 ftype = 'CDS'
 
@@ -95,7 +95,7 @@ def move_phage_and_features():
                     feature.start,
                     feature.stop,
                     feature.strand,
-                    Seq(genome.genome_sequence, IUPAC.unambiguous_dna)
+                    Seq(starship.genome_sequence, IUPAC.unambiguous_dna)
                 )
                 ftype = 'Repeat Region'
 
@@ -104,7 +104,7 @@ def move_phage_and_features():
                     feature.start,
                     feature.stop,
                     feature.strand,
-                    Seq(genome.genome_sequence, IUPAC.unambiguous_dna)
+                    Seq(starship.genome_sequence, IUPAC.unambiguous_dna)
                 )
                 ftype = 'tRNA'
 

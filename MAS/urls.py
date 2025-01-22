@@ -33,7 +33,7 @@ urlpatterns = [
     # path('accounts/', include('django.contrib.auth.urls')),
 
     path('home/', include('home.urls')),
-    path('genome/', include('genome.urls'))
+    path('starship/', include('starship.urls'))
     # path('similarity_viewer/', include('similarity_viewer.urls'))
 ]
 

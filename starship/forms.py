@@ -168,7 +168,7 @@ class Annotation_Form(CrispyModelForm):
         return annotation
 
 
-class Starship_Genome_Upload_Form(forms.Form):
+class Starship_Starship_Upload_Form(forms.Form):
     user_choices = User.objects.none()
 
     name = forms.CharField(
@@ -191,7 +191,7 @@ class Starship_Genome_Upload_Form(forms.Form):
     )
 
     def __init__(self, *args, **kwargs):
-        super(Starship_Genome_Upload_Form, self).__init__(*args, **kwargs)
+        super(Starship_Starship_Upload_Form, self).__init__(*args, **kwargs)
         # User choices should be limited to those with permissions to change annotations
         self.fields['assign_to'].queryset = starship_views.get_annotation_editors()
 
@@ -202,7 +202,7 @@ class DynamicChoiceField(forms.ChoiceField):
         super(forms.ChoiceField, self).validate(value)
 
 
-class Custom_Genome_Upload_Form(forms.Form):
+class Custom_Starship_Upload_Form(forms.Form):
     user_choices = User.objects.none()
 
     name = forms.CharField(

@@ -42,7 +42,7 @@ $(document).ready(function() {
 //             $.ajax({
 //                 // url: "{% url 'sop:get_qc_info' %}",
 //                 url: "{% url 'starship:get_aa_sequence' %}",
-//                 // url: "/genome/ajax/get_aa_sequence",
+//                 // url: "/starship/ajax/get_aa_sequence",
 //                 type: "GET",
 //                 data: {'annotation_id': annotation_id},
 //                 dataType: 'html',

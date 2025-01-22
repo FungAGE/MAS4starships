@@ -12,7 +12,7 @@ chown -R daemon:daemon /home/daemon/MAS/media
 /home/daemon/miniconda/envs/mas/bin/python /home/daemon/MAS/manage.py migrate
 /home/daemon/miniconda/envs/mas/bin/python /home/daemon/MAS/manage.py changemappingtablecollation
 /home/daemon/miniconda/envs/mas/bin/python /home/daemon/MAS/manage.py collectstatic --noinput
-/home/daemon/miniconda/envs/mas/bin/python /home/daemon/MAS/manage.py loaddata /home/daemon/MAS/genome/fixtures/groups.json
+/home/daemon/miniconda/envs/mas/bin/python /home/daemon/MAS/manage.py loaddata /home/daemon/MAS/starship/fixtures/groups.json
 /home/daemon/miniconda/envs/mas/bin/python /home/daemon/MAS/manage.py createdefaultusers "${ADMIN_USER_PASSWORD}" "${LUIGI_USER_PASSWORD}"
 
 # Start luigi daemon from daemon account

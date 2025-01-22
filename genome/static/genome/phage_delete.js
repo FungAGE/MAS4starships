@@ -16,7 +16,7 @@
 //
 //     $.ajax({
 //         // url: "{% url 'sop:get_qc_info' %}",
-//         url: "/genome/ajax/phage/delete",
+//         url: "/starship/ajax/phage/delete",
 //         type: "GET",
 //         data: {'phage_id_list': phage_id_list},
 //         dataType: 'html',

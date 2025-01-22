@@ -290,14 +290,14 @@ class Confirm_Upload_Annotation(LoginRequiredMixin, PermissionRequiredMixin, Mix
         return redirect('starship:starship_list')
 
 
-class Upload_Genome(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTemplate, generic.View):
+class Upload_Starship(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTemplate, generic.View):
     model = starship_models.Starship
     permission_required = 'starship.add_starship'
     permission_denied_message = 'You do not have permission to access this page. Please contact your administrator.'
     login_url = reverse_lazy('login')
 
 
-class Upload_Starship(Upload_Genome):
+class Upload_Starship(Upload_Starship):
     template_name = 'starship/upload_starship.html'
     # context_object_name = 'starship'
 
@@ -547,11 +547,11 @@ class Upload_Starship(Upload_Genome):
         return new_fasta_path
 
 
-class Upload_Custom_Genome(Upload_Genome):
+class Upload_Custom_Starship(Upload_Starship):
     template_name = 'starship/upload_custom_starship.html'
 
     def get(self, request):
-        upload_form = starship_forms.Custom_Genome_Upload_Form()
+        upload_form = starship_forms.Custom_Starship_Upload_Form()
 
         context = self.get_context_data()
         context['upload_form'] = upload_form
@@ -559,7 +559,7 @@ class Upload_Custom_Genome(Upload_Genome):
         return render(request, self.template_name, context)
 
     def post(self, request):
-        upload_form = starship_forms.Custom_Genome_Upload_Form(request.POST, request.FILES)
+        upload_form = starship_forms.Custom_Starship_Upload_Form(request.POST, request.FILES)
 
         if upload_form.is_valid():
             new_annotations = {}  # Annotation objects keyed by sequence
@@ -616,13 +616,13 @@ class Upload_Custom_Genome(Upload_Genome):
 
 
 # returns the list of genomes
-class Genome_List(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
+class Starship_List(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
     model = starship_models.Starship
     context_object_name = 'genomes'
     template_name = 'starship/starship_list.html'
 
     def get_context_data(self,  **kwargs):
-        context = super(Genome_List, self).get_context_data(**kwargs)
+        context = super(Starship_List, self).get_context_data(**kwargs)
         genomes = starship_models.Starship.objects.all().prefetch_related(
             'feature_set__annotation')
 
@@ -632,35 +632,35 @@ class Genome_List(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
         return context
 
 
-class Genome_List_SS(LoginRequiredMixin, MixinForBaseTemplate, generic.TemplateView):
+class Starship_List_SS(LoginRequiredMixin, MixinForBaseTemplate, generic.TemplateView):
     template_name = 'starship/starship_list_serverside.html'
 
 
 # used for starship detail page
 # @cache_page(60 * 15)
-class Genome_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailView):
+class Starship_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailView):
     model = starship_models.Starship
-    context_object_name = 'genome'
+    context_object_name = 'starship'
     template_name = 'starship/starship_detail.html'
     starship_dict = {}
     features_dict = {}
 
     def get_context_data(self, **kwargs):
         #get default context data
-        context = super(Genome_Detail, self).get_context_data(**kwargs)
+        context = super(Starship_Detail, self).get_context_data(**kwargs)
 
-        context = add_context_for_starship_viz(context, context['genome'])
+        context = add_context_for_starship_viz(context, context['starship'])
 
         context['features'] = starship_models.Feature.objects.filter(
-            genome=context['genome']
-        ).prefetch_related('annotation', 'genome')
+            genome=context['starship']
+        ).prefetch_related('annotation', 'starship')
 
         context['annotations'] = starship_models.Annotation.objects.filter(
             feature__in=context['features']
         ).prefetch_related('feature_set__starship', 'feature_set').select_related('assigned_to')
 
-        self.starship_dict['starship_name'] = context['genome'].starship_name
-        self.starship_dict['genome'] = context['genome'].starship_sequence
+        self.starship_dict['starship_name'] = context['starship'].starship_name
+        self.starship_dict['starship'] = context['starship'].starship_sequence
         context['starship_data'] = self.starship_dict
 
         upload_form = starship_forms.Starship_Upload_Form
@@ -682,13 +682,13 @@ class Genome_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailView
 # used for feature list page
 class Feature_List(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
     model = starship_models.Feature
-    context_object_name = 'starships'
+    context_object_name = 'starship'
     template_name = 'starship/feature_list.html'
     # test
 
     def get_context_data(self, **kwargs):
         context = super(Feature_List, self).get_context_data(**kwargs)
-        context['features'] = starship_models.Feature.objects.all().prefetch_related('genome', 'annotation')\
+        context['features'] = starship_models.Feature.objects.all().prefetch_related('starship', 'annotation')\
             .order_by('start')
         return context
 
@@ -771,12 +771,12 @@ class Annotation_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.Detail
 
 
 # used to show the nucleotide sequence through starship list view
-class Get_Genome(LoginRequiredMixin, generic.View):
+class Get_Starship(LoginRequiredMixin, generic.View):
     def get(self, request):
         starship_id = request.GET.get('starship_id', None)
         context = {}
         if starship_id:
-            context['genome'] = starship_models.Starship.objects.get(pk=starship_id)
+            context['starship'] = starship_models.Starship.objects.get(pk=starship_id)
             # context['features'] = starship.feature_set.all()
             print(starship_id)
         return render(request, 'starship/starship_sequence.html', context)
@@ -816,18 +816,18 @@ class Get_Feature_Sequence(LoginRequiredMixin, generic.View):
 
 
 # loads the delete starship page
-class Genome_Delete(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTemplate, generic.ListView):
+class Starship_Delete(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTemplate, generic.ListView):
     model = starship_models.Starship
-    context_object_name = 'starships'
+    context_object_name = 'starship'
     template_name = 'starship/starship_delete.html'
     permission_required = 'starship.delete_starship'
     permission_denied_message = 'You do not have permission to access this page. Please contact your administrator.'
     login_url = reverse_lazy('login')
 
     def get_context_data(self, *, object_list=None, **kwargs):
-        context = super(Genome_Delete, self).get_context_data()
-        starships = context['starships']
-        starship_form = starship_forms.Genome_Delete(
+        context = super(Starship_Delete, self).get_context_data()
+        starships = context['starship']
+        starship_form = starship_forms.Starship_Delete(
 
         )
         context['starship_form'] = starship_form
@@ -835,7 +835,7 @@ class Genome_Delete(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTem
 
 
 # used to confirm objects to be deleted and delets objects
-class Confirm_Genome_Delete(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTemplate, generic.View):
+class Confirm_Starship_Delete(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTemplate, generic.View):
     confirm_annotation_formset_factory = modelformset_factory(
         model=starship_models.Annotation,
         form=starship_forms.Confirm_Delete,
@@ -847,7 +847,7 @@ class Confirm_Genome_Delete(LoginRequiredMixin, PermissionRequiredMixin, MixinFo
 
     def get(self, request):
         context = {}
-        starship_form = starship_forms.Genome_Delete(
+        starship_form = starship_forms.Starship_Delete(
             data=request.GET
         )
         context['starship_form'] = deepcopy(starship_form)
@@ -856,7 +856,7 @@ class Confirm_Genome_Delete(LoginRequiredMixin, PermissionRequiredMixin, MixinFo
             return render(request, 'starship/starship_delete.html', context)
         # context = {}
 
-        genomes = starship_form.cleaned_data['genome']
+        genomes = starship_form.cleaned_data['starship']
         features = starship_models.Feature.objects.filter(starship__in=genomes)
         annotations = starship_models.Annotation.objects.filter(feature__in=features)
 
@@ -893,7 +893,7 @@ class Confirm_Genome_Delete(LoginRequiredMixin, PermissionRequiredMixin, MixinFo
 
     def post(self, request):
 
-        starship_form = starship_forms.Genome_Delete(data=request.POST)
+        starship_form = starship_forms.Starship_Delete(data=request.POST)
         if not starship_form.is_valid():
             return redirect('starship:starship_delete')
 
@@ -909,7 +909,7 @@ class Confirm_Genome_Delete(LoginRequiredMixin, PermissionRequiredMixin, MixinFo
         if not annotations_to_confirm_form.is_valid():
             return redirect('starship:starship_delete')
 
-        genomes = starship_form.cleaned_data['genome']
+        genomes = starship_form.cleaned_data['starship']
 
         if 'annotations' in annotations_to_delete_form.cleaned_data:
             annotations_to_delete = annotations_to_delete_form.cleaned_data['annotations']
