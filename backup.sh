@@ -1,3 +1,4 @@
+#!/bin/bash
 # Note: The MAS database is stored in a Docker volume and will persist when rebuilding images.
 # This means the MYSQL_ROOT_PASSWORD configuration will not be updated unless you delete the volume containing the database ('docker volume rm mas_db-data' THIS WILL DELETE ALL UPLOADED DATA). 
 # If you wish to change the MySQL password after building without deleting the volume, you can rebuild you images with the new MYSQL_ROOT_PASSWORD configuration set then manually change the password by entering the sql server container ('docker exec -it mas-sql-server') and changing it through the terminal.
