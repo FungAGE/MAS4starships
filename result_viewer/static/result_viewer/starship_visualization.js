@@ -37,10 +37,10 @@ $(document).ready(function() {
             }
         });
 
-    var genome_xAxis = d3.axisBottom()
+    var starship_xAxis = d3.axisBottom()
         .scale(s);
 
-    var genome_vis;
+    var starship_vis;
     var features;
     var previousb = {};
     var previoust = {};
@@ -100,10 +100,10 @@ $(document).ready(function() {
         var ytick_locs = range(0,3,1);
         yAxis.tickValues(ytick_locs);
 
-        genome_vis = svg.append('g')
-            .attr('id', 'genome_vis')
+        starship_vis = svg.append('g')
+            .attr('id', 'starship_vis')
             .attr('transform', `translate(50, 200)`)
-            .call(genome_xAxis);
+            .call(starship_xAxis);
 
         svg.append('text')
             .attr('transform','translate('+ (width/2) + ', ' + '250)')
@@ -124,7 +124,7 @@ $(document).ready(function() {
             .text('Strand');
 
 
-        features = genome_vis.selectAll('.rect')
+        features = starship_vis.selectAll('.rect')
             .data(feature_data['features'])
             .enter()
             .append('a')
@@ -201,9 +201,9 @@ $(document).ready(function() {
     function zoomed(){
         var new_x_scale = d3.event.transform.rescaleX(s);
 
-        genome_vis.transition()
+        starship_vis.transition()
             .duration(0)
-            .call(genome_xAxis.scale(new_x_scale));
+            .call(starship_xAxis.scale(new_x_scale));
 
         //append features
         features

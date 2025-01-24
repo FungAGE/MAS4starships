@@ -17,18 +17,12 @@ from copy import deepcopy
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio.Alphabet import generic_protein
-from Bio.Alphabet import IUPAC
-from Bio.Blast import NCBIXML
 from tempfile import TemporaryDirectory
 import re
 import pandas as pd
 from pandas import ExcelWriter
 import argparse
 import tarfile
-import sys
-import subprocess
-import multiprocessing
 
 from result_viewer.views import MixinForBaseTemplate, add_context_for_starship_viz
 
@@ -508,9 +502,9 @@ class StarshipUpload(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTe
         )
         new_features.append(feature)
 
-    def _get_feature_sequence(self, genome_sequence, start, end, strand):
+    def _get_feature_sequence(self, starship_sequence, start, end, strand):
         """Extract and return the feature sequence"""
-        sequence = genome_sequence[start:end]
+        sequence = starship_sequence[start:end]
         if strand == '-':
             # Convert to Seq object for reverse complement
             sequence = Seq(sequence).reverse_complement().__str__()
@@ -721,7 +715,7 @@ class Starship_Delete(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseT
     model = starship_models.Starship
     context_object_name = 'starship'
     template_name = 'starship/starship_delete.html'
-    permission_required = 'starship.delete_starship'
+    permission_required = 'starship.starship_delete'
     permission_denied_message = 'You do not have permission to access this page. Please contact your administrator.'
     login_url = reverse_lazy('login')
 
@@ -742,7 +736,7 @@ class Confirm_Starship_Delete(LoginRequiredMixin, PermissionRequiredMixin, Mixin
         form=starship_forms.Confirm_Delete,
         extra=0
     )
-    permission_required = 'starship.delete_starship'
+    permission_required = 'starship.starship_delete'
     permission_denied_message = 'You do not have permission to access this page. Please contact your administrator.'
     login_url = reverse_lazy('login')
 
@@ -861,8 +855,12 @@ class Annotation_Bulk(LoginRequiredMixin, generic.View):
                 private_note = annotation.private_notes
                 flag = annotation.get_flag_display()
 
-                sequence = SeqRecord(Seq(aa_sequence, generic_protein), id=annotation.accession + " |",
-                                     description="%s | %s | %s | %s" % (anno, public_note, private_note, flag))
+                sequence = SeqRecord(
+                    Seq(aa_sequence),
+                    id=annotation.accession + " |",
+                    description="%s | %s | %s | %s" % (anno, public_note, private_note, flag),
+                    annotations={"molecule_type": "protein"}
+                )
                 annotation_list.insert(0, sequence)
 
             with TemporaryDirectory() as temp:
@@ -1113,7 +1111,12 @@ def starship_download_fasta(request, starship_id):
         starship = starship_models.Starship.objects.get(pk=starship_id)
         starship_name = starship.starship_name
         nucleotide = starship.starship_sequence
-        sequence = SeqRecord(Seq(nucleotide, IUPAC.ambiguous_dna), id=starship_name, description=starship_name)
+        sequence = SeqRecord(
+            Seq(nucleotide),
+            id=starship_name,
+            description=starship_name,
+            annotations={"molecule_type": "DNA"}
+        )
 
         with TemporaryDirectory() as temp:
             file_path = os.path.join(temp, "%s.fsa" % starship_name)
@@ -1172,8 +1175,12 @@ def annotation_download(request, annotation_id):
         private_note = annotation_obj.private_notes
         flag = annotation_obj.get_flag_display()
 
-        sequence = SeqRecord(Seq(aa_sequence, generic_protein), id=annotation_obj.accession + " |",
-                             description="%s | %s | %s | %s" % (annotation, public_note, private_note, flag))
+        sequence = SeqRecord(
+            Seq(aa_sequence),
+            id=annotation_obj.accession + " |",
+            description="%s | %s | %s | %s" % (annotation, public_note, private_note, flag),
+            annotations={"molecule_type": "protein"}
+        )
 
         with TemporaryDirectory() as temp:
             file_path = os.path.join(temp, "%s.faa" % annotation_obj.accession)
@@ -1185,3 +1192,11 @@ def annotation_download(request, annotation_id):
             response['Content-Disposition'] = 'attachment; filename=%s.faa' % annotation_obj.accession
 
         return response
+
+def get_dna_sequence(start, stop, strand, sequence):
+    """Extract and return DNA sequence"""
+    dna_seq = sequence[start:stop]
+    if strand == '-':
+        # Convert to Seq object for reverse complement
+        dna_seq = Seq(str(dna_seq)).reverse_complement()
+    return str(dna_seq)

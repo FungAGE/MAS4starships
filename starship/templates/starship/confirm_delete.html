@@ -13,7 +13,7 @@
 
 {% block body %}
     <div class="block">
-        <form action="{% url 'starship:confirm_phage_delete' %}" method="post">
+        <form action="{% url 'starship:confirm_starship_delete' %}" method="post">
         <h1>Confirm Annotations to Delete</h1>
             {% csrf_token %}
             {{ annotations_to_check_form.management_form }}

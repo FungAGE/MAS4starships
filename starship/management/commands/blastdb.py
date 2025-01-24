@@ -4,8 +4,6 @@ from starship import models as starship_models
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio.Alphabet import generic_nucleotide
-from Bio.Alphabet import generic_protein
 import os
 from starship import views
 import subprocess
@@ -27,8 +25,8 @@ class Command(BaseCommand):
         phages = starship_models.Starship.objects.all()
         phage_list = []
         for phage in phages:
-            sequence = SeqRecord(Seq(phage.starship_sequence, generic_nucleotide), id=phage.starship_name,
-                                 description=phage.starship_name)
+            sequence = SeqRecord(Seq(starship.starship_sequence, generic_nucleotide), id=starship.starship_name,
+                                 description=starship.starship_name)
             phage_list.append(sequence)
 
         SeqIO.write(phage_list, file_path, "fasta")
@@ -49,7 +47,7 @@ class Command(BaseCommand):
             public_note = annotation.public_notes
             private_note = annotation.private_notes
             flag = annotation.get_flag_display()
-            phages = views.annotation_phages(annotation)
+            phages = views.annotation_starships(annotation)
             sequence = SeqRecord(Seq(aa_sequence, generic_protein), id=annotation.accession + " |",
                                  description="%s | %s | %s | %s %s" % (anno, public_note, private_note, flag, phages))
             annotation_list.append(sequence)

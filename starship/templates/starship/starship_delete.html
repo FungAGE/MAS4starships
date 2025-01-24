@@ -7,7 +7,7 @@ endblock %} {% block head %}
 <div class="block">
   <h1>Delete Starships</h1>
   {% if phage_form %}
-  <form method="get" action="{% url 'starship:confirm_phage_delete' %}">
+  <form method="get" action="{% url 'starship:confirm_starship_delete' %}">
     {% csrf_token %} {{ phage_form|crispy }}
     <button class="btn btn-success button" type="submit">Delete</button>
   </form>

@@ -147,9 +147,9 @@ def blastp_alignment_to_dict(alignment):
 
 
 def add_context_for_starship_viz(context, phage, current_annotation_id=None):
-    context['phage_id'] = phage.id
-    context['starship_length'] = len(phage.starship_sequence)
-    feature_objects = Feature.objects.filter(starship__id=phage.id)
+    context['phage_id'] = starship.id
+    context['starship_length'] = len(starship.starship_sequence)
+    feature_objects = Feature.objects.filter(starship__id=starship.id)
     # current_annotation_id = int(self.kwargs['accession'], 36)
     features = []
     features_dict = {}
@@ -189,7 +189,7 @@ def add_context_for_starship_viz(context, phage, current_annotation_id=None):
             f['annotation'] = feature.annotation.annotation
         except AttributeError:
             f['annotation'] = "nan"
-        f['href'] = reverse('view-results', args=(f['accession'], 'GenomeNavigator', phage.starship_name))
+        f['href'] = reverse('view-results', args=(f['accession'], 'GenomeNavigator', starship.starship_name))
         if f['annotation_id'] == current_annotation_id:
             features_dict['feature_id'] = f['id']
 
@@ -287,7 +287,7 @@ class ViewResults(LoginRequiredMixin, MixinForBaseTemplate, generic.UpdateView):
 
         # URLs
         context['run_search_url'] = reverse('run_search')
-        context['run_search_for_phage_url'] = reverse('run_search_for_phage')
+        context['run_search_for_starship_url'] = reverse('run_search_for_starship')
 
         # Default tool and database
         context['tool'] = 'blastp'
@@ -455,10 +455,10 @@ class FlagNavRedirect(generic.RedirectView):
 class GenomeNavRedirect(generic.RedirectView):
     def get_redirect_url(self, *args, **kwargs):
         try:
-            first_obj = GenomeNavigator(kwargs['phage_name']).get_current_object()
-            return reverse('view-results', args=(first_obj.accession, 'GenomeNavigator', kwargs['phage_name']))
+            first_obj = GenomeNavigator(kwargs['starship_name']).get_current_object()
+            return reverse('view-results', args=(first_obj.accession, 'GenomeNavigator', kwargs['starship_name']))
         except:
-            return reverse('no-results', args=('GenomeNavigator', kwargs['phage_name']))
+            return reverse('no-results', args=('GenomeNavigator', kwargs['starship_name']))
 
 
 class AssignmentNavRedirect(generic.RedirectView):

@@ -9,9 +9,6 @@ from celery import shared_task
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio.Alphabet import generic_protein
-from Bio.Alphabet import generic_nucleotide
-from Bio.Alphabet import IUPAC
 from django.db import transaction
 from django.conf import settings
 from django.db.models.signals import post_save
@@ -72,7 +69,7 @@ def create_internal_nucleotide_blastdb():
         starship_list = []
         for starship in starships:
             sequence = SeqRecord(
-                Seq(starship.starship_sequence, generic_nucleotide),
+                Seq(starship.starship_sequence),
                 id=starship.starship_name,
                 description=starship.starship_name,
             )
@@ -122,7 +119,7 @@ def create_internal_protein_blastdb():
             {feature.starship.starship_name for feature in annotation.feature_set.all()}
         )
         record = SeqRecord(
-            Seq(aa_sequence, generic_protein),
+            Seq(aa_sequence),
             id=annotation.accession + " |",
             description="%s | %s | %s | %s | %s"
             % (anno, public_note, private_note, flag, genomes),
@@ -155,7 +152,7 @@ def create_CDS_annotations(
     glimmer_results_file_path, genome, assign_to, new_annotations, new_features
 ):
     for cds in gene_calling.parse_glimmer_results(glimmer_results_file_path):
-        sequence = Seq(starship.starship_sequence, IUPAC.ambiguous_dna)
+        sequence = Seq(starship.starship_sequence)
         protein = get_protein_sequence(cds.start, cds.stop, cds.strand, sequence)
 
         if starship_models.Annotation.objects.filter(sequence=protein).count() > 0:
@@ -182,7 +179,7 @@ def create_CDS_annotations(
 def create_custom_CDS_annotations(
     coordinate_file, translation_table, genome, assign_to, new_annotations, new_features
 ):
-    starship_sequence = Seq(starship.starship_sequence, IUPAC.ambiguous_dna)
+    starship_sequence = Seq(starship.starship_sequence)
 
     for protein_sequence, cds in parse_prots_from_coords(
         coordinate_file, starship_sequence, translation_table
@@ -220,7 +217,7 @@ def create_trna_annotations(
     trnascan_results_file_path, genome, assign_to, new_annotations, new_features
 ):
     for tRNA in gene_calling.parse_trnascan_results(trnascan_results_file_path):
-        sequence = Seq(starship.starship_sequence, IUPAC.ambiguous_dna)
+        sequence = Seq(starship.starship_sequence)
         rna = get_rna_sequence(tRNA.start, tRNA.stop, tRNA.strand, sequence)
 
         if starship_models.Annotation.objects.filter(sequence=rna).count() > 0:

@@ -64,8 +64,8 @@ class PipelineTask(BaseTask):
         super(PipelineTask, self).__init__(*args, **kwargs)
 
         name = ''
-        if hasattr(self, 'phage_name') and self.genome_name:
-            name = self.genome_name
+        if hasattr(self, 'starship_name') and self.starship_name:
+            name = self.starship_name
         elif self.annotation_accession:
             name = self.annotation_accession
 
@@ -75,8 +75,8 @@ class PipelineTask(BaseTask):
         '''
         Returns the directory which will hold the files output by this task.
         '''
-        if hasattr(self, 'phage_name') and self.genome_name:
-            return os.path.join(self.g.OUTPUT_DIR, self.genome_name)
+        if hasattr(self, 'starship_name') and self.starship_name:
+            return os.path.join(self.g.OUTPUT_DIR, self.starship_name)
 
         elif self.annotation_accession:
             return os.path.join(self.g.OUTPUT_DIR, self.run_time.strftime("%Y-%m-%d_h%H-m%M-s%S"),

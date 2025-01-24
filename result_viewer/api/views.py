@@ -198,7 +198,7 @@ class StarshipData:
             reverse('starship:phage_download_fasta', kwargs={'starship_id': starship.id})
         )
         self.navigator = '<a href="{}"><div class="glyphicon glyphicon-hand-right"></div></a>'.format(
-            reverse('phage-nav-redirect', kwargs={'phage_name': starship.starship_name})
+            reverse('phage-nav-redirect', kwargs={'starship_name': starship.starship_name})
         )
 
 

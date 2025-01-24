@@ -18,7 +18,7 @@
         ["view_historicalannotation", "genome", "historicalannotation"],
         ["add_starship", "genome", "starship"],
         ["change_starship", "genome", "starship"],
-        ["delete_starship", "genome", "starship"],
+        ["starship_delete", "genome", "starship"],
         ["view_starship", "genome", "starship"],
         ["add_blastp_result", "result_viewer", "blastp_result"],
         ["change_blastp_result", "result_viewer", "blastp_result"],

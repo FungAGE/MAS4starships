@@ -93,7 +93,7 @@ $('div.starship-control').click(function() {
         $(this).addClass('shown');
         if (phage_id !== undefined) {
             $.ajax({
-                url: "{% url 'genome:get_phage' %}",
+                url: "{% url 'genome:get_starship' %}",
                 type: "GET",
                 data: {'starship_id': phage_id},
                 dataType: 'html',

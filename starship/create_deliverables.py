@@ -19,7 +19,6 @@ import fileinput
 
 from Bio import SeqIO
 from Bio.Seq import Seq
-from Bio.Alphabet import IUPAC
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqUtils import GC
 import pandas as pd
@@ -311,7 +310,7 @@ def main(args):
 
     # Get starship's genome
     starship_obj = Starship.objects.get(starship_name=args.starship_name)
-    genome = Seq(starship_obj.starship_sequence, IUPAC.ambiguous_dna)
+    genome = Seq(starship_obj.starship_sequence)
 
     df = GetFeatureTable(args.starship_name, genome)
 

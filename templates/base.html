@@ -233,19 +233,19 @@
                     });
                 });
 
-                var genome_nav = $('#id_search_genome')
+                var starship_nav = $('#id_search_genome')
 
-                genome_nav.select2({
+                starship_nav.select2({
                     multiple: false,
                     placeholder: 'Navigate by Starship Name',
                     dropdownAutoWidth: true
                 });
 
-                genome_nav.change(function () {
+                starship_nav.change(function () {
                     console.log(this);
-                    var genome_name = $(this).children("option:selected").text();
+                    var starship_name = $(this).children("option:selected").text();
                     {# Solution found on stackoverflow.com/questions/17832194/ to use javascript variable in Django URL #}
-                    location.href = '{% url 'phage-nav-redirect' 12345 %}'.replace(/12345/, genome_name);
+                    location.href = '{% url 'phage-nav-redirect' 12345 %}'.replace(/12345/, starship_name);
                     {#location.href = '/viewer/GenomeNavigator-' + $(this).children("option:selected").text();#}
                 });
 

@@ -47,16 +47,16 @@ def blastp_alignment_to_dict(alignment):
     }
 
 
-def GetFeatureTable(phage_name, genome):
+def GetFeatureTable(starship_name, genome):
     '''
     Return a Pandas DataFrame which contains information about a phage's features.
-    :param phage_name: (str) Name of phage
+    :param starship_name: (str) Name of phage
     :param starship: (Bio.Seq) Full genome sequence
     :return: Pandas DataFrame
     '''
     # Get all features associated with phage
     features = []
-    feature_obj_list = list(Feature.objects.filter(starship__starship_name=phage_name))
+    feature_obj_list = list(Feature.objects.filter(starship__starship_name=starship_name))
     for feature_obj in feature_obj_list:
         annotation_obj = feature_obj.annotation
 
@@ -84,7 +84,7 @@ def GetFeatureTable(phage_name, genome):
             prot = ''
 
         features.append((
-            phage_name,
+            starship_name,
             feature_obj.start,
             feature_obj.stop,
             feature_obj.strand,
