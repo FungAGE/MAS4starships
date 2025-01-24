@@ -34,6 +34,9 @@ from starship import forms as starship_forms
 from starship import models as starship_models
 from starship.tasks import create_CDS_annotations, create_trna_annotations, add_annotations_and_features_to_db, create_custom_CDS_annotations
 
+# Derived from stackoverflow.com/questions/4727327/
+flag_options_reverse = dict((v, k) for k, v in starship_models.Annotation.flag_options)
+
 # Annotation history information
 class Annotation_History(LoginRequiredMixin, MixinForBaseTemplate, generic.View):
     template_name = 'starship/annotation_history.html'
@@ -96,9 +99,6 @@ class Upload_Annotation(LoginRequiredMixin, PermissionRequiredMixin, MixinForBas
             need_review_count = 0
             failed_count = 0
             failed_list = []
-
-            # Derived from stackoverflow.com/questions/4727327/
-            flag_options_reverse = dict((v, k) for k, v in starship_models.Annotation.flag_options)
 
             # Correct column names for backward compatibility to upload annotations
             # Match phate output
