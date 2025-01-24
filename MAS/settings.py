@@ -27,10 +27,11 @@ else:
         'default': {
             'ENGINE': 'django.db.backends.mysql',
             'OPTIONS': {
-                'host': 'mas-sql-server',
+                'host': os.getenv('DB_HOST', 'mas-sql-server'),
                 'database': 'mas',
                 'user': 'root',
                 'password': os.getenv('MYSQL_ROOT_PASSWORD'),
+                'port': int(os.getenv('DB_PORT', '3306')),
             }
         }
     }
