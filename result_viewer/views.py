@@ -17,6 +17,7 @@ from result_viewer.hhsuite2_text import Hhsuite2TextParser
 from result_viewer.models import *
 from result_viewer.navigator import FlagNavigator, GenomeNavigator, AssignmentNavigator
 from starship.models import *
+from result_viewer.utils import interproscan_tsv_to_dict
 
 
 def blastp_alignment_to_str(alignment):
@@ -386,6 +387,29 @@ class ViewResults(LoginRequiredMixin, MixinForBaseTemplate, generic.UpdateView):
                 context['rpsblast_alignments'][db]['date_ran'] = rpsblast_result.run_date
                 context['rpsblast_alignments'][db]['status'] = rpsblast_result.status
 
+            except ObjectDoesNotExist:
+                pass
+
+        # Add InterProScan results
+        context['interpro_alignments'] = {}
+        
+        for db in Interpro_Result.database_options:
+            db = db[0]
+            context['interpro_alignments'][db] = {'matches': None, 'date_ran': None, 'status': None}
+            
+            try:
+                interpro_result = Interpro_Result.objects.get(annotation=context['annotation'], database=db)
+                
+                if interpro_result.result:
+                    context['interpro_alignments'][db]['matches'] = interproscan_xml_to_dict(
+                        interpro_result.result.open(mode='r')
+                    )
+                else:
+                    context['interpro_alignments'][db]['matches'] = []
+                
+                context['interpro_alignments'][db]['date_ran'] = interpro_result.run_date
+                context['interpro_alignments'][db]['status'] = interpro_result.status
+                
             except ObjectDoesNotExist:
                 pass
 

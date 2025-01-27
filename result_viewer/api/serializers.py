@@ -110,7 +110,7 @@ class UploadResultsSerializer(serializers.Serializer):
         return value
 
     def validate_tool(self, value):
-        if not value in ['blastp', 'hhsearch', 'rpsblast']:
+        if not value in ['blastp', 'hhsearch', 'rpsblast', 'interproscan']:
             raise serializers.ValidationError('Invalid tool: tool not recognized.')
 
         return value

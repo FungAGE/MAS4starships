@@ -8,16 +8,14 @@ from datetime import datetime, timedelta
 from MAS.celery import app
 from result_viewer.models import *
 # from AnnotationToolPipeline.RunSearchForProtein import run_search_for_protein
-from AnnotationToolPipeline import RunSearchForProtein
 # from AnnotationToolPipeline.RunSearchesForProteins import run_searches_for_proteins
-from AnnotationToolPipeline import RunSearchesForProteins
-
+from AnnotationToolPipeline import RunSearchForProtein, RunSearchesForProteins 
 
 @app.task
 def database_maintenance(timeout_hrs=12):
     current_datetime = datetime.now()
 
-    for model in [HHSearch_Result, Blastp_Result, RPSBlast_Result]:
+    for model in [HHSearch_Result, Blastp_Result, RPSBlast_Result, Interpro_Result]:
         model.objects.filter(status=1, run_date__lt=current_datetime - timedelta(hours=timeout_hrs)).update(status=2)
 
 
@@ -56,7 +54,8 @@ def run_single_search(accession, tool, database, site):
 
         elif tool == 'rpsblast':
             create_result_entry(RPSBlast_Result)
-
+        elif tool == 'interproscan':
+            create_result_entry(Interpro_Result)
         else:
             raise HttpResponseBadRequest
 
@@ -93,7 +92,8 @@ def run_multiple_search(starship_name, rerun, tools_and_databases, site):
 
             elif tool == 'rpsblast':
                 result_model = RPSBlast_Result
-
+            elif tool == 'interproscan':
+                result_model = Interpro_Result
             else:
                 raise HttpResponseBadRequest
 

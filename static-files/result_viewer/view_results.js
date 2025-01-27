@@ -81,6 +81,8 @@ function on_tool_button_click(tool) {
         DATABASE = Object.keys(hhsearch_alignment_data)[0];
     } else if (TOOL === 'rpsblast') {
         DATABASE = Object.keys(rpsblast_alignment_data)[0];
+    } else if (TOOL === 'interproscan') {
+        DATABASE = Object.keys(interpro_alignment_data)[0];
     }
 
     display_correct_db_buttons(`${tool}-db-selection-buttons`);
@@ -112,6 +114,14 @@ d3.select('#rpsblast_button')
     .on('click', function () {
         if (TOOL !== 'rpsblast') {
             on_tool_button_click('rpsblast')
+        }
+    });
+
+
+d3.select('#interpro_button')
+    .on('click', function () {
+        if (TOOL !== 'interproscan') {
+            on_tool_button_click('interproscan')
         }
     });
 

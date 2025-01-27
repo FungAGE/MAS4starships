@@ -563,6 +563,82 @@ class HHsearch(PipelineTask):
             '-cpu', str(self.n_cpu)
         ])
 
+class InterproScan(PipelineTask):
+    '''
+    Run InterProScan on protein sequence
+    '''
+    annotation_accession = luigi.Parameter(default='')
+    database = luigi.Parameter()
+    run_time = luigi.DateSecondParameter()
+    tool = 'interproscan'
+
+    # InterProScan specific parameters
+    interproscan_path = luigi.Parameter()
+    interproscan_cpu = luigi.IntParameter(default=1)
+    applications = luigi.Parameter(default='')
+    goterms = luigi.BoolParameter(default=True)
+    pathways = luigi.BoolParameter(default=True)
+    iprlookup = luigi.BoolParameter(default=True)
+    tempdir = luigi.Parameter(default='temp')
+
+    def __init__(self, *args, **kwargs):
+        super(InterproScan, self).__init__(*args, **kwargs)
+        self.n_cpu = self.interproscan_cpu
+
+    def requires(self):
+        return Pull_Protein(
+            annotation_accession=self.annotation_accession,
+            run_time=self.run_time,
+            tool=self.tool,
+            database=self.database,
+            mas_server=self.mas_server
+        )
+
+    def out_file_path(self, temp=False):
+        name = self.annotation_accession
+        return {
+            'results': os.path.join(self.out_dir(temp), '{}_{}_interproscan.xml'.format(name, self.database)),
+            'tsv': os.path.join(self.out_dir(temp), '{}_{}_interproscan.tsv'.format(name, self.database))
+        }
+
+    def out_dir(self, temp=False):
+        folder = '{}-temp'.format(self.database) if temp else self.database
+        return os.path.join(self.pipeline_out_dir(), self.task_family, folder)
+
+    def do_task(self):
+        if self.database != 'interpro':
+            raise ValueError('Invalid database ' + self.database)
+
+        # Build command with all available options
+        cmd = [
+            'java',
+            '-XX:+UseParallelGC',
+            '-XX:ParallelGCThreads=2',
+            '-XX:+AggressiveOpts',
+            '-XX:+UseFastAccessorMethods',
+            '-Xms128M',
+            '-Xmx2048M',
+            '-jar',
+            self.interproscan_path,
+            '-i', self.input()['fasta'].path,
+            '-f', 'XML,TSV',
+            '-o', self.out_file_path(True)['results'],
+            '-cpu', str(self.n_cpu),
+            '-T', self.tempdir,
+            '--iprlookup' if self.iprlookup else '',
+            '--goterms' if self.goterms else '',
+            '--pathways' if self.pathways else ''
+        ]
+
+        # Add optional applications if specified
+        if self.applications:
+            cmd.extend(['-appl', self.applications])
+
+        # Filter out empty strings from command
+        cmd = [arg for arg in cmd if arg]
+
+        self._run_command(cmd)
+
 
 '''
 **********   Result Submission   **********

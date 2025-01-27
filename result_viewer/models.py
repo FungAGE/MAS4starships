@@ -76,3 +76,18 @@ class RPSBlast_Result(models.Model):
 class PDB_Accession_Mapping(models.Model):
     pdb_accession = models.CharField(max_length=20, null=False, blank=False, unique=True)
     pdb_chain_name = models.CharField(max_length=1500, blank=False, null=True)
+
+
+class Interpro_Result(models.Model):
+    database_options = (
+        ('interpro', 'InterPro Database'),
+    )
+
+    annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE, null=False, db_index=True)
+    database = models.CharField(max_length=50, choices=database_options, null=False, blank=False)
+    result = models.FileField(upload_to=result_upload_to, null=True)
+    run_date = models.DateTimeField(null=True)
+    status = models.IntegerField(default=0, choices=search_status_options)
+
+    class Meta:
+        unique_together = ['annotation', 'database']

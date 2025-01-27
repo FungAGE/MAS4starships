@@ -13,6 +13,7 @@
     {{ hhsearch_alignments|json_script:"hhsearch_alignment_data" }}
     {{ blastp_alignments|json_script:"blastp_alignment_data" }}
     {{ rpsblast_alignments|json_script:"rpsblast_alignment_data" }}
+    {{ interpro_alignments|json_script:"interpro_alignment_data" }}
     {{ form.initial|json_script:"current_annotation_info" }}
     {{ feature_data|json_script:"feature_data" }}
 {% endblock %}
@@ -139,6 +140,7 @@
                 <button type="button" class="btn btn-default" id="blastp_button">Blastp</button>
                 <button type="button" class="btn btn-default" id="rpsblast_button">RPSBlast</button>
                 <button type="button" class="btn btn-default" id="hhsearch_button">HHSearch</button>
+                <button type="button" class="btn btn-default" id="interpro_button">InterPro</button>
             </div>
             <div id="database-button-div">
                 <div
@@ -332,6 +334,44 @@
                     </table>
                 </div>
             {% endfor %}
+            {% for db, alignment_data in interpro_alignments.items %}
+                <div class="table-div" id={{ "interpro-table-div-"|add:db }} {% if tool != "interpro" or database != db %}hidden{% endif %}>
+                    <table id={{ "interpro-table-"|add:db }} class="table table-hover table-striped">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Database</th>
+                                <th>Accession</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Location</th>
+                                <th>E-value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for match in alignment_data.matches %}
+                                {% for location in match.locations %}
+                                <tr id="{{ match.accession }}">
+                                    <td class="details-cell" align="center">
+                                        <div class="glyphicon glyphicon-menu-right details-control"></div>
+                                    </td>
+                                    <td>{{ match.database }}</td>
+                                    <td>
+                                        <a href="https://www.ebi.ac.uk/interpro/entry/{{ match.accession }}" target="_blank">
+                                            {{ match.accession }}
+                                        </a>
+                                    </td>
+                                    <td>{{ match.name }}</td>
+                                    <td>{{ match.description }}</td>
+                                    <td>{{ location.start }}-{{ location.end }}</td>
+                                    <td>{{ location.evalue }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endfor %}
         </div>
     </div>
 
@@ -359,7 +399,67 @@
         var blastp_alignment_data = JSON.parse(document.getElementById("blastp_alignment_data").textContent);
         var hhsearch_alignment_data = JSON.parse(document.getElementById("hhsearch_alignment_data").textContent);
         var rpsblast_alignment_data = JSON.parse(document.getElementById("rpsblast_alignment_data").textContent);
+        var interpro_alignment_data = JSON.parse(document.getElementById("interpro_alignment_data").textContent);
     </script>
     <script type="application/javascript" src="{% static "result_viewer/view_results.js" %}" ></script>
     <script type="application/javascript" src="{% static "result_viewer/starship_visualization.js" %}" ></script>
+    <script>
+    // Add InterPro domain visualization
+    function renderInterProDomains(matches, proteinLength) {
+        if (!matches || matches.length === 0) return;
+        
+        const margin = {top: 20, right: 20, bottom: 30, left: 100};
+        const width = 800 - margin.left - margin.right;
+        const height = matches.length * 30;
+        
+        const svg = d3.select('#alignment')
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom)
+            .append('g')
+            .attr('transform', `translate(${margin.left},${margin.top})`);
+        
+        // Create scales
+        const xScale = d3.scaleLinear()
+            .domain([0, proteinLength])
+            .range([0, width]);
+        
+        const yScale = d3.scaleBand()
+            .domain(matches.map(d => d.name))
+            .range([0, height])
+            .padding(0.1);
+        
+        // Add axes
+        svg.append('g')
+            .attr('transform', `translate(0,${height})`)
+            .call(d3.axisBottom(xScale));
+        
+        svg.append('g')
+            .call(d3.axisLeft(yScale));
+        
+        // Add domain rectangles
+        matches.forEach(match => {
+            match.locations.forEach(loc => {
+                svg.append('rect')
+                    .attr('x', xScale(loc.start))
+                    .attr('y', yScale(match.name))
+                    .attr('width', xScale(loc.end) - xScale(loc.start))
+                    .attr('height', yScale.bandwidth())
+                    .attr('fill', '#69b3a2')
+                    .attr('opacity', 0.8)
+                    .append('title')
+                    .text(`${match.name}\n${loc.start}-${loc.end}\nE-value: ${loc.evalue}`);
+            });
+        });
+    }
+    
+    // Update visualization when InterPro tool is selected
+    d3.select('#interpro_button')
+        .on('click', function() {
+            if (TOOL !== 'interproscan') {
+                d3.select('#alignment').selectAll('*').remove();
+                const matches = interpro_alignment_data[DATABASE].matches;
+                renderInterProDomains(matches, QUERY_LEN);
+            }
+        });
+    </script>
 {% endblock %}
