@@ -115,9 +115,15 @@ INTERNAL_NUCLEOTIDE_DB_PATH = ''
 GIT_DIR = os.path.join(BASE_DIR, '.git')
 
 if os.getenv('CELERY_WORKER') == 'TRUE':
-    CELERY_BROKER_URL = 'amqp://mas:{password}@0.0.0.0:{port}'.format(password=os.getenv('RABBITMQ_DEFAULT_PASS'), port=os.getenv('RABBITMQ_PORT'))
+    CELERY_BROKER_URL = 'amqp://mas:{password}@mas-message-broker:{port}'.format(
+        password=os.getenv('RABBITMQ_DEFAULT_PASS'),
+        port=os.getenv('RABBITMQ_PORT', '5672')
+    )
 else:
-    CELERY_BROKER_URL = 'amqp://mas:{password}@mas-message-broker:{port}'.format(password=os.getenv('RABBITMQ_DEFAULT_PASS'), port=5672)
+    CELERY_BROKER_URL = 'amqp://mas:{password}@127.0.0.1:{port}'.format(
+        password=os.getenv('RABBITMQ_DEFAULT_PASS'),
+        port=os.getenv('RABBITMQ_PORT', '5672')
+    )
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_WORKERS = ['mas-worker@host']
