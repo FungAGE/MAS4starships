@@ -15,6 +15,7 @@ import os
 import sys
 from dotenv import load_dotenv
 import django
+from datetime import datetime
 
 # Load environment variables from .env file
 load_dotenv()
@@ -34,6 +35,7 @@ from starship.models import Annotation, Feature
 from starship.views import flag_options_reverse
 from MAS.celery import app
 
+import configparser
 import pandas as pd
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -43,11 +45,11 @@ from tqdm import tqdm
 import argparse
 from Bio.Blast.Applications import NcbiblastpCommandline
 from Bio import SeqRecord
-from io import StringIO
-import subprocess
 import tempfile
 from result_viewer.api.tasks import run_single_search
 from result_viewer.models import Blastp_Result
+from kombu.exceptions import OperationalError
+from Bio.Blast import NCBIXML
 
 class AnnotationPreparation:
     def __init__(self, db_connection, dry_run=False):
@@ -63,29 +65,23 @@ class AnnotationPreparation:
             "ORANGE": 5,
             "UNANNOTATED": 7
         }
-        # Create temporary BLAST database if it doesn't exist
-        self._setup_blast_db()
+        # Get internal BLAST database path from settings
+        from django.conf import settings
+        config = configparser.ConfigParser()
+        config.read(settings.LUIGI_CFG)
+        self.internal_blast_db = config.get('Blastp', 'internal')
         
-    def _setup_blast_db(self):
-        """Create a temporary BLAST database from current annotations"""
-        # Create a temporary file for sequences
-        self.temp_fasta = tempfile.NamedTemporaryFile(mode='w+', suffix='.fasta', delete=False)
-        
-        # Write all sequences to the temporary file
-        for ann in Annotation.objects.all():
-            if ann.sequence:
-                record = SeqRecord.SeqRecord(
-                    Seq(ann.sequence),
-                    id=str(ann.id),
-                    description=f"{ann.accession}|{ann.annotation}"
+        # Get admin user
+        from django.contrib.auth.models import User
+        try:
+            self.admin_user = User.objects.get(username='admin')
+        except User.DoesNotExist:
+            if not dry_run:
+                # Create admin user with password from environment
+                self.admin_user = User.objects.create_superuser(
+                    username='admin',
+                    password=os.getenv('ADMIN_USER_PASSWORD')
                 )
-                SeqIO.write(record, self.temp_fasta, "fasta")
-        
-        self.temp_fasta.close()
-        
-        # Create BLAST database
-        makeblastdb_cmd = f"makeblastdb -in {self.temp_fasta.name} -dbtype prot"
-        subprocess.run(makeblastdb_cmd, shell=True, check=True)
 
     def validate_annotation(self, annotation):
         """Validate a single annotation entry"""
@@ -108,7 +104,7 @@ class AnnotationPreparation:
                 
         return issues
 
-    def find_similar_sequences(self, annotation, threshold=0.9):
+    def find_similar_sequences(self, annotation, tool=None, threshold=0.9):
         """
         Find annotations with similar sequences using existing BLAST infrastructure
         
@@ -119,56 +115,93 @@ class AnnotationPreparation:
         Returns:
             list: List of Annotation objects with similar sequences
         """
-        # Check if we already have recent results
-        existing_results = Blastp_Result.objects.filter(
-            annotation=annotation,
-            database='internal',
-            status=0  # Completed successfully
-        ).order_by('-run_date').first()
-        
-        if not existing_results:
-            # Queue the BLAST search using existing infrastructure
+        # Use existing run_single_search task
+        try:
             run_single_search.delay(
                 accession=annotation.accession,
-                tool='blastp',
+                tool=tool,
                 database='internal',
-                site='localhost'  # Or appropriate site name
+                site='localhost'
             )
-            return []  # Results will be available later
-        
-        # Parse existing BLAST results
-        similar_annotations = []
-        blast_results = existing_results.result
-        
-        for hit in blast_results:
-            try:
-                hit_identity = float(hit.get('pident', 0)) / 100.0
-                if hit_identity >= threshold:
-                    hit_annotation = Annotation.objects.get(accession=hit.get('sseqid'))
-                    similar_annotations.append(hit_annotation)
-            except (Annotation.DoesNotExist, ValueError):
-                continue
+            print(f"Queued {tool} search for annotation {annotation.accession}")
             
-        return similar_annotations
+            # Wait for results
+            result = Blastp_Result.objects.filter(
+                annotation=annotation,
+                database='internal',
+                status=0  # Completed successfully
+            ).order_by('-run_date').first()
+            
+            if result:
+                similar_annotations = []
+                for hit in result.result:
+                    try:
+                        hit_identity = float(hit.get('pident', 0))
+                        if hit_identity >= (threshold * 100):
+                            hit_annotation = Annotation.objects.get(accession=hit.get('sseqid'))
+                            similar_annotations.append(hit_annotation)
+                    except (Annotation.DoesNotExist, ValueError):
+                        continue
+                return similar_annotations
+                
+        except (OperationalError, ConnectionError) as e:
+            print(f"Warning: Cannot connect to task queue ({str(e)})")
+            return []
 
     def standardize_annotation(self, annotation, similar_annotations):
-        """Standardize annotation based on similar sequences"""
+        """Standardize annotation based on similar sequences and record changes"""
+        from starship.models import Annotation_History
+        from django.contrib.auth.models import User
+        from django.utils import timezone
+        
         if not similar_annotations:
             return annotation
-            
+        
         # Get most common annotation name among similar sequences
         annotation_counts = defaultdict(int)
         for similar in similar_annotations:
             annotation_counts[similar.annotation] += 1
-            
+        
         if annotation_counts:
             most_common = max(annotation_counts.items(), key=lambda x: x[1])
             if most_common[1] >= len(similar_annotations) * 0.7:  # 70% consensus
-                annotation.annotation = most_common[0]
+                old_annotation = annotation.annotation
+                
+                # Only proceed if there's an actual change
+                if old_annotation != most_common[0]:
+                    # Create history entry before making changes
+                    history = Annotation_History(
+                        annotation=annotation,
+                        old_annotation=old_annotation,
+                        new_annotation=most_common[0],
+                        old_flag=annotation.flag,
+                        new_flag=annotation.flag,  # Flag remains unchanged
+                        old_public_notes=annotation.public_notes,
+                        new_public_notes=annotation.public_notes,  # Notes remain unchanged
+                        old_private_notes=annotation.private_notes,
+                        new_private_notes=annotation.private_notes,  # Notes remain unchanged
+                        user=self.admin_user,
+                        date=timezone.now(),
+                        reason="Automated standardization based on similar sequences"
+                    )
+                    
+                    # Update the annotation
+                    annotation.annotation = most_common[0]
+                    
+                    if not self.dry_run:
+                        history.save()
+                        annotation.save()
+                        print(f"Updated annotation {annotation.accession}:")
+                        print(f"  Old annotation: {old_annotation}")
+                        print(f"  New annotation: {annotation.annotation}")
+                    else:
+                        print(f"Would update annotation {annotation.accession}:")
+                        print(f"  Old annotation: {old_annotation}")
+                        print(f"  New annotation: {most_common[0]}")
                 
         return annotation
 
-    def process_all_annotations(self, annotations=None):
+    def process_all_annotations(self, annotations=None, tool=None):
         """Process and validate all annotations in the database"""
         print("Processing annotations..." + (" (DRY RUN)" if self.dry_run else ""))
         
@@ -194,7 +227,7 @@ class AnnotationPreparation:
                     tqdm.write(f"  - {issue}")
                     
             # Find similar sequences using existing infrastructure
-            similar = self.find_similar_sequences(annotation)
+            similar = self.find_similar_sequences(annotation, tool=tool)
             
             # Standardize annotation
             if similar:  # Only standardize if we have results
@@ -212,17 +245,6 @@ class AnnotationPreparation:
                 
         return stats
 
-    def __del__(self):
-        """Cleanup temporary files"""
-        try:
-            # Remove BLAST database files
-            for ext in ['.phr', '.pin', '.psq']:
-                os.remove(self.temp_fasta.name + ext)
-            # Remove temporary FASTA file
-            os.remove(self.temp_fasta.name)
-        except:
-            pass
-
 def main():
     # Add argument parsing
     parser = argparse.ArgumentParser(description='Prepare and validate annotation dataset.')
@@ -230,6 +252,8 @@ def main():
                        help='Show what changes would be made without actually making them')
     parser.add_argument('--limit', type=int, 
                        help='Limit the number of annotations to process (for testing)')
+    parser.add_argument('--tool', type=str, default='blastp', 
+                       help='Tool to use for annotation processing')
     args = parser.parse_args()
 
     # Database connection using environment variables
@@ -249,7 +273,7 @@ def main():
         print(f"Limiting to {args.limit} annotations")
         annotations = annotations[:args.limit]
         
-    stats = prep.process_all_annotations(annotations)  # Pass the annotations queryset
+    stats = prep.process_all_annotations(annotations, tool=args.tool)  # Pass the annotations queryset
     
     print("\nProcessing complete!")
     print(f"Total annotations processed: {stats['total']}")
