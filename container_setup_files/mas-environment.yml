@@ -68,7 +68,7 @@ dependencies:
   - zlib=1.2.11=h7b6447c_3
   - zstd=1.4.5=h9ceee32_0
   - tbl2asn
-  - interproscan
+  # - interproscan
   - pip:
     - asgiref==3.2.10
     - chardet==3.0.4
