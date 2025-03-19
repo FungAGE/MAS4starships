@@ -70,3 +70,25 @@ DEBUG_TOOLBAR_PANELS = [
     'debug_toolbar.panels.logging.LoggingPanel',
     'debug_toolbar.panels.profiling.ProfilingPanel',
 ]
+
+# Celery Configuration
+CELERY_BROKER_URL = f"amqp://mas:{os.getenv('RABBITMQ_DEFAULT_PASS')}@127.0.0.1:{os.getenv('RABBITMQ_PORT')}/"
+CELERY_RESULT_BACKEND = 'rpc://'
+CELERY_WORKERS = ['mas-worker@host']  # Name of your worker(s)
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+                'home.context_processors.worker_status',
+            ],
+        },
+    },
+]
