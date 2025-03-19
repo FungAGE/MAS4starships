@@ -147,8 +147,15 @@ def blastp_alignment_to_dict(alignment):
     }
 
 
-def add_context_for_starship_viz(context, phage, current_annotation_id=None):
-    context['phage_id'] = starship.id
+def add_context_for_starship_viz(context, starship, current_annotation_id=None):
+    """
+    Add visualization context for a starship
+    :param context: The context dictionary to update
+    :param starship: The starship object to visualize
+    :param current_annotation_id: Optional ID of the current annotation
+    :return: Updated context dictionary
+    """
+    context['starship_id'] = starship.id
     context['starship_length'] = len(starship.starship_sequence)
     feature_objects = Feature.objects.filter(starship__id=starship.id)
     # current_annotation_id = int(self.kwargs['accession'], 36)
@@ -195,22 +202,13 @@ def add_context_for_starship_viz(context, phage, current_annotation_id=None):
             features_dict['feature_id'] = f['id']
 
         # Deal with genes split over genome's ends
-        # if feature.start < feature.stop and feature.strand == '-':
-        #     f2 = copy(f)
-        #     f['start'] = context['starship_length']
-        #     f['stop'] = feature.stop
-        #     f2['start'] = feature.start
-        #     f2['stop'] = 0
-        #     features.append(f2)
-
-        elif feature.start > feature.stop and feature.strand == '+':
+        if feature.start > feature.stop and feature.strand == '+':
             f2 = copy(f)
             f['start'] = feature.start
             f['stop'] = context['starship_length']
             f2['start'] = 0
             f2['stop'] = feature.stop
             features.append(f2)
-
         else:
             f['start'] = feature.start
             f['stop'] = feature.stop

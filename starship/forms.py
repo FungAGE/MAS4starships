@@ -168,7 +168,7 @@ class Annotation_Form(CrispyModelForm):
         return annotation
 
 
-class Starship_Starship_Upload_Form(forms.Form):
+class Starship_Upload_Form(forms.Form):
     user_choices = User.objects.none()
 
     name = forms.CharField(
@@ -191,7 +191,7 @@ class Starship_Starship_Upload_Form(forms.Form):
     )
 
     def __init__(self, *args, **kwargs):
-        super(Starship_Starship_Upload_Form, self).__init__(*args, **kwargs)
+        super(Starship_Upload_Form, self).__init__(*args, **kwargs)
         # User choices should be limited to those with permissions to change annotations
         self.fields['assign_to'].queryset = starship_views.get_annotation_editors()
 
