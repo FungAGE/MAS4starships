@@ -26,7 +26,7 @@
     {% for genome in starship_info %}
     <tr>
       <td>
-        <a href="{% url 'starship:phage_detail' starship.pk %}"
+        <a href="{% url 'starship:starship_detail' starship.pk %}"
           >{{ starship.starship_name }}</a
         >
       </td>
@@ -39,7 +39,7 @@
       <td class="yellow-flag">{{ starship.yellow_gene_count }}</td>
       <td class="red-flag">{{ starship.red_gene_count }}</td>
       <td>
-        <a href="{% url 'starship:phage_download_fasta' starship.pk %}"
+        <a href="{% url 'starship:starship_download_fasta' starship.pk %}"
           >download fasta</a
         >
       </td>

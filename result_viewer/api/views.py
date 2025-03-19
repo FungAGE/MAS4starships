@@ -176,7 +176,7 @@ class UploadResultsView(PipelineAPIMixin, APIView):
 class StarshipData:
     def __init__(self, starship):
         self.starship_name = '<a href="{url}">{name}</a>'.format(
-            url=reverse('starship:phage_detail', kwargs={'pk': starship.id}),
+            url=reverse('starship:starship_detail', kwargs={'pk': starship.id}),
             name=starship.starship_name
         )
         self.species = starship.species
@@ -195,7 +195,7 @@ class StarshipData:
         self.starship_navis = starship.starship_navis
         self.starship_haplotype = starship.starship_haplotype
         self.download = '<a href="{}">download fasta</a>'.format(
-            reverse('starship:phage_download_fasta', kwargs={'starship_id': starship.id})
+            reverse('starship:starship_download_fasta', kwargs={'starship_id': starship.id})
         )
         self.navigator = '<a href="{}"><div class="glyphicon glyphicon-hand-right"></div></a>'.format(
             reverse('phage-nav-redirect', kwargs={'starship_name': starship.starship_name})

@@ -25,7 +25,7 @@
     <div class="block" id="nav">
         {{ navigator.description }}
         {% if navigator.type == "GenomeNavigator" %}
-            <a href="{% url 'starship:phage_detail' pk=starship_id %}">
+            <a href="{% url 'starship:starship_detail' pk=starship_id %}">
 {#                <div class="glyphicon glyphicon-hand-right"></div>#}
                 <i class="fa fa-share"></i>
             </a>
