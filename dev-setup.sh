@@ -37,4 +37,4 @@ fi
 
 # Start development server
 echo "Starting development server..."
-python manage.py runserver 
+python manage.py runserver localhost:8000 
