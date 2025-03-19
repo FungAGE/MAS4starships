@@ -57,7 +57,9 @@
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a href="{% url 'starship:upload_starship' %}"><i class="fa fa-upload"></i> Upload Starship</a></li>
-                                <li><a href="{% url 'starship:starship_delete' %}"><i class="fa fa-trash"></i> Delete Starship</a></li>
+                                {% if starship %}
+                                    <li><a href="{% url 'starship:starship_delete' pk=starship.id %}"><i class="fa fa-trash"></i> Delete Starship</a></li>
+                                {% endif %}
                                 <li><a href="{% url 'starship:starship_list' %}"><i class="fa fa-list"></i> Starship List</a></li>
                                 <li role="separator" class="divider"></li>
                                 <li><a href="{% url 'starship:upload_annotations' %}"><i class="fa fa-file-excel-o"></i> Upload Annotations</a></li>
@@ -169,11 +171,13 @@
                     </a>
                 </li>
 {#           ########## DELETE STARSHIP ###########}
-                <li>
-                    <a href="{% url 'starship:starship_delete' %}">
-                        Delete Starship
-                    </a>
-                </li>
+                {% if starship %}
+                    <li>
+                        <a href="{% url 'starship:starship_delete' pk=starship.id %}">
+                            Delete Starship
+                        </a>
+                    </li>
+                {% endif %}
 {#           ########## STARSHIP LIST ###########}
                 <li>
                     <a href="{% url 'starship:starship_list' %}">
