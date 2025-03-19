@@ -23,7 +23,7 @@
     </tr>
   </thead>
   <tbody>
-    {% for genome in starship_info %}
+    {% for starship in starship_info %}
     <tr>
       <td>
         <a href="{% url 'starship:starship_detail' starship.pk %}"
@@ -44,16 +44,16 @@
         >
       </td>
       <td>
-        <a href="{% url 'phage-nav-redirect' starship.starship_name %}">
+        <a href="{% url 'starship-nav-redirect' starship.starship_name %}">
           <div class="glyphicon glyphicon-hand-right"></div>
         </a>
       </td>
       <td>{{ starship.contigID }}</td>
       <td>{{ starship.elementBegin }}</td>
       <td>{{ starship.elementEnd }}</td>
-      <td>{{ starship.starship_family}}</td>
-      <td>{{ starship.starship_navis}}</td>
-      <td>{{ starship.starship_haplotype}}</td>
+      <td>{{ starship.starship_family }}</td>
+      <td>{{ starship.starship_navis }}</td>
+      <td>{{ starship.starship_haplotype }}</td>
     </tr>
     {% endfor %}
   </tbody>

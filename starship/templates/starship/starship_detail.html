@@ -6,12 +6,10 @@
 <meta charset="UTF-8" />
 <title>MAS | {{ starship.starship_name }}</title>
 <script src="/static/js/d3.min.js" charset="UTF-8"></script>
-{{ phage_data|json_script:"phage_data" }} {{
-feature_data|json_script:"feature_data" }} {% endblock %} {% block body %}
+{{ feature_data|json_script:"feature_data" }} {% endblock %} {% block body %}
 <div class="block">
   <h1>Starship Details: {{ starship.starship_name }}</h1>
   <table class="table-condensed">
-    {% for genome in starship_info %}
     <tr>
       <td><b>ID: </b></td>
       <td>{{ starship.pk }}</td>
@@ -33,25 +31,25 @@ feature_data|json_script:"feature_data" }} {% endblock %} {% block body %}
       <td>{{ starship.unpolished_gene_count }}</td>
     </tr>
     <tr>
-      <td class="review-flag"><b># Need Review: </b></td>
+      <td class="review-flag"><b>Need Review: </b></td>
       <td>{{ starship.review_name_gene_count }}</td>
     </tr>
     <tr>
-      <td class="green-flag"><b># Green Flag: </b></td>
+      <td class="green-flag"><b>Green Flag: </b></td>
       <td>{{ starship.green_gene_count }}</td>
     </tr>
     <tr>
-      <td class="yellow-flag"><b># Yellow Flag: </b></td>
+      <td class="yellow-flag"><b>Yellow Flag: </b></td>
       <td>{{ starship.yellow_gene_count }}</td>
     </tr>
     <tr>
-      <td class="red-flag"><b># Red Flag: </b></td>
+      <td class="red-flag"><b>Red Flag: </b></td>
       <td>{{ starship.red_gene_count }}</td>
     </tr>
     <tr>
       <td>
         <b
-          ><a href="{% url 'genome:starship_download_fasta' starship.pk %}"
+          ><a href="{% url 'starship:starship_download_fasta' starship.pk %}"
             >download fasta</a
           ></b
         >
@@ -60,13 +58,12 @@ feature_data|json_script:"feature_data" }} {% endblock %} {% block body %}
     <tr>
       <td>
         <b
-          ><a href="{% url 'genome:download_deliverables' starship.pk %}"
+          ><a href="{% url 'starship:download_deliverables' starship.pk %}"
             >download deliverables</a
           ></b
         >
       </td>
     </tr>
-    {% endfor %}
   </table>
 </div>
 
@@ -94,10 +91,10 @@ feature_data|json_script:"feature_data" }} {% endblock %} {% block body %}
 ></script>
 <script>
   const STARSHIP_LENGTH = {{ starship_length }};
-  const GENOME_ID = {{ starship.id }};
-  const GET_AA_SEQ_URL = "{% url 'genome:get_aa_sequence' %}";
+  const STARSHIP_ID = {{ starship.id }};
+  const GET_AA_SEQ_URL = "{% url 'starship:get_aa_sequence' %}";
   const GET_ANNO_DATA_URL = "{% url 'get_annotation_data' %}";
-  const GET_FEATURE_SEQ_URL = "{% url 'genome:get_feature_sequence' %}";
+  const GET_FEATURE_SEQ_URL = "{% url 'starship:get_feature_sequence' %}";
 </script>
 <script
   type="application/javascript"
