@@ -1,5 +1,5 @@
 from result_viewer.models import *
-from genome.models import *
+from starship.models import *
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
@@ -8,6 +8,8 @@ from Bio.Seq import Seq
 from Bio.Alphabet import IUPAC
 from simple_history.utils import get_history_manager_for_model
 
+from starship.models import Annotation, Feature, Starship
+from starship.views import get_dna_sequence, get_protein_sequence, get_rna_sequence
 
 def move_users():
     print('Starting moving users.')
@@ -58,6 +60,85 @@ def move_annotations():
     Annotation.objects.using('default').bulk_create(annos, batch_size=1000)
     get_history_manager_for_model(Annotation).using('default').bulk_create(histories, batch_size=1000)
     print('Done moving Annotations.')
+
+
+def move_starship_and_features():
+    print('Starting moving phages and features.')
+    features = []
+    new_annotations = []
+
+    i = 1
+    for phage in Phage.objects.using('old-mas').all():
+        print('Starting phage {}'.format(i))
+        i += 1
+
+        starship = Starship(
+            starship_name=starship.starship_name,
+            starship_sequence=starship.starship
+        )
+        starship.save(using='default')
+
+        phage_features = old_Feature.objects.using('old-mas').filter(phage__starship_name=starship.starship_name)
+
+        for feature in phage_features.all():
+            # Find annotation associated with feature
+            ftype = None
+            if feature.type == 'CDS' | feature.type == 'gene':
+                sequence = get_protein_sequence(
+                    feature.start,
+                    feature.stop,
+                    feature.strand,
+                    Seq(starship.starship_sequence)
+                )
+                ftype = 'CDS'
+
+            elif feature.type == 'repeat_region' or feature.type == 'Repeat Region':
+                sequence = get_dna_sequence(
+                    feature.start,
+                    feature.stop,
+                    feature.strand,
+                    starship.starship_sequence
+                )
+                ftype = 'Repeat Region'
+
+            elif feature.type == 'tRNA':
+                sequence = get_rna_sequence(
+                    feature.start,
+                    feature.stop,
+                    feature.strand,
+                    Seq(starship.starship_sequence)
+                )
+                ftype = 'tRNA'
+
+            else:
+                raise ValueError('Feature type not recognized')
+
+            try:
+                # If not found in amd table, look if we already created it for MAS table
+                mas_annotation = Annotation.objects.using('default').get(sequence=sequence)
+
+            # start from here
+            except ObjectDoesNotExist:
+                print('Warning: Annotation not found. Creating...')
+                mas_annotation = Annotation(
+                    sequence=sequence,
+                    flag=7
+                )
+                new_annotations.append(mas_annotation)
+                mas_annotation.save()
+
+            mas_feature = Feature(
+                starship=starship,
+                start=feature.start,
+                stop=feature.stop,
+                type=ftype,
+                strand=feature.strand,
+                annotation=mas_annotation
+            )
+            features.append(mas_feature)
+
+    Feature.objects.using('default').bulk_create(features, batch_size=1000)
+    print('Done moving phages and features')
 
 
 def move_search_results():
@@ -166,7 +247,7 @@ def glimmer_to_db_standard(start, stop, strand):
     return start, stop, strand
 
 
-def db_standard_to_gff(start, stop, strand, genome_length):
+def db_standard_to_gff(start, stop, strand, starship_length):
     '''
     GFF version 3 results are:
       - 1-based
@@ -179,12 +260,12 @@ def db_standard_to_gff(start, stop, strand, genome_length):
     # Handle forward wrap arounds
     if strand == '+' and start > stop:
         begin = start + 1
-        end = genome_length + stop
+        end = starship_length + stop
 
     return begin, end, strand
 
 
-def db_standard_to_tbl_text(start, stop, strand, genome_length, feature_type):
+def db_standard_to_tbl_text(start, stop, strand, starship_length, feature_type):
     '''
     Outputs text version of coordinates for tbl files.
     Tbl results are:
@@ -200,39 +281,39 @@ def db_standard_to_tbl_text(start, stop, strand, genome_length, feature_type):
         stop += 1
 
     if start < stop and strand == '-':
-        return '%i\t1\t%s\n%i\t%i\n' % (start, feature_type, genome_length, stop)
+        return '%i\t1\t%s\n%i\t%i\n' % (start, feature_type, starship_length, stop)
 
     elif start > stop and strand == '+':
-        return '%i\t%i\t%s\n1\t%i\n' % (start, genome_length, feature_type, stop)
+        return '%i\t%i\t%s\n1\t%i\n' % (start, starship_length, feature_type, stop)
 
     else:
         return '%i\t%i\t%s\n' % (start, stop, feature_type)
 
 
-def get_dna_sequence(start, stop, strand, genome):
+def get_dna_sequence(start, stop, strand, starship):
     if start < stop and strand == '+':
-        return genome[start:stop]
+        return starship[start:stop]
 
     elif start < stop and strand == '-':
-        return (genome[stop:] + genome[:start]).reverse_complement()
+        return (starship[stop:] + starship[:start]).reverse_complement()
 
     elif start > stop and strand == '+':
-        return (genome[start:] + genome[:stop])
+        return (starship[start:] + starship[:stop])
 
     elif start > stop and strand == '-':
-        return genome[stop:start].reverse_complement()
+        return starship[stop:start].reverse_complement()
 
 
-def get_protein_sequence(start, stop, strand, genome):
+def get_protein_sequence(start, stop, strand, starship):
     '''
-    Extract protein sequence from genome given coordinates in db standard format.
-    'genome' is a Bio.Seq object
+    Extract protein sequence from starship given coordinates in db standard format.
+    'starship' is a Bio.Seq object
     '''
-    return get_dna_sequence(start, stop, strand, genome).translate(table=11, cds=True)
+    return get_dna_sequence(start, stop, strand, starship).translate(table=11, cds=True)
 
 
-def get_rna_sequence(start, stop, strand, genome):
-    return get_dna_sequence(start, stop, strand, genome).transcribe()
+def get_rna_sequence(start, stop, strand, starship):
+    return get_dna_sequence(start, stop, strand, starship).transcribe()
 
 # with padding
 # 13 in base 10 = 000D in base 36

@@ -8,13 +8,12 @@
 *.sql
 *.tar.gz
 *.pid
+logs/**
 *.log
 MAS/settings/__init__.py
 mas_backup*.bundle
 MAS/settings_files/secret_key.txt
 output/**
-logs/**
-celerybeat-schedule.dat
 databases/**
 backup.sh
 .env
@@ -22,3 +21,4 @@ celerybeat-schedule.bak
 celerybeat-schedule.dat
 celerybeat-schedule.dir
 celerybeat-schedule.db
+static-files/**

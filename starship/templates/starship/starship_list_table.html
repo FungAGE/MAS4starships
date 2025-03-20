@@ -1,0 +1,66 @@
+{% if starship_info %} {% load static %}
+
+<table id="starship-table" class="table table-hover table-striped" width="100%">
+  <thead>
+    <tr>
+      <th>Starship Name</th>
+      <th>species</th>
+      <th>Starship Length</th>
+      <th># Genes</th>
+      <th># Genes Unannotated</th>
+      <th># Needs Review</th>
+      <th># Green Flag</th>
+      <th># Yellow Flag</th>
+      <th># Red Flag</th>
+      <th>Download Sequence</th>
+      <th>Nav</th>
+      <th>Starship Contig</th>
+      <th>Start Coordinates</th>
+      <th>End Coordinates</th>
+      <th>Starship family</th>
+      <th>Starship navis</th>
+      <th>Starship haplotype</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for starship in starship_info %}
+    <tr>
+      <td>
+        <a href="{% url 'starship:starship_detail' starship.pk %}"
+          >{{ starship.starship_name }}</a
+        >
+      </td>
+      <td>{{ starship.species }}</td>
+      <td>{{ starship.starship_length }}</td>
+      <td>{{ starship.gene_count }}</td>
+      <td>{{ starship.unpolished_gene_count }}</td>
+      <td class="review-flag">{{ starship.review_name_gene_count }}</td>
+      <td class="green-flag">{{ starship.green_gene_count }}</td>
+      <td class="yellow-flag">{{ starship.yellow_gene_count }}</td>
+      <td class="red-flag">{{ starship.red_gene_count }}</td>
+      <td>
+        <a href="{% url 'starship:starship_download_fasta' starship.pk %}"
+          >download fasta</a
+        >
+      </td>
+      <td>
+        <a href="{% url 'starship-nav-redirect' starship.starship_name %}">
+          <div class="glyphicon glyphicon-hand-right"></div>
+        </a>
+      </td>
+      <td>{{ starship.contigID }}</td>
+      <td>{{ starship.elementBegin }}</td>
+      <td>{{ starship.elementEnd }}</td>
+      <td>{{ starship.starship_family }}</td>
+      <td>{{ starship.starship_navis }}</td>
+      <td>{{ starship.starship_haplotype }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+
+  <tbody></tbody>
+</table>
+
+{% else %}
+<p>No Starships are available.</p>
+{% endif %}

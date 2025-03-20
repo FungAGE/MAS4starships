@@ -16,6 +16,7 @@ from rest_framework.parsers import FormParser
 from result_viewer.api.serializers import *
 from result_viewer.api.tasks import run_single_search, run_multiple_search
 
+from starship.models import Starship, Annotation
 
 class RunSearchAjaxView(APIView):
     '''
@@ -46,21 +47,21 @@ class RunSearchAjaxView(APIView):
             )
 
 
-class RunAllPhageProteinsAjaxView(APIView):
+class RunAllStarshipProteinsAjaxView(APIView):
 
     def post(self, request, format=None):
-        s = RunAllPhageProteinsAjaxSerializer(data=json.loads(request.data['data']))
+        s = RunAllStarshipProteinsAjaxSerializer(data=json.loads(request.data['data']))
 
         if s.is_valid():
             # Get data from serializer
-            genome_name = s.data['genome']
+            starship_name = s.data['starship']
             rerun = s.data['rerun']
             tools_and_databases = s.data['tools_and_databases']
 
             uri_scheme = 'https://' if request.is_secure() else 'http://'
             mas_server_uri = uri_scheme + request.site.domain
 
-            run_multiple_search.delay(genome_name, rerun, tools_and_databases, mas_server_uri)
+            run_multiple_search.delay(starship_name, rerun, tools_and_databases, mas_server_uri)
 
             return response.Response(s.data)
 
@@ -106,31 +107,31 @@ class GetProtSeqView(PipelineAPIMixin, APIView):
         return response.Response(s.data)
 
 
-class GetGenomeView(PipelineAPIMixin, APIView):
+class GetStarshipView(PipelineAPIMixin, APIView):
     permission_classes = [permissions.DjangoModelPermissions]
-    queryset = Genome.objects.all()
+    queryset = Starship.objects.all()
 
-    def get(self, request, genome_name, format=None):
+    def get(self, request, starship_name, format=None):
         try:
-            genome = self.queryset.get(genome_name=genome_name)
-            genome_features = Feature.objects.filter(genome=genome)
-            counts = genome_features.aggregate(
+            starship = self.queryset.get(starship_name=starship_name)
+            starship_features = Feature.objects.filter(starship=starship)
+            counts = starship_features.aggregate(
                 tRNAs=Count('id', filter=Q(type='tRNA')),
                 repeats=Count('id', filter=Q(type='Repeat Region')),
                 gene=Count('id', filter=Q(type='gene')),
                 cds=Count('id', filter=Q(type='CDS'))
             )
             if counts['repeats'] > 0:
-                DTR_length = len(genome_features.get(type='Repeat Region').annotation.sequence)
+                DTR_length = len(starship_features.get(type='Repeat Region').annotation.sequence)
             else:
                 DTR_length = 0
 
-        except Genome.DoesNotExist:
+        except Starship.DoesNotExist:
             raise Http404
 
-        s = GenomeSeqSerializer({
-            'genome_name': genome.genome_name,
-            'genome_sequence': genome.genome_sequence,
+        s = StarshipSeqSerializer({
+            'starship_name': starship.starship_name,
+            'starship_sequence': starship.starship_sequence,
             'num_cds': counts['cds'],
             'num_gene': counts['gene'],
             'num_trna': counts['tRNAs'],
@@ -172,36 +173,36 @@ class UploadResultsView(PipelineAPIMixin, APIView):
         return response.Response(s.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class GenomeData:
-    def __init__(self, genome):
-        self.genome_name = '<a href="{url}">{name}</a>'.format(
-            url=reverse('genome:phage_detail', kwargs={'pk': genome.id}),
-            name=genome.genome_name
+class StarshipData:
+    def __init__(self, starship):
+        self.starship_name = '<a href="{url}">{name}</a>'.format(
+            url=reverse('starship:starship_detail', kwargs={'pk': starship.id}),
+            name=starship.starship_name
         )
-        self.organism = genome.organism
-        self.genome_length = len(genome.genome_sequence)
-        self.num_cds = genome.num_cds
-        self.num_gene = genome.num_gene
-        self.num_unannotated = genome.num_unannotated
-        self.num_review = genome.num_review
-        self.num_green = genome.num_green
-        self.num_yellow = genome.num_yellow
-        self.num_red = genome.num_red
-        self.contigID = genome.contigID
-        self.elementBegin = genome.elementBegin
-        self.elementEnd = genome.elementEnd
-        self.starship_family = genome.starship_family
-        self.starship_navis = genome.starship_navis
-        self.starship_haplotype = genome.starship_haplotype
+        self.species = starship.species
+        self.starship_length = len(starship.starship_sequence)
+        self.num_cds = starship.num_cds
+        self.num_gene = starship.num_gene
+        self.num_unannotated = starship.num_unannotated
+        self.num_review = starship.num_review
+        self.num_green = starship.num_green
+        self.num_yellow = starship.num_yellow
+        self.num_red = starship.num_red
+        self.contigID = starship.contigID
+        self.elementBegin = starship.elementBegin
+        self.elementEnd = starship.elementEnd
+        self.starship_family = starship.starship_family
+        self.starship_navis = starship.starship_navis
+        self.starship_haplotype = starship.starship_haplotype
         self.download = '<a href="{}">download fasta</a>'.format(
-            reverse('genome:phage_download_fasta', kwargs={'genome_id': genome.id})
+            reverse('starship:starship_download_fasta', kwargs={'starship_id': starship.id})
         )
         self.navigator = '<a href="{}"><div class="glyphicon glyphicon-hand-right"></div></a>'.format(
-            reverse('phage-nav-redirect', kwargs={'phage_name': genome.genome_name})
+            reverse('phage-nav-redirect', kwargs={'starship_name': starship.starship_name})
         )
 
 
-class GetPhageDataView(APIView):
+class GetStarshipDataView(APIView):
     def get(self, request):
         params = self.read_parameters(request.GET)
 
@@ -214,28 +215,29 @@ class GetPhageDataView(APIView):
         unannotated = Count('feature__annotation__flag', filter=Q(feature__annotation__flag=flag_options_reverse['UNANNOTATED']))
         review = Count('feature__annotation__flag', filter=Q(feature__annotation__flag=flag_options_reverse['REVIEW NAME']))
 
-        genomes = Genome.objects.annotate(num_green=green).annotate(num_yellow=yellow).annotate(num_red=red).\
+        starships = Starship.objects.annotate(num_green=green).annotate(num_yellow=yellow).annotate(num_red=red).\
             annotate(num_unannotated=unannotated).annotate(num_review=review).\
             annotate(num_cds=cds).annotate(num_gene=gene)
 
-        total_num_genomes = genomes.count()
+        total_num_starships = starships.count()
 
-        genomes = genomes.filter(
-            Q(genome_name__icontains=params['search_val']) |
-            Q(organism__icontains=params['search_val'])
+        # Update the filter to use species instead of organism
+        starships = starships.filter(
+            Q(starship_name__icontains=params['search_val']) |
+            Q(species__icontains=params['search_val'])  # Changed from organism to species
         ).order_by(self.get_order_by_arg(params['order_col'], params['order_dir']))
 
-        filtered_num_genomes = genomes.count()
-        genomes = genomes[ params['start'] : params['start']+params['length'] ]
+        filtered_num_starships = starships.count()
+        starships = starships[ params['start'] : params['start']+params['length'] ]
 
-        genome_data = [GenomeData(p) for p in genomes]
-        # s = GenomeDataSerializer(phage_data, many=True)
+        starship_data = [StarshipData(p) for p in starships]
+        # s = StarshipDataSerializer(phage_data, many=True)
 
-        return response.Response(GenomeDataListSerializer({
-            'data': genome_data,
+        return response.Response(StarshipDataListSerializer({
+            'data': starship_data,
             'draw': params['draw'],
-            'recordsTotal': total_num_genomes,
-            'recordsFiltered': filtered_num_genomes
+            'recordsTotal': total_num_starships,
+            'recordsFiltered': filtered_num_starships
         }).data)
 
     def read_parameters(self, query_dict):
@@ -251,11 +253,11 @@ class GetPhageDataView(APIView):
 
     def get_order_by_arg(self, order_col, order_dir):
         if order_col == 0:
-            return 'genome_name' if order_dir == 'asc' else '-genome_name'
+            return 'starship_name' if order_dir == 'asc' else '-starship_name'
         elif order_col == 1:
-            return 'organism' if order_dir == 'asc' else '-organism'
+            return 'species' if order_dir == 'asc' else '-species'
         elif order_col == 2:
-            return Length('genome_sequence').asc() if order_dir == 'asc' else Length('genome_sequence').desc()
+            return Length('starship_sequence').asc() if order_dir == 'asc' else Length('starship_sequence').desc()
         elif order_col == 3:
             return 'num_gene' if order_dir == 'asc' else '-num_gene'
         elif order_col == 4:
@@ -283,19 +285,19 @@ class GetPhageDataView(APIView):
         
 
 class AnnotationData:
-    def __init__(self, annotation, genome_name=None):
+    def __init__(self, annotation, starship_name=None):
         self.sequence = '<div class="glyphicon glyphicon-menu-right aa-control details-control"></div>' \
                         '<input type="hidden" class="annotation" value="{pk}">'.format(pk=annotation.pk)
         self.feature = '<ul class="list-group">'
         for feature in annotation.feature_set.all():
             self.feature += '<li class="list-group-item list-group-item-text">'
             self.feature += '<a href="{url}">{description}</a>'.format(
-                url=reverse('genome:feature_detail', kwargs={'pk': feature.pk}),
+                url=reverse('starship:feature_detail', kwargs={'pk': feature.pk}),
                 description=feature
             )
         self.feature += '</ul>'
         self.accession = '<a href="{url}">{accession}</a>'.format(
-            url=reverse('genome:annotation_detail', kwargs={'pk': annotation.pk}),
+            url=reverse('starship:annotation_detail', kwargs={'pk': annotation.pk}),
             accession=annotation.accession_sql
         )
         self.annotation = annotation.annotation
@@ -305,17 +307,17 @@ class AnnotationData:
         self.flag = annotation.get_flag_display()
         self.assigned_to = annotation.assigned_to
         self.download = '<a href="{url}"><div class="glyphicon glyphicon-download"></div></a>'.format(
-            url=reverse('genome:annotation_download', kwargs={'annotation_id': annotation.pk})
+            url=reverse('starship:annotation_download', kwargs={'annotation_id': annotation.pk})
         )
         self.history = '<a href="{url}"><i class="fa fa-history"></i></a>'.format(
-            url=reverse('genome:annotation_history', kwargs={'annotation_pk': annotation.pk})
+            url=reverse('starship:annotation_history', kwargs={'annotation_pk': annotation.pk})
         )
 
-        if genome_name:
+        if starship_name:
             view_results_url = reverse('view-results', kwargs={
-                'navigator': 'GenomeNavigator',
+                'navigator': 'StarshipNavigator',
                 'accession': annotation.accession,
-                'nav_arg': genome_name
+                'nav_arg': starship_name
             })
         else:
             view_results_url = reverse('accession-redirect', kwargs={'accession': annotation.accession})
@@ -329,12 +331,12 @@ class GetAnnotationListView(APIView):
     def get(self, request):
         params = self.read_parameters(request.GET)
 
-        if params['genome_id']:
-            annotations = Annotation.objects.filter(feature__genome_id=params['genome_id']).distinct()
-            genome_name = Genome.objects.get(id=params['genome_id']).genome_name
+        if params['starship_id']:
+            annotations = Annotation.objects.filter(feature__starship_id=params['starship_id']).distinct()
+            starship_name = Starship.objects.get(id=params['starship_id']).starship_name
         else:
             annotations = Annotation.objects
-            genome_name = None
+            starship_name = None
 
         # Annotate each annotation with accession (Only works in mysql/mariadb)
         annotations = annotations.annotate(
@@ -361,7 +363,7 @@ class GetAnnotationListView(APIView):
         filtered_num_annotations = annotations.count()
 
         annotations = annotations[params['start'] : params['start'] + params['length']]
-        annotation_data = [AnnotationData(a, genome_name) for a in annotations]
+        annotation_data = [AnnotationData(a, starship_name) for a in annotations]
 
         return response.Response(AnnotationDataListSerializer({
             'data': annotation_data,
@@ -378,7 +380,7 @@ class GetAnnotationListView(APIView):
             'order_col': int(query_dict.get('order[0][column]')),
             'order_dir': query_dict.get('order[0][dir]'),
             'search_val': query_dict.get('search[value]'),
-            'genome_id': None if query_dict.get('genome_id') == 'NaN' else int(query_dict.get('genome_id'))
+            'starship_id': None if query_dict.get('starship_id') == 'NaN' else int(query_dict.get('starship_id'))
         }
 
     def get_order_by_arg(self, order_col, order_dir):

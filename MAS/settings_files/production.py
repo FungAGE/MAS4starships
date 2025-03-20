@@ -32,7 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'result_viewer.apps.ResultViewerConfig',
-    'genome.apps.GenomesConfig',
+    'starship.apps.StarshipsConfig',
     'home.apps.HomeConfig',
     'simple_history',
     'crispy_forms',

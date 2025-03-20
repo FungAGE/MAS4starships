@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from simple_history.models import HistoricalRecords
 
-from genome.models import *
+from starship.models import *
 
 import os
 
@@ -35,7 +35,7 @@ class HHSearch_Result(models.Model):
     status = models.IntegerField(default=0, choices=search_status_options)
 
     class Meta:
-        # db_table = 'genome_hhsearch_result'
+        # db_table = 'starship_hhsearch_result'
         unique_together = ['annotation', 'database']
 
 
@@ -53,7 +53,7 @@ class Blastp_Result(models.Model):
     status = models.IntegerField(default=0, choices=search_status_options)
 
     class Meta:
-        # db_table = 'genome_blastp_result'
+        # db_table = 'starship_blastp_result'
         unique_together = ['annotation', 'database']
 
 
@@ -69,10 +69,25 @@ class RPSBlast_Result(models.Model):
     status = models.IntegerField(default=0, choices=search_status_options)
 
     class Meta:
-        # db_table = 'genome_rpsblast_result'
+        # db_table = 'starship_rpsblast_result'
         unique_together = ['annotation', 'database']
 
 
 class PDB_Accession_Mapping(models.Model):
     pdb_accession = models.CharField(max_length=20, null=False, blank=False, unique=True)
     pdb_chain_name = models.CharField(max_length=1500, blank=False, null=True)
+
+
+class Interpro_Result(models.Model):
+    database_options = (
+        ('interpro', 'InterPro Database'),
+    )
+
+    annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE, null=False, db_index=True)
+    database = models.CharField(max_length=50, choices=database_options, null=False, blank=False)
+    result = models.FileField(upload_to=result_upload_to, null=True)
+    run_date = models.DateTimeField(null=True)
+    status = models.IntegerField(default=0, choices=search_status_options)
+
+    class Meta:
+        unique_together = ['annotation', 'database']

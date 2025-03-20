@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from django.views import generic
 
 from result_viewer.views import MixinForBaseTemplate
-from genome.models import Annotation
-from genome.models import Genome
+from starship.models import Annotation
+from starship.models import Starship
 
 
 class HomePageView(MixinForBaseTemplate, generic.TemplateView):
@@ -36,7 +36,7 @@ class HomePageView(MixinForBaseTemplate, generic.TemplateView):
                 last_weeks_annotations.values("id").distinct().count()
             )
 
-            ship_count = Genome.objects.count()
+            ship_count = Starship.objects.count()
             context["ship_count"] = ship_count
 
         return context

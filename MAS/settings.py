@@ -28,14 +28,15 @@ if os.getenv("CELERY_WORKER") == "TRUE":
     }
 else:
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.mysql",
-            "OPTIONS": {
-                "host": "mas-sql-server",
-                "database": "mas",
-                "user": "root",
-                "password": os.getenv("MYSQL_ROOT_PASSWORD"),
-            },
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'OPTIONS': {
+                'host': os.getenv('DB_HOST', 'mas-sql-server'),
+                'database': 'mas',
+                'user': 'root',
+                'password': os.getenv('MYSQL_ROOT_PASSWORD'),
+                'port': int(os.getenv('DB_PORT', '3306')),
+            }
         }
     }
 
@@ -119,19 +120,21 @@ PROTEIN_DATABASE = "/mnt/sda/johannesson_lab/adrian/bin/MAS/internal_db/internal
 
 GIT_DIR = os.path.join(BASE_DIR, ".git")
 
-if os.getenv("CELERY_WORKER") == "TRUE":
-    CELERY_BROKER_URL = "amqp://mas:{password}@0.0.0.0".format(
-        password=os.getenv("RABBITMQ_DEFAULT_PASS")
+if os.getenv('CELERY_WORKER') == 'TRUE':
+    CELERY_BROKER_URL = 'amqp://mas:{password}@mas-message-broker:{port}'.format(
+        password=os.getenv('RABBITMQ_DEFAULT_PASS'),
+        port=os.getenv('RABBITMQ_PORT', '5672')
     )
 else:
-    CELERY_BROKER_URL = "amqp://mas:{password}@mas-message-broker".format(
-        password=os.getenv("RABBITMQ_DEFAULT_PASS")
+    CELERY_BROKER_URL = 'amqp://mas:{password}@127.0.0.1:{port}'.format(
+        password=os.getenv('RABBITMQ_DEFAULT_PASS'),
+        port=os.getenv('RABBITMQ_PORT', '5672')
     )
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
-CELERY_WORKERS = ["mas-worker@host"]
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_WORKERS = ['mas-worker@host']
 
 LUIGI_CFG = os.path.join(BASE_DIR, "AnnotationToolPipeline", "luigi.cfg")
 
-GENOME_NAME_FORMAT = ""
+STARSHIP_NAME_FORMAT = ""
 # GENOME_NAME_FORMAT = r"(?:AMD|INT)_[A-Z]_[a-z]+_[0-9A-Z]+_Phi_[0-9]{3}$"

@@ -255,7 +255,7 @@ d3.select('#submit-genome')
         };
         var response = $.ajax({
             type: 'POST',
-            url: RUN_SEARCH_FOR_PHAGE_URL,
+            url: RUN_SEARCH_FOR_STARSHIP_URL,
             data: { 'data': JSON.stringify(d) },
             headers: {'X-CSRFToken': getCookie('csrftoken')},
             dataType: 'json',

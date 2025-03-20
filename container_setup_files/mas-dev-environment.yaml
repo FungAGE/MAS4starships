@@ -1,0 +1,41 @@
+name: mas
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python
+  - biopython>=1.79
+  - blast=2.9.0
+  - django>=3.1.2
+  - glimmer=3.02
+  - infernal=1.1.2
+  - jinja2
+  - mysql-connector-c
+  - mysqlclient
+  - numpy
+  - pandas
+  - pillow
+  - pip
+  - psycopg2
+  - reportlab
+  - trnascan-se
+  - tbl2asn
+  - pip:
+    - asgiref==3.2.10
+    - chardet==3.0.4
+    - clustergrammer==1.13.6
+    - django-crispy-forms==1.9.2
+    - django-debug-toolbar==3.1.1
+    - django-simple-history==2.12.0
+    - djangorestframework==3.12.1
+    - docx-mailmerge==0.5.0
+    - et-xmlfile==1.0.1
+    - idna==2.10
+    - lxml==4.6.1
+    - requests==2.24.0
+    - urllib3==1.25.11
+    - celery==5.0.2
+    - luigi==3.0.2
+    - openpyxl==3.0.5
+    - libfaketime==2.0.0

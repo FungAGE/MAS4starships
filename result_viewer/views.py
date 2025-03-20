@@ -4,6 +4,7 @@ from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404, HttpResponse
+from kombu.exceptions import OperationalError
 
 import math
 from copy import copy
@@ -15,7 +16,8 @@ from result_viewer.forms import AnnotationForm, GenomeSearchForm
 from result_viewer.hhsuite2_text import Hhsuite2TextParser
 from result_viewer.models import *
 from result_viewer.navigator import FlagNavigator, GenomeNavigator, AssignmentNavigator
-from genome.models import *
+from starship.models import *
+from result_viewer.utils import interproscan_tsv_to_dict
 
 
 def blastp_alignment_to_str(alignment):
@@ -145,10 +147,17 @@ def blastp_alignment_to_dict(alignment):
     }
 
 
-def add_context_for_genome_viz(context, phage, current_annotation_id=None):
-    context['phage_id'] = phage.id
-    context['genome_length'] = len(phage.genome_sequence)
-    feature_objects = Feature.objects.filter(genome__id=phage.id)
+def add_context_for_starship_viz(context, starship, current_annotation_id=None):
+    """
+    Add visualization context for a starship
+    :param context: The context dictionary to update
+    :param starship: The starship object to visualize
+    :param current_annotation_id: Optional ID of the current annotation
+    :return: Updated context dictionary
+    """
+    context['starship_id'] = starship.id
+    context['starship_length'] = len(starship.starship_sequence)
+    feature_objects = Feature.objects.filter(starship__id=starship.id)
     # current_annotation_id = int(self.kwargs['accession'], 36)
     features = []
     features_dict = {}
@@ -188,27 +197,18 @@ def add_context_for_genome_viz(context, phage, current_annotation_id=None):
             f['annotation'] = feature.annotation.annotation
         except AttributeError:
             f['annotation'] = "nan"
-        f['href'] = reverse('view-results', args=(f['accession'], 'GenomeNavigator', phage.genome_name))
+        f['href'] = reverse('view-results', args=(f['accession'], 'GenomeNavigator', starship.starship_name))
         if f['annotation_id'] == current_annotation_id:
             features_dict['feature_id'] = f['id']
 
         # Deal with genes split over genome's ends
-        if feature.start < feature.stop and feature.strand == '-':
-            f2 = copy(f)
-            f['start'] = context['genome_length']
-            f['stop'] = feature.stop
-            f2['start'] = feature.start
-            f2['stop'] = 0
-            features.append(f2)
-
-        elif feature.start > feature.stop and feature.strand == '+':
+        if feature.start > feature.stop and feature.strand == '+':
             f2 = copy(f)
             f['start'] = feature.start
-            f['stop'] = context['genome_length']
+            f['stop'] = context['starship_length']
             f2['start'] = 0
             f2['stop'] = feature.stop
             features.append(f2)
-
         else:
             f['start'] = feature.start
             f['stop'] = feature.stop
@@ -230,8 +230,13 @@ class MixinForBaseTemplate(generic.base.ContextMixin):
         else:
             context['dark_mode'] = self.request.session.get('dark_mode', False)
 
-        context['genome_search_form'] = GenomeSearchForm()
-        context['worker_active'] = bool(app.control.inspect(settings.CELERY_WORKERS).ping())
+        context['starship_search_form'] = GenomeSearchForm()
+        # Safely check worker status
+        try:
+            context['worker_active'] = bool(app.control.inspect(settings.CELERY_WORKERS).ping())
+        except (OperationalError, AttributeError, ConnectionError):
+            # If we can't connect to the message broker or CELERY_WORKERS isn't defined
+            context['worker_active'] = False
         return context
 
 
@@ -281,7 +286,7 @@ class ViewResults(LoginRequiredMixin, MixinForBaseTemplate, generic.UpdateView):
 
         # URLs
         context['run_search_url'] = reverse('run_search')
-        context['run_search_for_phage_url'] = reverse('run_search_for_phage')
+        context['run_search_for_starship_url'] = reverse('run_search_for_starship')
 
         # Default tool and database
         context['tool'] = 'blastp'
@@ -299,16 +304,16 @@ class ViewResults(LoginRequiredMixin, MixinForBaseTemplate, generic.UpdateView):
         # History info
         context['history'] = context['annotation'].history.all().order_by('history_date')
 
-        # Genome visualization
+        # Starship visualization
         if context['navigator']['type'] == 'GenomeNavigator':
-            genome = Genome.objects.get(genome_name=self.kwargs['nav_arg'])
-            context['genome_id'] = genome.id
-            if genome.feature_set.count() < 1000:
+            starship = Starship.objects.get(starship_name=self.kwargs['nav_arg'])
+            context['starship_id'] = starship.id
+            if starship.feature_set.count() < 1000:
                 current_annotation_id = int(self.kwargs['accession'], 36)
-                context = add_context_for_genome_viz(context, genome, current_annotation_id)
+                context = add_context_for_starship_viz(context, starship, current_annotation_id)
 
         # Disable form fields if user has no permission to edit
-        if not self.request.user.has_perm('genome.change_annotation'):
+        if not self.request.user.has_perm('starship.change_annotation'):
             for field_name in context['form'].fields:
                 context['form'].fields[field_name].disabled = True
 
@@ -383,6 +388,29 @@ class ViewResults(LoginRequiredMixin, MixinForBaseTemplate, generic.UpdateView):
             except ObjectDoesNotExist:
                 pass
 
+        # Add InterProScan results
+        context['interpro_alignments'] = {}
+        
+        for db in Interpro_Result.database_options:
+            db = db[0]
+            context['interpro_alignments'][db] = {'matches': None, 'date_ran': None, 'status': None}
+            
+            try:
+                interpro_result = Interpro_Result.objects.get(annotation=context['annotation'], database=db)
+                
+                if interpro_result.result:
+                    context['interpro_alignments'][db]['matches'] = interproscan_xml_to_dict(
+                        interpro_result.result.open(mode='r')
+                    )
+                else:
+                    context['interpro_alignments'][db]['matches'] = []
+                
+                context['interpro_alignments'][db]['date_ran'] = interpro_result.run_date
+                context['interpro_alignments'][db]['status'] = interpro_result.status
+                
+            except ObjectDoesNotExist:
+                pass
+
         return context
 
     def dispatch(self, request, *args, **kwargs):
@@ -418,7 +446,7 @@ class ViewResults(LoginRequiredMixin, MixinForBaseTemplate, generic.UpdateView):
             return self.nav.next()
 
     def post(self, request, *args, **kwargs):
-        if request.user.has_perm('genome.change_annotation'):
+        if request.user.has_perm('starship.change_annotation'):
             return super().post(request, *args, **kwargs)
         else:
             raise PermissionError('Current user does not have permissions to change annotations')
@@ -443,16 +471,16 @@ class FlagNavRedirect(generic.RedirectView):
 
         else:
             return reverse('no-results', args=('FlagNavigator', kwargs['flag']))
-            # raise ObjectDoesNotExist('Genome has no annotations.')
+            # raise ObjectDoesNotExist('Starship has no annotations.')
 
 
 class GenomeNavRedirect(generic.RedirectView):
     def get_redirect_url(self, *args, **kwargs):
         try:
-            first_obj = GenomeNavigator(kwargs['phage_name']).get_current_object()
-            return reverse('view-results', args=(first_obj.accession, 'GenomeNavigator', kwargs['phage_name']))
+            first_obj = GenomeNavigator(kwargs['starship_name']).get_current_object()
+            return reverse('view-results', args=(first_obj.accession, 'GenomeNavigator', kwargs['starship_name']))
         except:
-            return reverse('no-results', args=('GenomeNavigator', kwargs['phage_name']))
+            return reverse('no-results', args=('GenomeNavigator', kwargs['starship_name']))
 
 
 class AssignmentNavRedirect(generic.RedirectView):
