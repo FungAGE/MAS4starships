@@ -77,7 +77,7 @@ class PipelineTask(BaseTask):
     def pipeline_out_dir(self):
         """
         Returns the directory which will hold the files output by this task.
-        '''
+        """
         if hasattr(self, 'starship_name') and self.starship_name:
             return os.path.join(self.g.OUTPUT_DIR, self.starship_name)
 
