@@ -32,10 +32,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 'blast_viewer.apps.BlastViewerConfig',
+    'starship.apps.StarshipConfig',
     'result_viewer.apps.ResultViewerConfig',
+    # 'blast_viewer.apps.BlastViewerConfig',
     # 'similarity_viewer.apps.SimilarityViewerConfig',
-    'starship.apps.StarshipsConfig',
     'home.apps.HomeConfig',
     'simple_history',
     'crispy_forms',
@@ -44,6 +44,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -53,7 +54,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.contrib.sites.middleware.CurrentSiteMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 DEBUG_TOOLBAR_PANELS = [
@@ -92,3 +92,8 @@ TEMPLATES = [
         },
     },
 ]
+
+# Configure Debug Toolbar
+DEBUG_TOOLBAR_CONFIG = {
+    'SHOW_TOOLBAR_CALLBACK': lambda request: DEBUG,
+}

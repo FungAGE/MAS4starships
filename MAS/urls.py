@@ -37,6 +37,8 @@ urlpatterns = [
     # path('similarity_viewer/', include('similarity_viewer.urls'))
 ]
 
-if not settings.IN_PRODUCTION:
+if settings.DEBUG:
     import debug_toolbar
-    urlpatterns = [path('__debug__/', include(debug_toolbar.urls)),] + urlpatterns
+    urlpatterns += [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ]
