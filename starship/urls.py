@@ -26,7 +26,7 @@ urlpatterns = [
     path('annotation/download/excel/unannotated_annotations/', views.download_unannotated_annotations, name='download_unannotated_annotations'),
 
     # ajax url used for nucleotide sequence drop down
-    path('ajax/phage/get', views.Get_Starship.as_view(), name='get_starship'),
+    path('ajax/starship/get', views.Get_Starship.as_view(), name='get_starship'),
     # ajax url used for amino acid sequence drop down
     path('ajax/annotation/get/aa_sequence/', views.Get_AA_Sequence.as_view(), name='get_aa_sequence'),
     path('ajax/feature/get/nucleotide_sequence/', views.Get_Feature_Sequence.as_view(), name='get_feature_sequence'),

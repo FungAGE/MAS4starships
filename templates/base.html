@@ -221,7 +221,7 @@
                     console.log(this);
                     var starship_name = $(this).children("option:selected").text();
                     {# Solution found on stackoverflow.com/questions/17832194/ to use javascript variable in Django URL #}
-                    location.href = '{% url 'phage-nav-redirect' 12345 %}'.replace(/12345/, starship_name);
+                    location.href = '{% url 'starship-nav-redirect' 12345 %}'.replace(/12345/, starship_name);
                     {#location.href = '/viewer/GenomeNavigator-' + $(this).children("option:selected").text();#}
                 });
 

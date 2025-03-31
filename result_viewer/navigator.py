@@ -95,16 +95,16 @@ class GenomeNavigator(Navigator):
     def __init__(self, starship_name, accession=None):
         self.nav_arg = starship_name
 
-        phage_obj = Starship.objects.get(starship_name=starship_name)
-        self.queryset = Annotation.objects.filter(feature__starship=phage_obj).order_by('feature__start').distinct()
+        starship_obj = Starship.objects.get(starship_name=starship_name)
+        self.queryset = Annotation.objects.filter(feature__starship=starship_obj).order_by('feature__start').distinct()
         self.size = self.queryset.count()
         self.description = 'You are navigating {}'.format(starship_name)
 
         if accession:
             pk = int(accession, 36)
 
-            # Use the queryset as a value list to find the position in the phage
-            # this_start = Feature.objects.filter(annotation_id=pk, phage=phage_obj).order_by('start')[0].start
+            # Use the queryset as a value list to find the position in the starship
+            # this_start = Feature.objects.filter(annotation_id=pk, starship=starship_obj).order_by('start')[0].start
             # self.idx = self.queryset.filter(feature__start__lt=this_start).count()
             # value_list = self.queryset.values_list('pk', flat=True)
             self.idx = list(self.queryset.values_list('pk', flat=True)).index(pk)

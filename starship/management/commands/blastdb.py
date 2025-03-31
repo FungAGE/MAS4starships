@@ -14,22 +14,22 @@ class Command(BaseCommand):
     help = 'creates blast database for protein and nucleotide'
 
     def handle(self, *args, **options):
-        self.phage_blastdb()
+        self.starship_blastdb()
         self.annotation_blastdb()
 
     # creates nucleotide blast database
-    def phage_blastdb(self):
+    def starship_blastdb(self):
         # temp = TemporaryDirectory()
         # file_path = os.path.join(temp.name, "AMD_Complete_Phage_Genomes")
         file_path = settings.NUCLEOTIDE_DATABASE + '.fa'
-        phages = starship_models.Starship.objects.all()
-        phage_list = []
-        for phage in phages:
+        starships = starship_models.Starship.objects.all()
+        starship_list = []
+        for starship in starships:
             sequence = SeqRecord(Seq(starship.starship_sequence, generic_nucleotide), id=starship.starship_name,
                                  description=starship.starship_name)
-            phage_list.append(sequence)
+            starship_list.append(sequence)
 
-        SeqIO.write(phage_list, file_path, "fasta")
+        SeqIO.write(starship_list, file_path, "fasta")
         # nucleotide_db = os.path.join(settings.NUCLEOTIDE_DATABASE, 'AMD_Complete_Phages')
         subprocess.run(['makeblastdb', '-in', '"%s"' % file_path, '-input_type', 'fasta', '-dbtype', 'nucl', '-title',
                         'MAS Starships', '-out', settings.NUCLEOTIDE_DATABASE], check=True)
@@ -47,9 +47,9 @@ class Command(BaseCommand):
             public_note = annotation.public_notes
             private_note = annotation.private_notes
             flag = annotation.get_flag_display()
-            phages = views.annotation_starships(annotation)
+            starships = views.annotation_starships(annotation)
             sequence = SeqRecord(Seq(aa_sequence, generic_protein), id=annotation.accession + " |",
-                                 description="%s | %s | %s | %s %s" % (anno, public_note, private_note, flag, phages))
+                                 description="%s | %s | %s | %s %s" % (anno, public_note, private_note, flag, starships))
             annotation_list.append(sequence)
         SeqIO.write(annotation_list, file_path, "fasta")
         # protein_db = os.path.join(settings.PROTEIN_DATABASE, 'AMD_Annotated_Proteins.faa')

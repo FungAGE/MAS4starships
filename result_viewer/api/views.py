@@ -16,7 +16,7 @@ from rest_framework.parsers import FormParser
 from result_viewer.api.serializers import *
 from result_viewer.api.tasks import run_single_search, run_multiple_search
 
-from starship.models import Starship, Annotation
+from starship.models import Starship, Annotation, Feature
 
 class RunSearchAjaxView(APIView):
     '''
@@ -198,7 +198,7 @@ class StarshipData:
             reverse('starship:starship_download_fasta', kwargs={'starship_id': starship.id})
         )
         self.navigator = '<a href="{}"><div class="glyphicon glyphicon-hand-right"></div></a>'.format(
-            reverse('phage-nav-redirect', kwargs={'starship_name': starship.starship_name})
+            reverse('starship-nav-redirect', kwargs={'starship_name': starship.starship_name})
         )
 
 
@@ -231,7 +231,7 @@ class GetStarshipDataView(APIView):
         starships = starships[ params['start'] : params['start']+params['length'] ]
 
         starship_data = [StarshipData(p) for p in starships]
-        # s = StarshipDataSerializer(phage_data, many=True)
+        # s = StarshipDataSerializer(starship_data, many=True)
 
         return response.Response(StarshipDataListSerializer({
             'data': starship_data,

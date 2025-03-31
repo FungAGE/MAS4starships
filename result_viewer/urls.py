@@ -12,7 +12,7 @@ urlpatterns = [
          name='no-results'
          ),
     path('navigator/flag/<int:flag>', views.FlagNavRedirect.as_view(), name='flag-nav-redirect'),
-    path('navigator/phage/<str:starship_name>', views.GenomeNavRedirect.as_view(), name='phage-nav-redirect'),
+    path('navigator/starship/<str:starship_name>', views.GenomeNavRedirect.as_view(), name='starship-nav-redirect'),
     path('navigator/assignment/<str:user>', views.AssignmentNavRedirect.as_view(), name='assignment-nav-redirect'),
     path('result/<str:accession>', views.AccessionRedirect.as_view(), name='accession-redirect'),
     path('<str:accession>', views.AccessionRedirect.as_view(), name='accession-redirect'),

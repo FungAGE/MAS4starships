@@ -500,7 +500,7 @@ class AccessionRedirect(generic.RedirectView):
     def get_redirect_url(self, *args, **kwargs):
         '''
         If only the accession is provided we will use the flag navigator becuase one annotation
-        could belong to multiple phages and an annotation may not be assigned to anyone.
+        could belong to multiple starships and an annotation may not be assigned to anyone.
         '''
         obj = Annotation.objects.get(pk=int(kwargs['accession'], 36))
         return reverse('view-results', args=(kwargs['accession'], 'FlagNavigator', obj.flag))

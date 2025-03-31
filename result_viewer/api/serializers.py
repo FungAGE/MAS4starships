@@ -9,7 +9,7 @@ class ProteinSeqSerializer(serializers.ModelSerializer):
         fields = ['sequence']
 
 
-class GenomeSeqSerializer(serializers.Serializer):
+class StarshipSeqSerializer(serializers.Serializer):
     starship_name = serializers.CharField(max_length=Starship._meta.get_field('starship_name').max_length)
     starship_sequence = serializers.CharField(max_length=Starship._meta.get_field('starship_sequence').max_length)
     num_cds = serializers.IntegerField()
@@ -81,8 +81,8 @@ class ToolsAndDatabasesSerializer(serializers.Serializer):
     )
 
 
-class RunAllPhageProteinsAjaxSerializer(serializers.Serializer):
-    genome = serializers.CharField(max_length=Starship._meta.get_field('starship_name').max_length)
+class RunAllStarshipProteinsAjaxSerializer(serializers.Serializer):
+    starship = serializers.CharField(max_length=Starship._meta.get_field('starship_name').max_length)
     rerun = serializers.BooleanField(default=False)
     tools_and_databases = ToolsAndDatabasesSerializer()
 
@@ -90,7 +90,7 @@ class RunAllPhageProteinsAjaxSerializer(serializers.Serializer):
         try:
             Starship.objects.get(starship_name=value)
         except Starship.DoesNotExist:
-            raise serializers.ValidationError('Invalid genome name: Does not exist')
+            raise serializers.ValidationError('Invalid starship name: Does not exist')
 
         return value
 
