@@ -46,31 +46,73 @@
 
 {#           ########## RESULT NAVIGATION OPTIONS ###########}
                 <ul class="nav navbar-nav">
-                    <li id="show-nav-options" class="dropdown">
-                        <a href="#" role="button">
-                            Show Result Navigation Options <span class="caret"></span>
+
+                    {# Starship Navigation #}
+                    <form class="navbar-form navbar-left" style="margin-top: 10px; margin-bottom: 10px;">
+                        <div class="form-group" id="starship-nav-form">
+                            {{ starship_search_form.search_starship }}
+                        </div>
+                    </form>
+
+                    {# Starship List #}
+                    <li>
+                        <a href="{% url 'starship:starship_list' %}">
+                            <i class="fa fa-list"></i> Starship List
                         </a>
                     </li>
 
-{#           ########## ADDITIONAL NAVIGATION OPTIONS ###########}
-                    <li id="show-additional-nav-options" class="dropdown">
-                        <a href="#" role="button">
-                            Show Additional Navigation Options <span class="caret"></span>
+                    {# Annotation List #}
+                    <li>
+                        <a href="{% url 'starship:annotation_list' %}">
+                            <i class="fa fa-tags"></i> Annotation List
                         </a>
                     </li>
+
+
+                    {# Upload Starship #}
+                    <li>
+                        <a href="{% url 'starship:upload_starship' %}">
+                            <i class="fa fa-upload"></i> Upload Starship
+                        </a>
+                    </li>
+
+                    {# Upload Annotations #}
+                    <li>
+                        <a href="{% url 'starship:upload_annotations' %}">
+                            <i class="fa fa-file-excel-o"></i> Upload Annotations
+                        </a>
+                    </li>
+
+                    {# FLAG NAV SELECTOR #}
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">
+                            <i class="fa fa-flag"></i> Navigate by Flag <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% for flag in annotation_flags %}
+                                <li><a href="{% url 'flag-nav-redirect' flag.0 %}">{{ flag.1 }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+
+
+                    {# Reviewer Navigation #}
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">
+                            <i class="fa fa-user"></i> Navigate by Assigned Reviewer <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% for user in users %}
+                                <li><a href="{% url 'assignment-nav-redirect' user %}">{{ user }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+
                 </ul>
 
 {#           ########## USER MANAGEMENT ###########}
                 <ul class="nav navbar-nav navbar-right">
                     <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">
-                            {% if user.is_authenticated %}
-                                {{ user.get_username }}
-                            {% else %}
-                                Guest
-                            {% endif %}
-                            <span class="caret"></span>
-                        </a>
                         <ul class="dropdown-menu">
                             <li><a href="{% url 'login' %}">Login</a></li>
                             <li><a href="{% url 'logout' %}">Logout</a></li>
@@ -101,16 +143,6 @@
                             </li>
                         {% endif %}
 
-                        <li>
-                            <a href="#" id="toggle-theme" data-toggle="tooltip" data-placement="bottom" title="Toggle theme">
-                                {% if dark_mode %}
-                                    <i class="fa fa-sun-o fa-lg"></i>
-                                {% else %}
-                                    <i class="fa fa-moon-o fa-lg"></i>
-                                {% endif %}
-                            </a>
-                        </li>
-
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                                 {% if user.is_authenticated %}
@@ -128,84 +160,9 @@
                             </ul>
                         </li>
                     </ul>
+                    {% endif %}
                 </div>
             </div>
-        </nav>
-
-{###################### RESULT NAVIGATION ITEMS ######################}
-        <nav id="navigation-navbar" class="navbar navbar-default dropdown-navbar" style="display: none">
-{#           ########## FLAG NAV SELECTOR ###########}
-            <ul class="nav navbar-nav navbar-left">
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">
-                        Navigate by Flag <span class="caret"></span>
-                    </a>
-                    <ul class="dropdown-menu">
-                        {% for flag in annotation_flags %}
-                            <li><a href="{% url 'flag-nav-redirect' flag.0 %}">{{ flag.1 }}</a></li>
-                        {% endfor %}
-                    </ul>
-                </li>
-            </ul>
-
-{#           ########## GENOME NAV SELECTOR ###########}
-            <form class="navbar-form navbar-left">
-                <div class="form-group" id="starship-nav-form">
-                    {{ starship_search_form.search_starship }}
-                </div>
-            </form>
-
-{#           ########## ASSIGNMENT NAV SELECTOR ###########}
-            <ul class="nav navbar-nav navbar-left">
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">
-                        Navigate by Assigned Reviewer <span class="caret"></span>
-                    </a>
-                    <ul class="dropdown-menu">
-                        {% for user in users %}
-                            <li><a href="{% url 'assignment-nav-redirect' user %}">{{ user }}</a></li>
-                        {% endfor %}
-                    </ul>
-                </li>
-            </ul>
-        </nav>
-
-{###################### ADDITIONAL NAVIGATION ITEMS ######################}
-        <nav id="additional-navbar" class="navbar navbar-default dropdown-navbar" style="display: none">
-            <ul class="nav navbar-nav navbar-left">
-{#           ########## UPLOAD STARSHIP ###########}
-                <li>
-                    <a href="{% url 'starship:upload_starship' %}">
-                        Upload Starship
-                    </a>
-                </li>
-{#           ########## DELETE STARSHIP ###########}
-                {% if starship %}
-                    <li>
-                        <a href="{% url 'starship:starship_delete' pk=starship.id %}">
-                            Delete Starship
-                        </a>
-                    </li>
-                {% endif %}
-{#           ########## STARSHIP LIST ###########}
-                <li>
-                    <a href="{% url 'starship:starship_list' %}">
-                        Starship List
-                    </a>
-                </li>
-{#           ########## UPLOAD ANNOTATIONS ###########}
-                <li>
-                    <a href="{% url 'starship:upload_annotations' %}">
-                        Upload Annotations From Excel
-                    </a>
-                </li>
-{#           ########## LIST ANNOTATIONS ###########}
-                <li>
-                    <a href="{% url 'starship:annotation_list' %}">
-                        Annotation List
-                    </a>
-                </li>
-            </ul>
         </nav>
 
         {% block body %}{% endblock %}
