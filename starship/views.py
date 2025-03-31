@@ -543,19 +543,25 @@ class Starship_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailVi
     def get_context_data(self, **kwargs):
         #get default context data
         context = super(Starship_Detail, self).get_context_data(**kwargs)
-
-        context = add_context_for_starship_viz(context, context['starship'])
+        starship = self.get_object()
+        
+        # Calculate starship length
+        element_end = int(starship.elementEnd) if starship.elementEnd else 0
+        element_begin = int(starship.elementBegin) if starship.elementBegin else 0
+        context['starship_length'] = (element_end + 1) - element_begin
+        
+        context = add_context_for_starship_viz(context, starship)
 
         context['features'] = starship_models.Feature.objects.filter(
-            starship=context['starship']
+            starship=starship
         ).prefetch_related('annotation', 'starship')
 
         context['annotations'] = starship_models.Annotation.objects.filter(
             feature__in=context['features']
         ).prefetch_related('feature_set__starship', 'feature_set').select_related('assigned_to')
 
-        self.starship_dict['starship_name'] = context['starship'].starship_name
-        self.starship_dict['starship'] = context['starship'].starship_sequence
+        self.starship_dict['starship_name'] = starship.starship_name
+        self.starship_dict['starship'] = starship.starship_sequence
         context['starship_data'] = self.starship_dict
 
         upload_form = starship_forms.Starship_Upload_Form
@@ -568,11 +574,10 @@ class Starship_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailVi
         # except:
         #     context['sample_sources'] = None
 
-        starship = starship_models.Starship.objects.filter(starship_name__exact=self.starship_dict['starship_name'])
-        context['starship_info'] = get_starship_data_dicts(starship)
+        # Use the existing starship object instead of querying again
+        context['starship_info'] = get_starship_data_dicts([starship])
 
         return context
-
 
 # used for feature list page
 class Feature_List(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
@@ -1065,7 +1070,9 @@ def get_starship_data_dicts(starships):
         starship_dict['species'] = starship.species
         starship_dict['contigID'] = starship.contigID
         starship_dict['elementBegin'] = starship.elementBegin
+        element_begin = int(starship.elementBegin) if starship.elementBegin else 0
         starship_dict['elementEnd'] = starship.elementEnd
+        element_end = int(starship.elementEnd) if starship.elementEnd else 0
         starship_dict["starship_family"] = starship.starship_family
         starship_dict["starship_navis"] = starship.starship_navis
         starship_dict["starship_haplotype"] = starship.starship_haplotype
@@ -1080,7 +1087,8 @@ def get_starship_data_dicts(starships):
         starship_dict['red_gene_count'] = annotations.filter(flag=flag_options_reverse['RED']).count()
         starship_dict['review_name_gene_count'] = annotations.filter(flag=flag_options_reverse['REVIEW NAME']).count()
         starship_dict['gene_count'] = gene
-        starship_dict['starship_length'] = len(starship.starship_sequence)
+        starship_dict['is_annotated'] = starship_dict['gene_count'] > 0
+        starship_dict['starship_length'] = (element_end + 1) - element_begin
         objects.append(starship_dict)
     return objects
 
