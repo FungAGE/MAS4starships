@@ -17,8 +17,5 @@ output/**
 databases/**
 backup.sh
 .env
-celerybeat-schedule.bak
-celerybeat-schedule.dat
-celerybeat-schedule.dir
-celerybeat-schedule.db
 static-files/**
+celerybeat-*
