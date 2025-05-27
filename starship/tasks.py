@@ -17,14 +17,14 @@ from starship.genomic_loci_conversions import *
 from starship import gene_calling
 from starship import models as starship_models
 from starship.forms import parse_prots_from_coords
-
+from starship.models import Starship
 from MAS.celery import app
 
 
 def on_starship_uploaded_or_removed(
     sender, **kwargs
 ):  # TODO: ADD SIGNAL WHICH CALLS THIS UPON GENOME DELETION
-    if settings.INTERNAL_NUCLEOTIDE_DB_PATH:
+    if settings.NUCLEOTIDE_DB_PATH:
         i = app.control.inspect(settings.CELERY_WORKERS)
         queue = i.scheduled()
         if queue:
@@ -62,9 +62,10 @@ starship_models.starship_upload_complete.connect(on_annotation_changed)
 @shared_task
 def create_internal_nucleotide_blastdb():
     print("Creating internal nucleotide BLAST database.")
+    db_path = settings.NUCLEOTIDE_DB_PATH
 
-    if settings.INTERNAL_NUCLEOTIDE_DB_PATH:
-        fasta_file_path = settings.INTERNAL_NUCLEOTIDE_DB_PATH + ".fa"
+    if settings.NUCLEOTIDE_FASTA_PATH:
+        fasta_file_path = settings.NUCLEOTIDE_FASTA_PATH
         starships = starship_models.Starship.objects.all()
         starship_list = []
         for starship in starships:
@@ -88,7 +89,7 @@ def create_internal_nucleotide_blastdb():
                 "-title",
                 "MAS Starships",
                 "-out",
-                settings.NUCLEOTIDE_DATABASE,
+                db_path,
             ],
             check=True,
         )
@@ -98,12 +99,8 @@ def create_internal_nucleotide_blastdb():
 def create_internal_protein_blastdb():
     print("Creating internal protein BLAST database.")
 
-    # Get path from luigi config
-    cfg = ConfigParser()
-    cfg.read(settings.LUIGI_CFG)
-    db_path = cfg["Blastp"]["internal"]
-    fasta_file_path = db_path + ".fa"
-
+    fasta_file_path = settings.PROTEIN_FASTA_PATH
+    db_path = settings.PROTEIN_DB_PATH
     annotations = starship_models.Annotation.objects.all()
     annotations = annotations.prefetch_related("feature_set")
     annotations = annotations.prefetch_related("feature_set__starship")
@@ -127,7 +124,6 @@ def create_internal_protein_blastdb():
         annotation_list.append(record)
     print("writing fasta")
     SeqIO.write(annotation_list, fasta_file_path, "fasta")
-    # protein_db = os.path.join(settings.PROTEIN_DATABASE, 'AMD_Annotated_Proteins.faa')
     subprocess.run(
         [
             "makeblastdb",
@@ -152,7 +148,7 @@ def create_CDS_annotations(
     glimmer_results_file_path, genome, assign_to, new_annotations, new_features
 ):
     for cds in gene_calling.parse_glimmer_results(glimmer_results_file_path):
-        sequence = Seq(starship.starship_sequence)
+        sequence = Seq(Starship.objects.get(starship_name=genome).starship_sequence)
         protein = get_protein_sequence(cds.start, cds.stop, cds.strand, sequence)
 
         if starship_models.Annotation.objects.filter(sequence=protein).count() > 0:
@@ -179,7 +175,7 @@ def create_CDS_annotations(
 def create_custom_CDS_annotations(
     coordinate_file, translation_table, genome, assign_to, new_annotations, new_features
 ):
-    starship_sequence = Seq(starship.starship_sequence)
+    starship_sequence = Seq(Starship.objects.get(starship_name=genome).starship_sequence)
 
     for protein_sequence, cds in parse_prots_from_coords(
         coordinate_file, starship_sequence, translation_table
@@ -217,7 +213,7 @@ def create_trna_annotations(
     trnascan_results_file_path, genome, assign_to, new_annotations, new_features
 ):
     for tRNA in gene_calling.parse_trnascan_results(trnascan_results_file_path):
-        sequence = Seq(starship.starship_sequence)
+        sequence = Seq(Starship.objects.get(starship_name=genome).starship_sequence)
         rna = get_rna_sequence(tRNA.start, tRNA.stop, tRNA.strand, sequence)
 
         if starship_models.Annotation.objects.filter(sequence=rna).count() > 0:

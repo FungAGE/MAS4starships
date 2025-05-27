@@ -66,7 +66,7 @@ def GetFeatureTable(starship_name, genome):
             prot = get_protein_sequence(feature_obj.start, feature_obj.stop, feature_obj.strand, genome)
             # try:
             #     #TODO: For downloading excel files for telework
-            #     db = 'internal'
+            #     db = 'protein'
             #     blastp_result = Blastp_Result.objects.get(annotation=annotation_obj, database=db)
             #     if blastp_result.result:
             #         record = NCBIXML.read(blastp_result.result.open(mode='r'))
