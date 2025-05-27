@@ -43,6 +43,13 @@ fi
 # echo "Running database migrations..."
 # python manage.py migrate
 
+# Create logs directory if it doesn't exist
+mkdir -p "$PROJECT_ROOT/logs"
+
+# Start Luigi scheduler in the background
+echo "Starting Luigi scheduler..."
+$SCRIPT_DIR/dev-luigi.sh &
+
 # Start Celery worker in the background
 echo "Starting Celery worker..."
 $SCRIPT_DIR/dev-worker.sh &
