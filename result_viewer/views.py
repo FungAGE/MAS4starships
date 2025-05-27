@@ -17,7 +17,7 @@ from result_viewer.hhsuite2_text import Hhsuite2TextParser
 from result_viewer.models import *
 from result_viewer.navigator import FlagNavigator, GenomeNavigator, AssignmentNavigator
 from starship.models import *
-from result_viewer.utils import interproscan_tsv_to_dict
+from result_viewer.utils import interproscan_xml_to_dict
 
 
 def blastp_alignment_to_str(alignment):
