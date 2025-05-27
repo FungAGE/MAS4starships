@@ -14,30 +14,30 @@ class Command(BaseCommand):
     help = 'creates blast database for protein and nucleotide'
 
     def handle(self, *args, **options):
+        self.stdout.write('Creating BLAST databases...')
         self.starship_blastdb()
         self.annotation_blastdb()
+        self.swissprot_blastdb()
 
     # creates nucleotide blast database
     def starship_blastdb(self):
-        # temp = TemporaryDirectory()
-        # file_path = os.path.join(temp.name, "AMD_Complete_Phage_Genomes")
+        self.stdout.write('Creating Starship nucleotide BLAST database...')
         file_path = settings.NUCLEOTIDE_DATABASE + '.fa'
         starships = starship_models.Starship.objects.all()
         starship_list = []
         for starship in starships:
             sequence = SeqRecord(Seq(starship.starship_sequence), id=starship.starship_name,
-                                 description=starship.starship_name)
+                               description=starship.starship_name)
             starship_list.append(sequence)
 
         SeqIO.write(starship_list, file_path, "fasta")
-        # nucleotide_db = os.path.join(settings.NUCLEOTIDE_DATABASE, 'AMD_Complete_Phages')
         subprocess.run(['makeblastdb', '-in', '"%s"' % file_path, '-input_type', 'fasta', '-dbtype', 'nucl', '-title',
-                        'MAS Starships', '-out', settings.NUCLEOTIDE_DATABASE], check=True)
+                      'MAS Starships', '-out', settings.NUCLEOTIDE_DATABASE], check=True)
+        self.stdout.write(self.style.SUCCESS('Successfully created Starship BLAST database'))
 
     # creates sequence blast database
     def annotation_blastdb(self):
-        # temp = TemporaryDirectory()
-        # file_path = os.path.join(temp.name, "AMD_Annotated_Proteins.fasta")
+        self.stdout.write('Creating internal protein BLAST database...')
         file_path = settings.PROTEIN_DATABASE + '.fa'
         annotations = starship_models.Annotation.objects.all()
         annotation_list = []
@@ -49,10 +49,9 @@ class Command(BaseCommand):
             flag = annotation.get_flag_display()
             starships = views.annotation_starships(annotation)
             sequence = SeqRecord(Seq(aa_sequence), id=annotation.accession + " |",
-                                 description="%s | %s | %s | %s %s" % (anno, public_note, private_note, flag, starships))
+                               description="%s | %s | %s | %s %s" % (anno, public_note, private_note, flag, starships))
             annotation_list.append(sequence)
         SeqIO.write(annotation_list, file_path, "fasta")
-        # protein_db = os.path.join(settings.PROTEIN_DATABASE, 'AMD_Annotated_Proteins.faa')
         subprocess.run([
             'makeblastdb',
             '-in', '"%s"' % file_path,
@@ -62,3 +61,31 @@ class Command(BaseCommand):
             '-title', 'MAS Proteins',
             '-out', settings.PROTEIN_DATABASE
         ], check=True)
+        self.stdout.write(self.style.SUCCESS('Successfully created internal protein BLAST database'))
+
+    # creates swissprot blast database
+    def swissprot_blastdb(self):
+        self.stdout.write('Creating SwissProt BLAST database...')
+        swissprot_fasta = os.path.join(settings.SWISSPROT_DIR, 'uniprot_sprot.fasta')
+        swissprot_db = os.path.join(settings.SWISSPROT_DIR, 'uniprot_sprot')
+        
+        # Check if source file exists
+        if not os.path.exists(swissprot_fasta):
+            self.stdout.write(self.style.WARNING(
+                f'SwissProt FASTA file not found at {swissprot_fasta}. Skipping SwissProt database creation.'
+            ))
+            return
+
+        # Create the BLAST database
+        try:
+            subprocess.run([
+                'makeblastdb',
+                '-in', swissprot_fasta,
+                '-dbtype', 'prot',
+                '-parse_seqids',
+                '-title', 'SwissProt',
+                '-out', swissprot_db
+            ], check=True)
+            self.stdout.write(self.style.SUCCESS('Successfully created SwissProt BLAST database'))
+        except subprocess.CalledProcessError as e:
+            self.stdout.write(self.style.ERROR(f'Failed to create SwissProt BLAST database: {str(e)}'))
