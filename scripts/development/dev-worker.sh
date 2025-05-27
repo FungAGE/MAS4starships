@@ -1,11 +1,12 @@
 #!/bin/bash
 
-# Get directory of script
-wd="$(dirname "$0")"
-cd "$wd" || exit
+# Get directory of script and project root
+SCRIPT_DIR="$(dirname "$0")"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$PROJECT_ROOT" || exit
 
-# Load environment variables
-source .env
+# Then use PROJECT_ROOT for all paths
+source "$PROJECT_ROOT/.env"
 
 # Activate conda environment
 eval "$(conda shell.bash hook)"

@@ -2,6 +2,14 @@
 
 # * note that this script is not meant for testing celery worker/luigi tasks
 
+# Get directory of script and project root
+SCRIPT_DIR="$(dirname "$0")"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$PROJECT_ROOT" || exit
+
+# Then use PROJECT_ROOT for all paths
+source "$PROJECT_ROOT/.env"
+
 # Start required Docker services
 echo "Starting database container..."
 echo "Please enter your sudo password:"
@@ -37,7 +45,7 @@ fi
 
 # Start Celery worker in the background
 echo "Starting Celery worker..."
-./dev-worker.sh &
+$SCRIPT_DIR/dev-worker.sh &
 
 # Start development server
 echo "Starting development server..."
