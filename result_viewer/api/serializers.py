@@ -161,6 +161,7 @@ class StarshipDataSerializer(serializers.Serializer):
     starship_family = serializers.CharField(max_length=100)
     starship_navis = serializers.CharField(max_length=100)
     starship_haplotype = serializers.CharField(max_length=100)
+    starship_length = serializers.IntegerField()
     num_cds = serializers.IntegerField()
     num_gene = serializers.IntegerField()
     num_unannotated = serializers.IntegerField()

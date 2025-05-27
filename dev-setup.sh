@@ -35,6 +35,10 @@ fi
 # echo "Running database migrations..."
 # python manage.py migrate
 
+# Start Celery worker in the background
+echo "Starting Celery worker..."
+./dev-worker.sh &
+
 # Start development server
 echo "Starting development server..."
 python manage.py runserver localhost:8000 
