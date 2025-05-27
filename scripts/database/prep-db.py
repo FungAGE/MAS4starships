@@ -69,7 +69,7 @@ class AnnotationPreparation:
         from django.conf import settings
         config = configparser.ConfigParser()
         config.read(settings.LUIGI_CFG)
-        self.internal_blast_db = config.get('Blastp', 'internal')
+        self.blastp_db = config.get('Blastp', 'protein')
         
         # Get admin user
         from django.contrib.auth.models import User
@@ -120,7 +120,7 @@ class AnnotationPreparation:
             run_single_search.delay(
                 accession=annotation.accession,
                 tool=tool,
-                database='internal',
+                database='protein',
                 site='localhost'
             )
             print(f"Queued {tool} search for annotation {annotation.accession}")
@@ -128,7 +128,7 @@ class AnnotationPreparation:
             # Wait for results
             result = Blastp_Result.objects.filter(
                 annotation=annotation,
-                database='internal',
+                database='protein',
                 status=0  # Completed successfully
             ).order_by('-run_date').first()
             

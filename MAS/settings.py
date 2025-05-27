@@ -6,6 +6,8 @@ if os.getenv("DEVELOPER_MODE") == "TRUE":
 else:
     from .settings_files.production import *
 
+BASE_DIR = BASE_DIR
+
 # KEEP SECRET
 SECRET_KEY = (
     open(os.path.join(BASE_DIR, "MAS", "settings_files", "secret_key.txt"), "r")
@@ -113,11 +115,23 @@ REST_FRAMEWORK = {
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
-TERMINASE_DATABASE = "/home/daemon/MAS/databases/terminase/terminase_db"
-INTERNAL_NUCLEOTIDE_DB_PATH = "/mnt/sda/johannesson_lab/adrian/bin/MAS/internal_db/nucleotide"
-NUCLEOTIDE_DATABASE = "/mnt/sda/johannesson_lab/adrian/bin/MAS/internal_db/nucleotide.db"
-PROTEIN_DATABASE = "/mnt/sda/johannesson_lab/adrian/bin/MAS/internal_db/internal.db"
-SWISSPROT_DIR = "/mnt/sda/johannesson_lab/swissprot"
+INTERNAL_DIR = "/mnt/sda/johannesson_lab/adrian/bin/MAS/databases/internal_db"
+NUCLEOTIDE_DB_PATH = os.path.join(INTERNAL_DIR, "nucleotide")
+NUCLEOTIDE_FASTA_PATH = os.path.join(INTERNAL_DIR, "nucleotide.fa")
+NUCLEOTIDE_DATABASE = os.path.join(INTERNAL_DIR, "nucleotide.db")
+PROTEIN_DB_PATH = os.path.join(INTERNAL_DIR, "protein")
+PROTEIN_FASTA_PATH = os.path.join(INTERNAL_DIR, "protein.fa")
+PROTEIN_DATABASE = os.path.join(INTERNAL_DIR, "protein.db")
+
+SWISSPROT_DIR = "/mnt/sda/johannesson_lab/adrian/bin/MAS/databases/swissprot"
+SWISSPROT_DB_PATH = os.path.join(SWISSPROT_DIR, 'uniprot_sprot')
+SWISSPROT_FASTA_PATH = os.path.join(SWISSPROT_DIR, 'uniprot_sprot.fasta')
+
+CDD_DIR = "/mnt/sda/johannesson_lab/cdd/cdd_delta"
+UNICLUST_DIR = "/mnt/sda/johannesson_lab/uniclust"
+PDB_DIR = "/mnt/sda/johannesson_lab/pdb"
+INTERPRO_DIR = "/mnt/sda/johannesson_lab/adrian/bin/conda-envs/mas/share/InterProScan/data"
+
 GIT_DIR = os.path.join(BASE_DIR, ".git")
 
 if os.getenv('CELERY_WORKER') == 'TRUE':

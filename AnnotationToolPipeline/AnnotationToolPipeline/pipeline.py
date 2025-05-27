@@ -12,6 +12,7 @@ from Bio.Seq import Seq
 from Bio.Alphabet import IUPAC
 import requests
 from django.urls import reverse
+from django.conf import settings
 
 from AnnotationToolPipeline.luigi_cluster.sge import SGEJobTask
 from AnnotationToolPipeline.luigi_cluster.slurm import SLURMJobTask
@@ -195,24 +196,38 @@ class PipelineTask(BaseTask):
     def _check_output(self):
         """
         Checks the temporary dir to make sure all required files are there and not empty
-        :param task: A reference to the task which is calling this function
         :return: True if successful, False otherwise
         """
         self.logger.info("Checking temp folder for task %s" % self.task_uid)
-        for key in self.out_file_path(temp=True).keys():
-            file_path = self.out_file_path(temp=True)[key]
+        
+        # First verify temp directory exists
+        temp_dir = self.out_dir(temp=True)
+        if not os.path.exists(temp_dir):
+            self.logger.error(f"Temporary directory missing: {temp_dir}")
+            return False
+
+        # Check each expected output file
+        for key, file_path in self.out_file_path(temp=True).items():
             if not os.path.isfile(file_path):
                 self.logger.error(
-                    "OUTPUT FILE MISSING: file %s was not created" % file_path
+                    f"OUTPUT FILE MISSING: file {file_path} was not created"
                 )
                 return False
-            else:
-                if os.path.getsize(file_path) == 0:
-                    self.logger.error("OUTPUT FILE EMPTY: file %s is empty" % file_path)
-                    return False
+            
+            if os.path.getsize(file_path) == 0:
+                self.logger.error(f"OUTPUT FILE EMPTY: file {file_path} is empty")
+                return False
+            
+            self.logger.info(f"Verified output file {key}: {file_path}")
 
-        # All files exist and are not empty, so now we will move the folder
-        os.rename(self.out_dir(temp=True), self.out_dir(temp=False))
+        try:
+            # All files exist and are not empty, so now we will move the folder
+            os.rename(self.out_dir(temp=True), self.out_dir(temp=False))
+            self.logger.info(f"Successfully moved output from {self.out_dir(temp=True)} to {self.out_dir(temp=False)}")
+        except OSError as e:
+            self.logger.error(f"Failed to move output directory: {str(e)}")
+            return False
+
         return True
 
     def _run_command(self, command_params, condaenv="", **kwargs):
@@ -372,12 +387,7 @@ class Blastp(PipelineTask):
     run_time = luigi.DateSecondParameter()
     tool = "blastp"
 
-    # Available Database Choices
-    swissprot = luigi.Parameter()
-    nr = luigi.Parameter()
-    internal = luigi.Parameter()
-
-    # specific # CPU to use for each job
+    # CPU parameters
     swissprot_cpu = luigi.Parameter()
     nr_cpu = luigi.Parameter()
     internal_cpu = luigi.Parameter()
@@ -389,7 +399,7 @@ class Blastp(PipelineTask):
             self.n_cpu = self.nr_cpu
         elif self.database == "swissprot":
             self.n_cpu = self.swissprot_cpu
-        elif self.database == "internal":
+        elif self.database in ["protein", "nucleotide"]:
             self.n_cpu = self.internal_cpu
 
     def requires(self):
@@ -416,35 +426,74 @@ class Blastp(PipelineTask):
         return os.path.join(self.pipeline_out_dir(), self.task_family, folder)
 
     def do_task(self):
+        # Use paths from Django settings
         if self.database == "nr":
-            db_path = self.nr
-
+            db_path = settings.NR_DIR  # You'll need to add this to settings.py
         elif self.database == "swissprot":
-            db_path = self.swissprot
-
-        elif self.database == "internal":
-            db_path = self.internal
-
+            db_path = settings.SWISSPROT_DIR
+        elif self.database == "protein":
+            db_path = settings.PROTEIN_DB_PATH
+        elif self.database == "nucleotide":
+            db_path = settings.NUCLEOTIDE_DB_PATH
+        elif self.database == "cdd":
+            db_path = settings.CDD_DIR
+        elif self.database == "uniclust":
+            db_path = settings.UNICLUST_DIR
+        elif self.database == "pdb":
+            db_path = settings.PDB_DIR
+        elif self.database == "interpro":
+            db_path = settings.INTERPRO_DIR
         else:
             raise ValueError("Invalid database " + self.database)
 
-        self._run_command(
+        # Validate database files exist
+        required_extensions = ['.phr', '.pin', '.psq']
+        missing_files = []
+        for ext in required_extensions:
+            if not os.path.exists(db_path + ext):
+                missing_files.append(db_path + ext)
+        
+        if missing_files:
+            self.logger.error(f"Missing BLAST database files: {', '.join(missing_files)}")
+            self.logger.error("Please run: makeblastdb -in %s -dbtype prot -parse_seqids", db_path)
+            raise FileNotFoundError(f"BLAST database files not found for {db_path}")
+
+        # Add input file validation
+        input_file = self.input()["fasta"].path
+        if not os.path.exists(input_file):
+            self.logger.error(f"Input file not found: {input_file}")
+            raise FileNotFoundError(f"Required input file missing: {input_file}")
+        
+        if os.path.getsize(input_file) == 0:
+            self.logger.error(f"Input file is empty: {input_file}")
+            raise ValueError(f"Input file is empty: {input_file}")
+
+        # Create output directory if it doesn't exist
+        os.makedirs(os.path.dirname(self.out_file_path(True)["results"]), exist_ok=True)
+
+        # Run blastp with better error handling
+        result = self._run_command(
             [
                 "blastp",
-                "-query",
-                self.input()["fasta"].path,
-                "-db",
-                db_path,
-                "-evalue",
-                str(self.e_value),
-                "-outfmt",
-                "5",
-                "-out",
-                self.out_file_path(True)["results"],
-                "-num_threads",
-                str(self.n_cpu),
+                "-query", input_file,
+                "-db", db_path,
+                "-evalue", str(self.e_value),
+                "-outfmt", "5",
+                "-out", self.out_file_path(True)["results"],
+                "-num_threads", str(self.n_cpu),
             ]
         )
+
+        # Check blastp execution status
+        if result.returncode != 0:
+            self.logger.error(f"Blastp failed with return code {result.returncode}")
+            self.logger.error(f"Stderr: {result.stderr.decode('utf-8')}")
+            raise RuntimeError("Blastp execution failed")
+
+        # Verify output was created
+        if not os.path.exists(self.out_file_path(True)["results"]):
+            self.logger.error("Blastp did not create output file")
+            raise RuntimeError("Blastp failed to create output file")
 
 
 class RPSBlast(PipelineTask):

@@ -22,7 +22,7 @@ class Command(BaseCommand):
     # creates nucleotide blast database
     def starship_blastdb(self):
         self.stdout.write('Creating Starship nucleotide BLAST database...')
-        file_path = settings.NUCLEOTIDE_DATABASE + '.fa'
+        file_path = settings.NUCLEOTIDE_FASTA_PATH
         starships = starship_models.Starship.objects.all()
         starship_list = []
         for starship in starships:
@@ -32,13 +32,13 @@ class Command(BaseCommand):
 
         SeqIO.write(starship_list, file_path, "fasta")
         subprocess.run(['makeblastdb', '-in', '"%s"' % file_path, '-input_type', 'fasta', '-dbtype', 'nucl', '-title',
-                      'MAS Starships', '-out', settings.NUCLEOTIDE_DATABASE], check=True)
+                      'MAS Starships', '-out', settings.NUCLEOTIDE_DB_PATH], check=True)
         self.stdout.write(self.style.SUCCESS('Successfully created Starship BLAST database'))
 
     # creates sequence blast database
     def annotation_blastdb(self):
         self.stdout.write('Creating internal protein BLAST database...')
-        file_path = settings.PROTEIN_DATABASE + '.fa'
+        file_path = settings.PROTEIN_FASTA_PATH
         annotations = starship_models.Annotation.objects.all()
         annotation_list = []
         for annotation in annotations:
@@ -59,15 +59,15 @@ class Command(BaseCommand):
             '-dbtype', 'prot',
             '-parse_seqids',
             '-title', 'MAS Proteins',
-            '-out', settings.PROTEIN_DATABASE
+            '-out', settings.PROTEIN_DB_PATH
         ], check=True)
         self.stdout.write(self.style.SUCCESS('Successfully created internal protein BLAST database'))
 
     # creates swissprot blast database
     def swissprot_blastdb(self):
         self.stdout.write('Creating SwissProt BLAST database...')
-        swissprot_fasta = os.path.join(settings.SWISSPROT_DIR, 'uniprot_sprot.fasta')
-        swissprot_db = os.path.join(settings.SWISSPROT_DIR, 'uniprot_sprot')
+        swissprot_fasta = settings.SWISSPROT_FASTA_PATH
+        swissprot_db = settings.SWISSPROT_DB_PATH
         
         # Check if source file exists
         if not os.path.exists(swissprot_fasta):

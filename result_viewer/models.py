@@ -42,7 +42,7 @@ class HHSearch_Result(models.Model):
 class Blastp_Result(models.Model):
     database_options = (
         ('swissprot', 'SwissProt'),
-        ('internal', 'Previously Annotated Proteins'),
+        ('protein', 'Previously Annotated Proteins'),
         ('nr', 'NCBI Protein'),
     )
 
