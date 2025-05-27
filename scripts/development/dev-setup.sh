@@ -50,6 +50,10 @@ mkdir -p "$PROJECT_ROOT/logs"
 echo "Starting Luigi scheduler..."
 $SCRIPT_DIR/dev-luigi.sh &
 
+# Create BLAST database if it doesn't exist
+# echo "Checking/Creating BLAST database..."
+# python manage.py blastdb
+
 # Start Celery worker in the background
 echo "Starting Celery worker..."
 $SCRIPT_DIR/dev-worker.sh &

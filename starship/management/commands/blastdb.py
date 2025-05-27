@@ -25,7 +25,7 @@ class Command(BaseCommand):
         starships = starship_models.Starship.objects.all()
         starship_list = []
         for starship in starships:
-            sequence = SeqRecord(Seq(starship.starship_sequence, generic_nucleotide), id=starship.starship_name,
+            sequence = SeqRecord(Seq(starship.starship_sequence), id=starship.starship_name,
                                  description=starship.starship_name)
             starship_list.append(sequence)
 
@@ -48,7 +48,7 @@ class Command(BaseCommand):
             private_note = annotation.private_notes
             flag = annotation.get_flag_display()
             starships = views.annotation_starships(annotation)
-            sequence = SeqRecord(Seq(aa_sequence, generic_protein), id=annotation.accession + " |",
+            sequence = SeqRecord(Seq(aa_sequence), id=annotation.accession + " |",
                                  description="%s | %s | %s | %s %s" % (anno, public_note, private_note, flag, starships))
             annotation_list.append(sequence)
         SeqIO.write(annotation_list, file_path, "fasta")
