@@ -117,7 +117,7 @@ TERMINASE_DATABASE = "/home/daemon/MAS/databases/terminase/terminase_db"
 INTERNAL_NUCLEOTIDE_DB_PATH = "/mnt/sda/johannesson_lab/adrian/bin/MAS/internal_db/nucleotide"
 NUCLEOTIDE_DATABASE = "/mnt/sda/johannesson_lab/adrian/bin/MAS/internal_db/nucleotide.db"
 PROTEIN_DATABASE = "/mnt/sda/johannesson_lab/adrian/bin/MAS/internal_db/internal.db"
-
+SWISSPROT_DIR = "/mnt/sda/johannesson_lab/swissprot"
 GIT_DIR = os.path.join(BASE_DIR, ".git")
 
 if os.getenv('CELERY_WORKER') == 'TRUE':
