@@ -16,6 +16,20 @@
     {{ interpro_alignments|json_script:"interpro_alignment_data" }}
     {{ form.initial|json_script:"current_annotation_info" }}
     {{ feature_data|json_script:"feature_data" }}
+    <script id="template-vars" type="application/json">
+    {
+        "starship_length": {% if starship_length %}{{ starship_length }}{% else %}null{% endif %},
+        "worker_active": {{ worker_active|yesno:"true,false" }},
+        "query_len": {{ query_len|safe }},
+        "sequence": "{{ object.sequence|safe }}",
+        "nav_arg": "{{ navigator.nav_arg|safe }}",
+        "accession": "{{ accession|safe }}",
+        "tool": "{{ tool|safe }}",
+        "database": "{{ database|safe }}",
+        "run_search_url": "{{ run_search_url|safe }}",
+        "run_search_for_starship_url": "{{ run_search_for_starship_url|safe }}"
+    }
+    </script>
 {% endblock %}
 
 
@@ -76,7 +90,7 @@
             <label for="rerun">Rerun previously completed?</label>
             <input type="checkbox" name="rerun" id="rerun">
         </div>
-        <button type="button" class="btn btn-primary" id="submit-genome" {% if not worker_active %}title="Start worker to enable." disabled{% endif %}>Run for all proteins in genome</button>
+        <button type="button" class="btn btn-primary" id="submit-genome" {% if not worker_active %}title="Start worker to enable." disabled{% endif %}>Run for all proteins in Starship</button>
     </div>
     {% endif %}
 
@@ -384,18 +398,18 @@
     <script type="text/javascript" src="{% static 'DataTables/datatables.min.js' %}"></script>
     <script type="application/javascript" src="{% static "js/d3.min.js" %}" ></script>
     <script>
-        {% if starship_length %}
-            var STARSHIP_LENGTH = {{ starship_length }};
-        {% endif %}
-        var WORKER_ACTIVE = {{ worker_active|yesno:"true,false" }};
-        var QUERY_LEN = {{ query_len|safe }};
-        var SEQ = "{{ object.sequence|safe }}";
-        var NAV_ARG = "{{ navigator.nav_arg|safe }}";
-        var ACCESSION = "{{ accession|safe }}";
-        var TOOL = "{{ tool|safe }}";
-        var DATABASE = "{{ database|safe }}";
-        var RUN_SEARCH_URL = "{{ run_search_url|safe }}";
-        var RUN_SEARCH_FOR_PHAGE_URL = "{{ run_search_for_starship_url|safe }}";
+        // Parse template variables from JSON to avoid linter errors
+        var templateVars = JSON.parse(document.getElementById("template-vars").textContent);
+        var STARSHIP_LENGTH = templateVars.starship_length;
+        var WORKER_ACTIVE = templateVars.worker_active;
+        var QUERY_LEN = templateVars.query_len;
+        var SEQ = templateVars.sequence;
+        var NAV_ARG = templateVars.nav_arg;
+        var ACCESSION = templateVars.accession;
+        var TOOL = templateVars.tool;
+        var DATABASE = templateVars.database;
+        var RUN_SEARCH_URL = templateVars.run_search_url;
+        var RUN_SEARCH_FOR_STARSHIP_URL = templateVars.run_search_for_starship_url;
         var blastp_alignment_data = JSON.parse(document.getElementById("blastp_alignment_data").textContent);
         var hhsearch_alignment_data = JSON.parse(document.getElementById("hhsearch_alignment_data").textContent);
         var rpsblast_alignment_data = JSON.parse(document.getElementById("rpsblast_alignment_data").textContent);
