@@ -33,11 +33,60 @@ class RunSearchAjaxView(APIView):
 
             uri_scheme = 'https://' if request.is_secure() else 'http://'
             mas_server_uri = uri_scheme + request.site.domain
+            
+            # Start the search task
             run_single_search.delay(accession, tool, database, mas_server_uri)
 
-            return response.Response(s.data)
+            # Return success response with status 1 (running)
+            return response.Response({'status': 1, 'message': 'Search started successfully'})
 
         return response.Response(s.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, format=None):
+        '''
+        Check the status of a search task
+        '''
+        accession = request.GET.get('accession')
+        tool = request.GET.get('tool')
+        database = request.GET.get('database')
+
+        if not all([accession, tool, database]):
+            return response.Response({'error': 'Missing required parameters'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            annotation = Annotation.objects.get(pk=int(accession, 36))
+            
+            # Get the appropriate result model
+            result_model = None
+            if tool == 'blastp':
+                result_model = Blastp_Result
+            elif tool == 'hhsearch':
+                result_model = HHSearch_Result
+            elif tool == 'rpsblast':
+                result_model = RPSBlast_Result
+            else:
+                return response.Response({'error': 'Invalid tool'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if result exists
+            try:
+                result_obj = result_model.objects.get(annotation=annotation, database=database)
+                return response.Response({
+                    'status': result_obj.status,
+                    'run_date': result_obj.run_date,
+                    'message': 'Status retrieved successfully'
+                })
+            except result_model.DoesNotExist:
+                # No result entry exists, so search was never run
+                return response.Response({
+                    'status': None,
+                    'run_date': None,
+                    'message': 'Search never run'
+                })
+
+        except Annotation.DoesNotExist:
+            return response.Response({'error': 'Invalid accession'}, status=status.HTTP_400_BAD_REQUEST)
+        except ValueError:
+            return response.Response({'error': 'Invalid accession format'}, status=status.HTTP_400_BAD_REQUEST)
 
     def check_permissions(self, request):
         super().check_permissions(request)

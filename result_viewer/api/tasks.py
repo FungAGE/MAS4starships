@@ -196,3 +196,21 @@ def is_mas_reachable_from_worker(site):
     except requests.RequestException as e:
         print(f"Error connecting to MAS server from celery worker: {e}")
         return False
+
+def map_luigi_status_to_mas_status(luigi_status):
+    """
+    Maps Luigi task status to MAS status codes:
+    0: Complete/Done
+    1: Running
+    2: Failed
+    3: Upstream Failed
+    null: Never ran
+    """
+    status_map = {
+        'DONE': 0,
+        'PENDING': 1,
+        'RUNNING': 1,
+        'FAILED': 2,
+        'UPSTREAM_FAILED': 3,
+    }
+    return status_map.get(luigi_status, 2)  # Default to failed if unknown status
