@@ -20,3 +20,11 @@ backup.sh
 static-files/**
 celerybeat-*
 media/**
+*.fasta
+*.faa
+*.fna
+*.ffn
+*.faa
+*.fna
+*.ffn
+*.fa
