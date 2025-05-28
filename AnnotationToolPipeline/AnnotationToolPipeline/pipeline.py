@@ -436,14 +436,6 @@ class Blastp(PipelineTask):
             db_path = settings.PROTEIN_DATABASE
         elif self.database == "nucleotide":
             db_path = settings.NUCLEOTIDE_DATABASE
-        elif self.database == "cdd":
-            db_path = settings.CDD_DIR
-        elif self.database == "uniclust":
-            db_path = settings.UNICLUST_DIR
-        elif self.database == "pdb":
-            db_path = settings.PDB_DIR
-        elif self.database == "interpro":
-            db_path = settings.INTERPRO_DIR
         else:
             raise ValueError("Invalid database " + self.database)
 
@@ -543,29 +535,59 @@ class RPSBlast(PipelineTask):
         return os.path.join(self.pipeline_out_dir(), self.task_family, folder)
 
     def do_task(self):
-        if self.database == "cdd":
-            db_path = self.cdd
 
-        else:
-            raise ValueError("Invalid database " + self.database)
+        # Validate database files exist for RPS-BLAST
+        required_extensions = ['.phr', '.pin', '.psq', '.rps']
+        missing_files = []
+        db_path = settings.CDD_DIR
 
-        self._run_command(
+        for ext in required_extensions:
+            pattern = f"{db_path}*{ext}"
+            matching_files = glob.glob(pattern)
+            if not matching_files:
+                missing_files.append(pattern)
+        
+        if missing_files:
+            self.logger.error(f"Missing RPS-BLAST database files: {', '.join(missing_files)}")
+            self.logger.error("Please ensure RPS-BLAST database is properly formatted")
+            raise FileNotFoundError(f"RPS-BLAST database files not found for {db_path}")
+
+        # Add input file validation
+        input_file = self.input()["fasta"].path
+        if not os.path.exists(input_file):
+            self.logger.error(f"Input file not found: {input_file}")
+            raise FileNotFoundError(f"Required input file missing: {input_file}")
+        
+        if os.path.getsize(input_file) == 0:
+            self.logger.error(f"Input file is empty: {input_file}")
+            raise ValueError(f"Input file is empty: {input_file}")
+
+        # Create output directory if it doesn't exist
+        os.makedirs(os.path.dirname(self.out_file_path(True)["results"]), exist_ok=True)
+
+        # Run rpsblast with better error handling
+        result = self._run_command(
             [
                 "rpsblast",
-                "-query",
-                self.input()["fasta"].path,
-                "-db",
-                db_path,
-                "-evalue",
-                self.e_value,
-                "-out",
-                self.out_file_path(True)["results"],
-                "-outfmt",
-                "5",
-                "-num_threads",
-                str(self.n_cpu),
+                "-query", input_file,
+                "-db", db_path,
+                "-evalue", str(self.e_value),
+                "-out", self.out_file_path(True)["results"],
+                "-outfmt", "5",
+                "-num_threads", str(self.n_cpu),
             ]
         )
+
+        # Check rpsblast execution status
+        if result.returncode != 0:
+            self.logger.error(f"RPSBlast failed with return code {result.returncode}")
+            self.logger.error(f"Stderr: {result.stderr.decode('utf-8')}")
+            raise RuntimeError("RPSBlast execution failed")
+
+        # Verify output was created
+        if not os.path.exists(self.out_file_path(True)["results"]):
+            self.logger.error("RPSBlast did not create output file")
+            raise RuntimeError("RPSBlast failed to create output file")
 
 
 class HHblits(PipelineTask):
@@ -613,7 +635,8 @@ class HHblits(PipelineTask):
         return {"alignment": os.path.join(self.out_dir(temp), "{}.a3m".format(name))}
 
     def do_task(self):
-        db_path = self.uniclust
+        db_path = settings.UNICLUST_DATABASE
+
         in_file = self.input()["fasta"].path
 
         self._run_command(
@@ -675,7 +698,7 @@ class HHsearch(PipelineTask):
 
     def do_task(self):
         if self.database == "pdb":
-            db_path = self.pdb
+            db_path = settings.PDB_DATABASE
         else:
             raise ValueError("Invalid database " + self.database)
 
@@ -738,6 +761,8 @@ class InterproScan(PipelineTask):
     def do_task(self):
         if self.database != 'interpro':
             raise ValueError('Invalid database ' + self.database)
+        else:
+            interproscan_path = settings.INTERPRO_PATH
 
         # Build command with all available options
         cmd = [
@@ -749,7 +774,7 @@ class InterproScan(PipelineTask):
             '-Xms128M',
             '-Xmx2048M',
             '-jar',
-            self.interproscan_path,
+            interproscan_path,
             '-i', self.input()['fasta'].path,
             '-f', 'XML,TSV',
             '-o', self.out_file_path(True)['results'],

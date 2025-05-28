@@ -130,7 +130,7 @@ SWISSPROT_FASTA_PATH = os.path.join(SWISSPROT_DIR, 'uniprot_sprot.fasta')
 CDD_DATABASE = "/mnt/sda/johannesson_lab/cdd/cdd_delta"
 UNICLUST_DATABASE = "/mnt/sda/johannesson_lab/UniRef/UniRef100"
 PDB_DATABASE = "/mnt/sda/johannesson_lab/pdb/pdb70"
-INTERPRO_DATABASE = "/mnt/sda/johannesson_lab/adrian/bin/conda-envs/mas/share/InterProScan/data"
+INTERPRO_PATH = "/mnt/sda/johannesson_lab/adrian/bin/conda-envs/mas/share/InterProScan"
 
 GIT_DIR = os.path.join(BASE_DIR, ".git")
 
