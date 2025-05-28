@@ -60,8 +60,8 @@ services:
       DONT_FAKE_MONOTONIC: 1
       FAKETIME_DID_REEXEC: "true"
     ports:
-      - "8080:80"
-      - "8082:8082"
+      - "0.0.0.0:8080:80"
+      - "0.0.0.0:8082:8082"
     volumes:
       - type: volume
         source: masmedia

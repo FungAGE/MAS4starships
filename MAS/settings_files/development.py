@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', '*']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', '*', os.getenv('ALLOWED_HOST')]
 INTERNAL_IPS = ['localhost', '127.0.0.1', "*"]
 
 # Application definition
