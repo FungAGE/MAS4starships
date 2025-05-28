@@ -19,3 +19,4 @@ backup.sh
 .env
 static-files/**
 celerybeat-*
+media/**
