@@ -1,5 +1,6 @@
 import subprocess
 import os
+import glob
 from datetime import datetime
 import logging
 import platform
@@ -432,9 +433,9 @@ class Blastp(PipelineTask):
         elif self.database == "swissprot":
             db_path = settings.SWISSPROT_FASTA_PATH
         elif self.database == "protein":
-            db_path = settings.PROTEIN_DB_PATH
+            db_path = settings.PROTEIN_DATABASE
         elif self.database == "nucleotide":
-            db_path = settings.NUCLEOTIDE_DB_PATH
+            db_path = settings.NUCLEOTIDE_DATABASE
         elif self.database == "cdd":
             db_path = settings.CDD_DIR
         elif self.database == "uniclust":
@@ -450,8 +451,10 @@ class Blastp(PipelineTask):
         required_extensions = ['.phr', '.pin', '.psq']
         missing_files = []
         for ext in required_extensions:
-            if not os.path.exists(db_path + ext):
-                missing_files.append(db_path + ext)
+            pattern = f"{db_path}*{ext}"
+            matching_files = glob.glob(pattern)
+            if not matching_files:
+                missing_files.append(pattern)
         
         if missing_files:
             self.logger.error(f"Missing BLAST database files: {', '.join(missing_files)}")

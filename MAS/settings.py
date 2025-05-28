@@ -127,10 +127,10 @@ SWISSPROT_DIR = "/mnt/sda/johannesson_lab/adrian/bin/MAS/databases/swissprot"
 SWISSPROT_DB_PATH = os.path.join(SWISSPROT_DIR, 'uniprot_sprot')
 SWISSPROT_FASTA_PATH = os.path.join(SWISSPROT_DIR, 'uniprot_sprot.fasta')
 
-CDD_DIR = "/mnt/sda/johannesson_lab/cdd/cdd_delta"
-UNICLUST_DIR = "/mnt/sda/johannesson_lab/uniclust"
-PDB_DIR = "/mnt/sda/johannesson_lab/pdb"
-INTERPRO_DIR = "/mnt/sda/johannesson_lab/adrian/bin/conda-envs/mas/share/InterProScan/data"
+CDD_DATABASE = "/mnt/sda/johannesson_lab/cdd/cdd_delta"
+UNICLUST_DATABASE = "/mnt/sda/johannesson_lab/UniRef/UniRef100"
+PDB_DATABASE = "/mnt/sda/johannesson_lab/pdb/pdb70"
+INTERPRO_DATABASE = "/mnt/sda/johannesson_lab/adrian/bin/conda-envs/mas/share/InterProScan/data"
 
 GIT_DIR = os.path.join(BASE_DIR, ".git")
 
