@@ -4,22 +4,22 @@
     "fields": {
       "name": "Data Editors",
       "permissions": [
-        ["add_annotation", "genome", "annotation"],
-        ["change_annotation", "genome", "annotation"],
-        ["delete_annotation", "genome", "annotation"],
-        ["view_annotation", "genome", "annotation"],
-        ["add_feature", "genome", "feature"],
-        ["change_feature", "genome", "feature"],
-        ["delete_feature", "genome", "feature"],
-        ["view_feature", "genome", "feature"],
-        ["add_historicalannotation", "genome", "historicalannotation"],
-        ["change_historicalannotation", "genome", "historicalannotation"],
-        ["delete_historicalannotation", "genome", "historicalannotation"],
-        ["view_historicalannotation", "genome", "historicalannotation"],
-        ["add_starship", "genome", "starship"],
-        ["change_starship", "genome", "starship"],
-        ["starship_delete", "genome", "starship"],
-        ["view_starship", "genome", "starship"],
+        ["add_annotation", "starship", "annotation"],
+        ["change_annotation", "starship", "annotation"],
+        ["delete_annotation", "starship", "annotation"],
+        ["view_annotation", "starship", "annotation"],
+        ["add_feature", "starship", "feature"],
+        ["change_feature", "starship", "feature"],
+        ["delete_feature", "starship", "feature"],
+        ["view_feature", "starship", "feature"],
+        ["add_historicalannotation", "starship", "historicalannotation"],
+        ["change_historicalannotation", "starship", "historicalannotation"],
+        ["delete_historicalannotation", "starship", "historicalannotation"],
+        ["view_historicalannotation", "starship", "historicalannotation"],
+        ["add_starship", "starship", "starship"],
+        ["change_starship", "starship", "starship"],
+        ["delete_starship", "starship", "starship"],
+        ["view_starship", "starship", "starship"],
         ["add_blastp_result", "result_viewer", "blastp_result"],
         ["change_blastp_result", "result_viewer", "blastp_result"],
         ["delete_blastp_result", "result_viewer", "blastp_result"],
@@ -28,6 +28,10 @@
         ["change_hhsearch_result", "result_viewer", "hhsearch_result"],
         ["delete_hhsearch_result", "result_viewer", "hhsearch_result"],
         ["view_hhsearch_result", "result_viewer", "hhsearch_result"],
+        ["add_interpro_result", "result_viewer", "interpro_result"],
+        ["change_interpro_result", "result_viewer", "interpro_result"],
+        ["delete_interpro_result", "result_viewer", "interpro_result"],
+        ["view_interpro_result", "result_viewer", "interpro_result"],
         ["add_pdb_accession_mapping", "result_viewer", "pdb_accession_mapping"],
         ["change_pdb_accession_mapping", "result_viewer", "pdb_accession_mapping"],
         ["delete_pdb_accession_mapping", "result_viewer", "pdb_accession_mapping"],
@@ -35,16 +39,12 @@
         ["add_rpsblast_result", "result_viewer", "rpsblast_result"],
         ["change_rpsblast_result", "result_viewer", "rpsblast_result"],
         ["delete_rpsblast_result", "result_viewer", "rpsblast_result"],
-        ["view_rpsblast_result", "result_viewer", "rpsblast_result"]
+        ["view_rpsblast_result", "result_viewer", "rpsblast_result"],
+        ["add_userpreferences", "result_viewer", "userpreferences"],
+        ["change_userpreferences", "result_viewer", "userpreferences"],
+        ["delete_userpreferences", "result_viewer", "userpreferences"],
+        ["view_userpreferences", "result_viewer", "userpreferences"]
       ]
     }
-  },
-  {
-      "model": "auth.permission",
-      "fields": {
-          "name": "Can add starship",
-          "content_type": ["genome", "starship"],
-          "codename": "add_starship"
-      }
   }
 ]
