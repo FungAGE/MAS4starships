@@ -38,121 +38,6 @@ def validate_duplicate_name(name):
 starship_upload_complete = django.dispatch.Signal()
 
 
-# Create your models here.
-class Starship(models.Model):
-    class Meta:
-        db_table = 'starship_starship'
-    
-    starship_name = models.CharField(max_length=100, unique=True)
-    starship_sequence = models.TextField(max_length=15000000)
-    species = models.CharField(max_length=100, unique=False)
-    elementBegin = models.IntegerField(null=True, blank=True)
-    elementEnd = models.IntegerField(null=True, blank=True)
-    contigID = models.CharField(max_length=100, unique=False)
-    starship_family = models.CharField(max_length=100, unique=False)
-    starship_navis = models.CharField(max_length=100, unique=False)
-    starship_haplotype = models.CharField(max_length=100, unique=False)
-
-    def __str__(self):
-        return self.starship_name
-
-
-class ShipFeatures(models.Model):
-    contigID = models.CharField(max_length=100)
-    starshipID = models.CharField(max_length=100, unique=True)
-    elementBegin = models.IntegerField(default=0)
-    elementEnd = models.IntegerField(default=0)
-
-
-# TODO: add features of interest here?
-class Feature(models.Model):
-    class Meta:
-        db_table = 'starship_feature'
-
-    feature_options = (
-        ("gene", "Gene Annotation"),
-        ("CDS", "Coding Sequence"),
-        ("Repeat Region", "Repeat Region"),
-        ("tRNA", "tRNA"),
-    )
-
-    """
-    on_delete=models.CASCADE() - deletes features of a Starship when a Starship is deleted
-    """
-    starship = models.ForeignKey(
-        Starship,
-        on_delete=models.CASCADE,
-        db_column='starship_id'
-    )
-
-    start = models.IntegerField(default=0)
-    stop = models.IntegerField(default=0)
-
-    type = models.CharField(max_length=50, choices=feature_options)
-
-    strand = models.CharField(max_length=1)
-
-    # obtain information from the Starship annotations
-    annotation = models.ForeignKey(
-        "Annotation", blank=True, null=True, on_delete=models.PROTECT
-    )
-
-    def __str__(self):
-        return "%s: %s %s..%s %s" % (
-            self.type,
-            self.starship,
-            self.start,
-            self.stop,
-            self.strand,
-        )
-
-
-class Annotation(models.Model):
-    # if you update this, you need to update the flag dict in confirm_upload_annotations in starship views
-    flag_options = (
-        (0, "GREEN"),
-        (1, "YELLOW"),
-        (2, "RED"),
-        (3, "REVIEW NAME"),
-        (4, "N/A"),
-        (5, "ORANGE"),
-        (7, "UNANNOTATED"),
-    )
-    annotation = models.CharField(
-        max_length=255, blank=True, null=True, default="No Annotation"
-    )
-    # Amino Acid Sequence
-    sequence = models.TextField(max_length=10000, unique=True)
-    public_notes = models.TextField(max_length=30000, blank=True, null=True, default="")
-    private_notes = models.TextField(
-        max_length=30000, blank=True, null=True, default=""
-    )
-    # default 7 for unannotated Starship
-    flag = models.IntegerField(default=7, choices=flag_options)
-    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    history = HistoricalRecords()
-
-    @property
-    def accession(self):
-        chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        integer = abs(self.id)
-        result = ""
-        padding = []
-
-        while integer > 0:
-            integer, remainder = divmod(integer, 36)
-            padding.insert(0, chars[remainder])
-        if len(padding) < 5:
-            while len(padding) < 5:
-                padding.insert(0, "0")
-        for i in padding:
-            result = result + i
-        return result
-
-    def __str__(self):
-        return "%s | %s" % (self.annotation, self.get_flag_display())
-
-
 # Models to match schema structure of starbase SQLite
 # having the schema/tables matching will be useful when we develop mariadb -> sqlite migration
 # TODO: the data displayed in tables should be created from these updated models
@@ -283,7 +168,6 @@ class FamilyNames(models.Model):
     def __str__(self):
         return self.familyName or f"Family {self.id}"
 
-
 class StarshipFeatures(models.Model):
     """StarshipFeatures table from SQLite schema - more comprehensive than current Feature model"""
     class Meta:
@@ -350,6 +234,22 @@ class Gff(models.Model):
     def __str__(self):
         return f"GFF {self.contigID}:{self.start}-{self.end}"
 
+# class Starship(models.Model):
+#     class Meta:
+#         db_table = 'starship_starship'
+    
+#     starship_name = models.CharField(max_length=100, unique=True)
+#     starship_sequence = models.TextField(max_length=15000000)
+#     species = models.CharField(max_length=100, unique=False)
+#     elementBegin = models.IntegerField(null=True, blank=True)
+#     elementEnd = models.IntegerField(null=True, blank=True)
+#     contigID = models.CharField(max_length=100, unique=False)
+#     starship_family = models.CharField(max_length=100, unique=False)
+#     starship_navis = models.CharField(max_length=100, unique=False)
+#     starship_haplotype = models.CharField(max_length=100, unique=False)
+
+#     def __str__(self):
+#         return self.starship_name
 
 class JoinedShips(models.Model):
     """JoinedShips table from SQLite schema - comprehensive starship data"""
@@ -402,3 +302,92 @@ class JoinedShips(models.Model):
 
     def __str__(self):
         return f"{self.starshipID} - {self.genus} {self.species}"
+
+
+# TODO: add features of interest here?
+class Feature(models.Model):
+    class Meta:
+        db_table = 'starship_feature'
+
+    feature_options = (
+        ("gene", "Gene Annotation"),
+        ("CDS", "Coding Sequence"),
+        ("Repeat Region", "Repeat Region"),
+        ("tRNA", "tRNA"),
+    )
+
+    """
+    on_delete=models.CASCADE() - deletes features of a Starship when a Starship is deleted
+    """
+    starship = models.ForeignKey(
+        Starship,
+        on_delete=models.CASCADE,
+        db_column='starship_id'
+    )
+
+    start = models.IntegerField(default=0)
+    stop = models.IntegerField(default=0)
+
+    type = models.CharField(max_length=50, choices=feature_options)
+
+    strand = models.CharField(max_length=1)
+
+    # obtain information from the Starship annotations
+    annotation = models.ForeignKey(
+        "Annotation", blank=True, null=True, on_delete=models.PROTECT
+    )
+
+    def __str__(self):
+        return "%s: %s %s..%s %s" % (
+            self.type,
+            self.starship,
+            self.start,
+            self.stop,
+            self.strand,
+        )
+
+
+class Annotation(models.Model):
+    # if you update this, you need to update the flag dict in confirm_upload_annotations in starship views
+    flag_options = (
+        (0, "GREEN"),
+        (1, "YELLOW"),
+        (2, "RED"),
+        (3, "REVIEW NAME"),
+        (4, "N/A"),
+        (5, "ORANGE"),
+        (7, "UNANNOTATED"),
+    )
+    annotation = models.CharField(
+        max_length=255, blank=True, null=True, default="No Annotation"
+    )
+    # Amino Acid Sequence
+    sequence = models.TextField(max_length=10000, unique=True)
+    public_notes = models.TextField(max_length=30000, blank=True, null=True, default="")
+    private_notes = models.TextField(
+        max_length=30000, blank=True, null=True, default=""
+    )
+    # default 7 for unannotated Starship
+    flag = models.IntegerField(default=7, choices=flag_options)
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    history = HistoricalRecords()
+
+    @property
+    def accession(self):
+        chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        integer = abs(self.id)
+        result = ""
+        padding = []
+
+        while integer > 0:
+            integer, remainder = divmod(integer, 36)
+            padding.insert(0, chars[remainder])
+        if len(padding) < 5:
+            while len(padding) < 5:
+                padding.insert(0, "0")
+        for i in padding:
+            result = result + i
+        return result
+
+    def __str__(self):
+        return "%s | %s" % (self.annotation, self.get_flag_display())
