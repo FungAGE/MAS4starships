@@ -244,8 +244,110 @@ class StarshipUploadForm(forms.Form):
         self.fields['assign_to'].queryset = starship_views.get_annotation_editors()
 
 class Starship_Delete(forms.Form):
-    starship = forms.ModelMultipleChoiceField(
-        queryset=starship_models.Starship.objects.all()
+    starship = forms.ModelChoiceField(queryset=starship_models.Starship.objects.all())
+
+# A single form for manual entry of starship data across multiple models
+class ComprehensiveDataForm(CrispyModelForm):
+    """Single form for manual entry of starship data across multiple models"""
+    
+    # Accession fields
+    accession_tag = forms.CharField(max_length=255, required=True)
+    ship_name = forms.CharField(max_length=255, required=False)
+    version_tag = forms.CharField(max_length=255, required=False)
+    
+    # Basic starship info (JoinedShips key fields)
+    starshipID = forms.CharField(max_length=255, required=True)
+    genus = forms.CharField(max_length=255, required=False)
+    species = forms.CharField(max_length=255, required=False)
+    strain = forms.CharField(max_length=255, required=False)
+    
+    # Captain info
+    captainID = forms.CharField(max_length=255, required=False)
+    captain_sequence = forms.CharField(widget=forms.Textarea, required=False)
+    
+    # Location info
+    contigID = forms.CharField(max_length=255, required=False)
+    elementBegin = forms.IntegerField(required=False)
+    elementEnd = forms.IntegerField(required=False)
+    
+    # Family/Classification
+    family_name = forms.CharField(max_length=255, required=False)
+    navis_name = forms.CharField(max_length=255, required=False)
+    haplotype_name = forms.CharField(max_length=255, required=False)
+    
+    # Sequence data
+    ship_sequence = forms.CharField(widget=forms.Textarea, required=False)
+    
+    def save(self):
+        """Custom save method to create records across multiple models"""
+        # Create Accession
+        accession = Accessions.objects.create(
+            accession_tag=self.cleaned_data['accession_tag'],
+            ship_name=self.cleaned_data['ship_name'],
+            version_tag=self.cleaned_data['version_tag']
+        )
+        
+        # Create Ship if sequence provided
+        if self.cleaned_data['ship_sequence']:
+            ship = Ships.objects.create(
+                sequence=self.cleaned_data['ship_sequence'],
+                accession=accession
+            )
+        
+        # Create Captain if provided
+        if self.cleaned_data['captainID']:
+            captain = Captains.objects.create(
+                captainID=self.cleaned_data['captainID'],
+                sequence=self.cleaned_data['captain_sequence'] or '',
+                ship=accession
+            )
+        
+        # Create JoinedShips record
+        joined_ship = JoinedShips.objects.create(
+            starshipID=self.cleaned_data['starshipID'],
+            genus=self.cleaned_data['genus'],
+            species=self.cleaned_data['species'],
+            strain=self.cleaned_data['strain'],
+            captainID=self.cleaned_data['captainID'],
+            contigID=self.cleaned_data['contigID'],
+            elementBegin=self.cleaned_data['elementBegin'],
+            elementEnd=self.cleaned_data['elementEnd'],
+            navis_name=self.cleaned_data['navis_name'],
+            haplotype_name=self.cleaned_data['haplotype_name'],
+            ship=accession
+        )
+        
+        return joined_ship
+
+# Bulk upload forms for SQLite data import
+class BulkDataUploadForm(forms.Form):
+    """Form for uploading bulk data from SQLite database"""
+    sqlite_file = forms.FileField(
+        help_text='SQLite database file to import data from',
+        required=False
+    )
+    
+    csv_file = forms.FileField(
+        help_text='CSV file containing data to import',
+        required=False
+    )
+    
+    data_type = forms.ChoiceField(
+        choices=[
+            ('accessions', 'Accessions'),
+            ('ships', 'Ships'),
+            ('captains', 'Captains'),
+            ('taxonomy', 'Taxonomy'),
+            ('genomes', 'Genomes'),
+            ('papers', 'Papers'),
+            ('family_names', 'Family Names'),
+            ('starship_features', 'Starship Features'),
+            ('navis_haplotype', 'Navis Haplotype'),
+            ('gff', 'GFF'),
+            ('joined_ships', 'Joined Ships'),
+        ],
+        required=True,
+        help_text='Type of data to import'
     )
 
     def __init__(self, *args, **kwargs):
