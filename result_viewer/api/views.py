@@ -16,7 +16,7 @@ from rest_framework.parsers import FormParser
 from result_viewer.api.serializers import *
 from result_viewer.api.tasks import run_single_search, run_multiple_search
 
-from starship.models import Starship, Annotation, Feature
+from starship.models import JoinedShips, Annotation, Feature
 
 class RunSearchAjaxView(APIView):
     '''
@@ -158,7 +158,7 @@ class GetProtSeqView(PipelineAPIMixin, APIView):
 
 class GetStarshipView(PipelineAPIMixin, APIView):
     permission_classes = [permissions.DjangoModelPermissions]
-    queryset = Starship.objects.all()
+    queryset = JoinedShips.objects.all()
 
     def get(self, request, starship_name, format=None):
         try:
@@ -175,7 +175,7 @@ class GetStarshipView(PipelineAPIMixin, APIView):
             else:
                 DTR_length = 0
 
-        except Starship.DoesNotExist:
+        except JoinedShips.DoesNotExist:
             raise Http404
 
         s = StarshipSeqSerializer({
@@ -264,7 +264,7 @@ class GetStarshipDataView(APIView):
         unannotated = Count('feature__annotation__flag', filter=Q(feature__annotation__flag=flag_options_reverse['UNANNOTATED']))
         review = Count('feature__annotation__flag', filter=Q(feature__annotation__flag=flag_options_reverse['REVIEW NAME']))
 
-        starships = Starship.objects.annotate(num_green=green).annotate(num_yellow=yellow).annotate(num_red=red).\
+        starships = JoinedShips.objects.annotate(num_green=green).annotate(num_yellow=yellow).annotate(num_red=red).\
             annotate(num_unannotated=unannotated).annotate(num_review=review).\
             annotate(num_cds=cds).annotate(num_gene=gene)
 
@@ -382,7 +382,7 @@ class GetAnnotationListView(APIView):
 
         if params['starship_id']:
             annotations = Annotation.objects.filter(feature__starship_id=params['starship_id']).distinct()
-            starship_name = Starship.objects.get(id=params['starship_id']).starship_name
+            starship_name = JoinedShips.objects.get(id=params['starship_id']).starship_name
         else:
             annotations = Annotation.objects
             starship_name = None

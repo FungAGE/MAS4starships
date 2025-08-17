@@ -95,7 +95,7 @@ class GenomeNavigator(Navigator):
     def __init__(self, starship_name, accession=None):
         self.nav_arg = starship_name
 
-        starship_obj = Starship.objects.get(starship_name=starship_name)
+        starship_obj = JoinedShips.objects.get(starship_name=starship_name)
         self.queryset = Annotation.objects.filter(feature__starship=starship_obj).order_by('feature__start').distinct()
         self.size = self.queryset.count()
         self.description = 'You are navigating {}'.format(starship_name)

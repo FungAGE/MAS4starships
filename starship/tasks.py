@@ -66,7 +66,7 @@ def create_internal_nucleotide_blastdb():
 
     if settings.NUCLEOTIDE_FASTA_PATH:
         fasta_file_path = settings.NUCLEOTIDE_FASTA_PATH
-        starships = starship_models.Starship.objects.all()
+        starships = starship_models.JoinedShips.objects.all()
         starship_list = []
         for starship in starships:
             sequence = SeqRecord(
@@ -148,7 +148,7 @@ def create_CDS_annotations(
     glimmer_results_file_path, genome, assign_to, new_annotations, new_features
 ):
     for cds in gene_calling.parse_glimmer_results(glimmer_results_file_path):
-        sequence = Seq(Starship.objects.get(starship_name=genome).starship_sequence)
+        sequence = Seq(JoinedShips.objects.get(starship_name=genome).starship_sequence)
         protein = get_protein_sequence(cds.start, cds.stop, cds.strand, sequence)
 
         if starship_models.Annotation.objects.filter(sequence=protein).count() > 0:
@@ -175,7 +175,7 @@ def create_CDS_annotations(
 def create_custom_CDS_annotations(
     coordinate_file, translation_table, genome, assign_to, new_annotations, new_features
 ):
-    starship_sequence = Seq(Starship.objects.get(starship_name=genome).starship_sequence)
+    starship_sequence = Seq(JoinedShips.objects.get(starship_name=genome).starship_sequence)
 
     for protein_sequence, cds in parse_prots_from_coords(
         coordinate_file, starship_sequence, translation_table
@@ -213,7 +213,7 @@ def create_trna_annotations(
     trnascan_results_file_path, genome, assign_to, new_annotations, new_features
 ):
     for tRNA in gene_calling.parse_trnascan_results(trnascan_results_file_path):
-        sequence = Seq(Starship.objects.get(starship_name=genome).starship_sequence)
+        sequence = Seq(JoinedShips.objects.get(starship_name=genome).starship_sequence)
         rna = get_rna_sequence(tRNA.start, tRNA.stop, tRNA.strand, sequence)
 
         if starship_models.Annotation.objects.filter(sequence=rna).count() > 0:

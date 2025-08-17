@@ -309,7 +309,7 @@ def main(args):
         raise NotADirectoryError("Output directory '%s' does not exist." % args.output_folder)
 
     # Get starship's genome
-    starship_obj = Starship.objects.get(starship_name=args.starship_name)
+    starship_obj = JoinedShips.objects.get(starship_name=args.starship_name)
     genome = Seq(starship_obj.starship_sequence)
 
     df = GetFeatureTable(args.starship_name, genome)

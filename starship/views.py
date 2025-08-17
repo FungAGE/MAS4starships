@@ -310,7 +310,7 @@ class StarshipUpload(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTe
                     species = upload_form.cleaned_data['species']
 
                     # Create Starship object
-                    starship = starship_models.Starship(
+                    starship = starship_models.JoinedShips(
                         starship_name=name,
                         starship_sequence=genome,
                         species=species
@@ -505,13 +505,13 @@ class StarshipUpload(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTe
 
 # returns the list of starships
 class Starship_List(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
-    model = starship_models.Starship
+    model = starship_models.JoinedShips
     context_object_name = 'starships'
     template_name = 'starship/starship_list.html'
 
     def get_context_data(self,  **kwargs):
         context = super(Starship_List, self).get_context_data(**kwargs)
-        starships = starship_models.Starship.objects.all().prefetch_related(
+        starships = starship_models.JoinedShips.objects.all().prefetch_related(
             'feature_set__annotation')
 
         # calculate number of unpolished CDS in starship
@@ -527,7 +527,7 @@ class Starship_List_SS(LoginRequiredMixin, MixinForBaseTemplate, generic.Templat
 # used for starship detail page
 # @cache_page(60 * 15)
 class Starship_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailView):
-    model = starship_models.Starship
+    model = starship_models.JoinedShips
     context_object_name = 'starship'
     template_name = 'starship/starship_detail.html'
     starship_dict = {}
@@ -650,9 +650,9 @@ class Annotation_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.Detail
 
     def get_context_data(self, **kwargs):
         context = super(Annotation_Detail, self).get_context_data(**kwargs)
-        starships = starship_models.Starship.objects.none()
+        starships = starship_models.JoinedShips.objects.none()
         for feature in context['annotation'].feature_set.all():
-            starships = starships | starship_models.Starship.objects.filter(id=feature.starship_id)
+            starships = starships | starship_models.JoinedShips.objects.filter(id=feature.starship_id)
         context['starship_info'] = get_starship_data_dicts(starships)
 
         context['exact_names'] = starship_models.Annotation.objects.filter(
@@ -669,7 +669,7 @@ class Get_Starship(LoginRequiredMixin, generic.View):
         starship_id = request.GET.get('starship_id', None)
         context = {}
         if starship_id:
-            context['starship'] = starship_models.Starship.objects.get(pk=starship_id)
+            context['starship'] = starship_models.JoinedShips.objects.get(pk=starship_id)
             # context['features'] = starship.feature_set.all()
             print(starship_id)
         return render(request, 'starship/starship_sequence.html', context)
@@ -710,7 +710,7 @@ class Get_Feature_Sequence(LoginRequiredMixin, generic.View):
 
 # loads the delete starship page
 class Starship_Delete(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTemplate, generic.ListView):
-    model = starship_models.Starship
+    model = starship_models.JoinedShips
     context_object_name = 'starship'
     template_name = 'starship/starship_delete.html'
     permission_required = 'starship.starship_delete'
@@ -753,7 +753,7 @@ class Confirm_Starship_Delete(LoginRequiredMixin, PermissionRequiredMixin, Mixin
         features = starship_models.Feature.objects.filter(starship__in=starships)
         annotations = starship_models.Annotation.objects.filter(feature__in=features)
 
-        starships_not_being_deleted = starship_models.Starship.objects.all().exclude(pk__in=starships)
+        starships_not_being_deleted = starship_models.JoinedShips.objects.all().exclude(pk__in=starships)
         annotations_to_keep = annotations.filter(feature__starship__in=list(starships_not_being_deleted)).distinct()
 
         annotations = annotations.exclude(pk__in=annotations_to_keep) # difference(annotations_to_keep) <- can't do this because can't filter resulting QS
@@ -1109,7 +1109,7 @@ def get_annotation_editors():
 def starship_download_fasta(request, starship_id):
     if request.user.is_authenticated:
         context = {}
-        starship = starship_models.Starship.objects.get(pk=starship_id)
+        starship = starship_models.JoinedShips.objects.get(pk=starship_id)
         starship_name = starship.starship_name
         nucleotide = starship.starship_sequence
         sequence = SeqRecord(
@@ -1132,7 +1132,7 @@ def starship_download_fasta(request, starship_id):
 # Will download the fasta file of users desired starship
 def download_deliverables(request, starship_id):
     if request.user.is_authenticated:
-        starship_name = starship_models.Starship.objects.get(pk=starship_id).starship_name
+        starship_name = starship_models.JoinedShips.objects.get(pk=starship_id).starship_name
 
         with TemporaryDirectory() as tempdir:
             # Create deliverables in temp directory

@@ -44,7 +44,7 @@ class AnnotationForm(forms.ModelForm):
 
 class GenomeSearchForm(forms.Form):
     search_starship = forms.ModelChoiceField(
-        queryset=Starship.objects.order_by('starship_name'),
+        queryset=JoinedShips.objects.order_by('starship_name'),
         empty_label='',
         required=False
     )

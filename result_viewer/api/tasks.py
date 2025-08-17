@@ -77,7 +77,7 @@ def run_single_search(accession, tool, database, site):
 def run_multiple_search(starship_name, rerun, tools_and_databases, site):
     if is_luigi_server_functional() and is_mas_reachable_from_worker(site):
         # Get list of starship's annotations
-        starship_obj = Starship.objects.get(starship_name=starship_name)
+        starship_obj = JoinedShips.objects.get(starship_name=starship_name)
 
         # Iterate through starship's annotations, selecting which ones to run searches for
         annotation_objs = (

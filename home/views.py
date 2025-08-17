@@ -36,7 +36,7 @@ class HomePageView(MixinForBaseTemplate, generic.TemplateView):
                 last_weeks_annotations.values("id").distinct().count()
             )
 
-            ship_count = Starship.objects.count()
+            ship_count = JoinedShips.objects.count()
             context["ship_count"] = ship_count
 
         return context

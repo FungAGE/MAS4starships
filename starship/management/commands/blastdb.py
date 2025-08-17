@@ -23,7 +23,7 @@ class Command(BaseCommand):
     def starship_blastdb(self):
         self.stdout.write('Creating Starship nucleotide BLAST database...')
         file_path = settings.NUCLEOTIDE_FASTA_PATH
-        starships = starship_models.Starship.objects.all()
+        starships = starship_models.JoinedShips.objects.all()
         starship_list = []
         for starship in starships:
             sequence = SeqRecord(Seq(starship.starship_sequence), id=starship.starship_name,

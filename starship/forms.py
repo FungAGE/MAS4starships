@@ -24,6 +24,7 @@ from starship import models as starship_models
 from starship import views as starship_views
 from starship.genomic_loci_conversions import *
 
+# TODO: add/update validation methods that already exist in starbase
 
 def validate_fasta_file(instance):
 
@@ -113,7 +114,7 @@ def parse_prots_from_coords(cds_fh, starship_rec, selected_table):
 
 
 def get_set_of_used_speciess():
-    return tuple((x, x) for x in starship_models.Starship.objects.all().values_list('species', flat=True).distinct())
+    return tuple((x, x) for x in starship_models.JoinedShips.objects.all().values_list('species', flat=True).distinct())
 
 ### START classes moved from home.forms in LIMS ###
 class CrispyModelForm(forms.ModelForm):
@@ -244,7 +245,7 @@ class StarshipUploadForm(forms.Form):
         self.fields['assign_to'].queryset = starship_views.get_annotation_editors()
 
 class Starship_Delete(forms.Form):
-    starship = forms.ModelChoiceField(queryset=starship_models.Starship.objects.all())
+    starship = forms.ModelChoiceField(queryset=starship_models.JoinedShips.objects.all())
 
 # A single form for manual entry of starship data across multiple models
 class ComprehensiveDataForm(CrispyModelForm):

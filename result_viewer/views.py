@@ -306,7 +306,7 @@ class ViewResults(LoginRequiredMixin, MixinForBaseTemplate, generic.UpdateView):
 
         # Starship visualization
         if context['navigator']['type'] == 'GenomeNavigator':
-            starship = Starship.objects.get(starship_name=self.kwargs['nav_arg'])
+            starship = JoinedShips.objects.get(starship_name=self.kwargs['nav_arg'])
             context['starship_id'] = starship.id
             if starship.feature_set.count() < 1000:
                 current_annotation_id = int(self.kwargs['accession'], 36)

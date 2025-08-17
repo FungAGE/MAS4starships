@@ -29,7 +29,7 @@ def validate_starship_error(option):
 
 def validate_duplicate_name(name):
     # starships = Features.objects.filter(name=name)
-    starships = Starship.objects.all()
+    starships = JoinedShips.objects.all()
     for starship in starships:
         if starship.starship_name == name:
             raise ValidationError("%s is already a Starship name." % name, code=3)
@@ -320,7 +320,7 @@ class Feature(models.Model):
     on_delete=models.CASCADE() - deletes features of a Starship when a Starship is deleted
     """
     starship = models.ForeignKey(
-        Starship,
+        JoinedShips,
         on_delete=models.CASCADE,
         db_column='starship_id'
     )
