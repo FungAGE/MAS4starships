@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'starship/starship.css' %}" />
+{% endblock %}
+
+{% block head %}
+<meta charset="UTF-8" />
+<title>MAS | Bulk Data Upload</title>
+{% endblock %}
+
+{% block body %}
+<div class="block wide-block">
+    <h1>Bulk Data Upload</h1>
+    <p>Upload data from SQLite database or CSV files to populate the comprehensive starship database.</p>
+    
+    {% if result %}
+        <div class="alert {% if result.success %}alert-success{% else %}alert-danger{% endif %}">
+            {{ result.message }}
+        </div>
+    {% endif %}
+    
+    {% if error %}
+        <div class="alert alert-danger">
+            {{ error }}
+        </div>
+    {% endif %}
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-primary">Upload Data</button>
+        <a href="{% url 'starship:starship_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <h3>Supported Data Types</h3>
+            <ul>
+                <li><strong>Accessions:</strong> Basic starship accession information</li>
+                <li><strong>Ships:</strong> Starship sequence data</li>
+                <li><strong>Captains:</strong> Captain protein sequences</li>
+                <li><strong>Taxonomy:</strong> Taxonomic classification data</li>
+                <li><strong>Genomes:</strong> Genome metadata</li>
+                <li><strong>Papers:</strong> Research publications</li>
+                <li><strong>Family Names:</strong> Starship family classifications</li>
+                <li><strong>Starship Features:</strong> Detailed starship feature annotations</li>
+                <li><strong>Navis Haplotype:</strong> Navis and haplotype information</li>
+                <li><strong>GFF:</strong> Gene feature format annotations</li>
+                <li><strong>Joined Ships:</strong> Comprehensive starship data with taxonomy</li>
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <h3>File Formats</h3>
+            <ul>
+                <li><strong>SQLite:</strong> Direct import from SQLite database files</li>
+                <li><strong>CSV:</strong> Comma-separated values with column headers</li>
+            </ul>
+            
+            <div class="alert alert-info">
+                <strong>Note:</strong> Column names in CSV files should match the database field names. 
+                For SQLite files, data will be imported directly from the corresponding table.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

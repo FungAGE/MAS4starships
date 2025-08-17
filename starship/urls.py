@@ -30,4 +30,14 @@ urlpatterns = [
     # ajax url used for amino acid sequence drop down
     path('ajax/annotation/get/aa_sequence/', views.Get_AA_Sequence.as_view(), name='get_aa_sequence'),
     path('ajax/feature/get/nucleotide_sequence/', views.Get_Feature_Sequence.as_view(), name='get_feature_sequence'),
+    
+    # URLs for comprehensive data models from SQLite schema
+    path('accessions/', views.AccessionsList.as_view(), name='accessions_list'),
+    path('accessions/<int:pk>/', views.AccessionDetail.as_view(), name='accession_detail'),
+    path('accessions/create/', views.AccessionCreate.as_view(), name='accession_create'),
+    path('joined-ships/', views.JoinedShipsList.as_view(), name='joined_ships_list'),
+    path('joined-ships/<int:pk>/', views.JoinedShipDetail.as_view(), name='joined_ship_detail'),
+    path('taxonomy/', views.TaxonomyList.as_view(), name='taxonomy_list'),
+    path('papers/', views.PapersList.as_view(), name='papers_list'),
+    path('bulk-upload/', views.BulkDataUpload.as_view(), name='bulk_data_upload'),
 ]

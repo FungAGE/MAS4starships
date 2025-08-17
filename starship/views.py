@@ -284,13 +284,6 @@ class Confirm_Upload_Annotation(LoginRequiredMixin, PermissionRequiredMixin, Mix
         return redirect('starship:starship_list')
 
 
-class Upload_Starship(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTemplate, generic.View):
-    model = starship_models.Starship
-    permission_required = 'starship.add_starship'
-    permission_denied_message = 'You do not have permission to access this page. Please contact your administrator.'
-    login_url = reverse_lazy('login')
-
-
 class StarshipUpload(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTemplate, generic.View):
     template_name = 'starship/upload_starship.html'
     permission_required = 'starship.add_starship'
@@ -1208,3 +1201,240 @@ def get_dna_sequence(start, stop, strand, sequence):
         # Convert to Seq object for reverse complement
         dna_seq = Seq(str(dna_seq)).reverse_complement()
     return str(dna_seq)
+
+
+# Views for managing comprehensive data models from SQLite schema
+
+class AccessionsList(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
+    """View for listing all accessions"""
+    model = starship_models.Accessions
+    template_name = 'starship/accessions_list.html'
+    context_object_name = 'accessions'
+    paginate_by = 25
+
+
+class AccessionDetail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailView):
+    """View for displaying accession details"""
+    model = starship_models.Accessions
+    template_name = 'starship/accession_detail.html'
+    context_object_name = 'accession'
+
+
+class AccessionCreate(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTemplate, generic.CreateView):
+    """View for creating new accessions"""
+    model = starship_models.Accessions
+    form_class = starship_forms.AccessionForm
+    template_name = 'starship/accession_form.html'
+    permission_required = 'starship.add_accessions'
+    success_url = reverse_lazy('starship:accessions_list')
+
+
+class JoinedShipsList(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
+    """View for listing comprehensive starship data"""
+    model = starship_models.JoinedShips
+    template_name = 'starship/joined_ships_list.html'
+    context_object_name = 'joined_ships'
+    paginate_by = 25
+
+    def get_queryset(self):
+        return starship_models.JoinedShips.objects.select_related(
+            'ship_family', 'ship'
+        ).order_by('starshipID')
+
+
+class JoinedShipDetail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailView):
+    """View for displaying comprehensive starship details"""
+    model = starship_models.JoinedShips
+    template_name = 'starship/joined_ship_detail.html'
+    context_object_name = 'joined_ship'
+
+
+class TaxonomyList(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
+    """View for listing taxonomy data"""
+    model = starship_models.Taxonomy
+    template_name = 'starship/taxonomy_list.html'
+    context_object_name = 'taxonomies'
+    paginate_by = 25
+
+
+class PapersList(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
+    """View for listing research papers"""
+    model = starship_models.Papers
+    template_name = 'starship/papers_list.html'
+    context_object_name = 'papers'
+    paginate_by = 25
+
+    def get_queryset(self):
+        return starship_models.Papers.objects.order_by('-PublicationYear', 'Author')
+
+
+class BulkDataUpload(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTemplate, generic.View):
+    """View for bulk uploading data from SQLite or CSV files"""
+    template_name = 'starship/bulk_data_upload.html'
+    permission_required = 'starship.add_accessions'
+    
+    def get(self, request):
+        form = starship_forms.BulkDataUploadForm()
+        context = self.get_context_data()
+        context['form'] = form
+        return render(request, self.template_name, context)
+    
+    def post(self, request):
+        form = starship_forms.BulkDataUploadForm(request.POST, request.FILES)
+        context = self.get_context_data()
+        
+        if form.is_valid():
+            data_type = form.cleaned_data['data_type']
+            
+            if 'sqlite_file' in request.FILES:
+                # Handle SQLite file import
+                result = self.import_from_sqlite(request.FILES['sqlite_file'], data_type)
+            elif 'csv_file' in request.FILES:
+                # Handle CSV file import
+                result = self.import_from_csv(request.FILES['csv_file'], data_type)
+            else:
+                context['error'] = 'Please provide either a SQLite file or CSV file'
+                context['form'] = form
+                return render(request, self.template_name, context)
+            
+            context['result'] = result
+            context['form'] = starship_forms.BulkDataUploadForm()  # Reset form
+        else:
+            context['form'] = form
+            
+        return render(request, self.template_name, context)
+    
+    def import_from_sqlite(self, sqlite_file, data_type):
+        """Import data from SQLite file"""
+        import sqlite3
+        import tempfile
+        
+        try:
+            # Save uploaded file temporarily
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.sqlite') as tmp_file:
+                for chunk in sqlite_file.chunks():
+                    tmp_file.write(chunk)
+                tmp_file_path = tmp_file.name
+            
+            # Connect to SQLite database
+            conn = sqlite3.connect(tmp_file_path)
+            cursor = conn.cursor()
+            
+            # Map data types to table names
+            table_mapping = {
+                'accessions': 'accessions',
+                'ships': 'ships', 
+                'captains': 'captains',
+                'taxonomy': 'taxonomy',
+                'genomes': 'genomes',
+                'papers': 'papers',
+                'family_names': 'family_names',
+                'starship_features': 'starship_features',
+                'navis_haplotype': 'navis_haplotype',
+                'gff': 'gff',
+                'joined_ships': 'joined_ships',
+            }
+            
+            table_name = table_mapping.get(data_type)
+            if not table_name:
+                return {'success': False, 'message': 'Invalid data type'}
+            
+            # Get data from SQLite
+            cursor.execute(f"SELECT * FROM {table_name}")
+            rows = cursor.fetchall()
+            
+            # Get column names
+            cursor.execute(f"PRAGMA table_info({table_name})")
+            columns = [row[1] for row in cursor.fetchall()]
+            
+            conn.close()
+            os.unlink(tmp_file_path)  # Clean up temp file
+            
+            # Import data into Django models
+            imported_count = self.bulk_create_records(data_type, columns, rows)
+            
+            return {
+                'success': True, 
+                'message': f'Successfully imported {imported_count} {data_type} records'
+            }
+            
+        except Exception as e:
+            return {'success': False, 'message': f'Error importing data: {str(e)}'}
+    
+    def import_from_csv(self, csv_file, data_type):
+        """Import data from CSV file"""
+        import csv
+        
+        try:
+            # Read CSV file
+            file_content = csv_file.read().decode('utf-8')
+            csv_reader = csv.DictReader(file_content.splitlines())
+            
+            rows = []
+            columns = []
+            for row in csv_reader:
+                if not columns:
+                    columns = list(row.keys())
+                rows.append([row[col] for col in columns])
+            
+            # Import data into Django models
+            imported_count = self.bulk_create_records(data_type, columns, rows)
+            
+            return {
+                'success': True,
+                'message': f'Successfully imported {imported_count} {data_type} records'
+            }
+            
+        except Exception as e:
+            return {'success': False, 'message': f'Error importing CSV: {str(e)}'}
+    
+    def bulk_create_records(self, data_type, columns, rows):
+        """Create Django model records from imported data"""
+        model_mapping = {
+            'accessions': starship_models.Accessions,
+            'ships': starship_models.Ships,
+            'captains': starship_models.Captains,
+            'taxonomy': starship_models.Taxonomy,
+            'genomes': starship_models.Genome,
+            'papers': starship_models.Papers,
+            'family_names': starship_models.FamilyNames,
+            'starship_features': starship_models.StarshipFeatures,
+            'navis_haplotype': starship_models.NavisHaplotype,
+            'gff': starship_models.Gff,
+            'joined_ships': starship_models.JoinedShips,
+        }
+        
+        model_class = model_mapping.get(data_type)
+        if not model_class:
+            raise ValueError(f'Unknown data type: {data_type}')
+        
+        records_to_create = []
+        for row in rows:
+            row_dict = {}
+            for i, value in enumerate(row):
+                if i < len(columns):
+                    # Handle special field mappings
+                    field_name = columns[i]
+                    if field_name == 'class' and data_type == 'taxonomy':
+                        field_name = 'class_field'
+                    
+                    # Convert empty strings to None for nullable fields
+                    if value == '' or value == 'NULL':
+                        value = None
+                    
+                    row_dict[field_name] = value
+            
+            try:
+                records_to_create.append(model_class(**row_dict))
+            except Exception as e:
+                print(f"Error creating record: {e}, data: {row_dict}")
+                continue
+        
+        # Bulk create records
+        created_records = model_class.objects.bulk_create(
+            records_to_create, 
+            ignore_conflicts=True,
+            batch_size=1000
+        )
+        
+        return len(created_records)

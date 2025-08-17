@@ -48,6 +48,14 @@
         </div>
         <div class="col-md-3">
           <a
+            href="{% url 'starship:bulk_data_upload' %}"
+            class="btn btn-warning btn-block"
+          >
+            <i class="fa fa-upload"></i> Bulk Upload
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a
             href="{% url 'starship:starship_list' %}"
             class="btn btn-default btn-block"
           >
