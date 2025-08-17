@@ -151,3 +151,254 @@ class Annotation(models.Model):
 
     def __str__(self):
         return "%s | %s" % (self.annotation, self.get_flag_display())
+
+
+# Models to match schema structure of starbase SQLite
+# having the schema/tables matching will be useful when we develop mariadb -> sqlite migration
+# TODO: the data displayed in tables should be created from these updated models
+class Accessions(models.Model):
+    """Accessions table from SQLite schema"""
+    class Meta:
+        db_table = 'accessions'
+    
+    ship_name = models.CharField(max_length=255, null=True, blank=True)
+    accession_tag = models.CharField(max_length=255, unique=True)
+    version_tag = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.accession_tag} - {self.ship_name}"
+
+
+class Ships(models.Model):
+    """Ships table from SQLite schema"""
+    class Meta:
+        db_table = 'ships'
+    
+    sequence = models.TextField()
+    md5 = models.CharField(max_length=32, null=True, blank=True)
+    accession = models.ForeignKey(Accessions, on_delete=models.CASCADE, related_name='ships')
+
+    def __str__(self):
+        return f"Ship {self.id} - {self.accession.accession_tag}"
+
+
+class Captains(models.Model):
+    """Captains table from SQLite schema"""
+    class Meta:
+        db_table = 'captains'
+    
+    captainID = models.CharField(max_length=255, unique=True)
+    sequence = models.TextField()
+    ship = models.ForeignKey(Accessions, on_delete=models.CASCADE, related_name='captains')
+    reviewed = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return self.captainID
+
+
+class Taxonomy(models.Model):
+    """Taxonomy table from SQLite schema"""
+    class Meta:
+        db_table = 'taxonomy'
+    
+    name = models.CharField(max_length=255, null=True, blank=True)
+    taxID = models.CharField(max_length=255, null=True, blank=True)
+    superkingdom = models.CharField(max_length=255, null=True, blank=True)
+    clade = models.CharField(max_length=255, null=True, blank=True)
+    kingdom = models.CharField(max_length=255, null=True, blank=True)
+    subkingdom = models.CharField(max_length=255, null=True, blank=True)
+    phylum = models.CharField(max_length=255, null=True, blank=True)
+    subphylum = models.CharField(max_length=255, null=True, blank=True)
+    class_field = models.CharField(max_length=255, null=True, blank=True, db_column='class')  # class is reserved
+    subclass = models.CharField(max_length=255, null=True, blank=True)
+    order = models.CharField(max_length=255, null=True, blank=True)
+    suborder = models.CharField(max_length=255, null=True, blank=True)
+    family = models.CharField(max_length=255, null=True, blank=True)
+    genus = models.CharField(max_length=255, null=True, blank=True)
+    species = models.CharField(max_length=255, null=True, blank=True)
+    section = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.taxID})"
+
+
+class Genome(models.Model):
+    """Genome table from SQLite schema"""
+    class Meta:
+        db_table = 'genomes'
+    
+    ome = models.CharField(max_length=50, null=True, blank=True)
+    taxonomy = models.ForeignKey(Taxonomy, on_delete=models.CASCADE, related_name='genomes', null=True)
+    version = models.CharField(max_length=50, null=True, blank=True)
+    genomeSource = models.CharField(max_length=50, null=True, blank=True)
+    citation = models.CharField(max_length=50, null=True, blank=True)
+    biosample = models.CharField(max_length=50, null=True, blank=True)
+    acquisition_date = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.ome} v{self.version}"
+
+
+class Papers(models.Model):
+    """Papers table from SQLite schema"""
+    class Meta:
+        db_table = 'papers'
+    
+    Key = models.CharField(max_length=255, null=True, blank=True)
+    ItemType = models.CharField(max_length=255, null=True, blank=True)
+    PublicationYear = models.IntegerField(null=True, blank=True)
+    Author = models.CharField(max_length=255, null=True, blank=True)
+    Title = models.CharField(max_length=255, null=True, blank=True)
+    PublicationTitle = models.CharField(max_length=255, null=True, blank=True)
+    DOI = models.CharField(max_length=255, null=True, blank=True)
+    Url = models.CharField(max_length=255, null=True, blank=True)
+    AbstractNote = models.TextField(null=True, blank=True)
+    Date = models.CharField(max_length=255, null=True, blank=True)
+    starshipMentioned = models.CharField(max_length=255, null=True, blank=True)
+    typePaper = models.CharField(max_length=255, null=True, blank=True)
+    shortCitation = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.Author} ({self.PublicationYear}): {self.Title}"
+
+
+class FamilyNames(models.Model):
+    """FamilyNames table from SQLite schema"""
+    class Meta:
+        db_table = 'family_names'
+    
+    longFamilyID = models.CharField(max_length=255, null=True, blank=True)
+    oldFamilyID = models.CharField(max_length=255, null=True, blank=True)
+    clade = models.IntegerField(null=True, blank=True)
+    newFamilyID = models.IntegerField(null=True, blank=True)
+    familyName = models.CharField(max_length=255, null=True, blank=True)
+    type_element_reference = models.CharField(max_length=255, null=True, blank=True)
+    notes = models.CharField(max_length=255, null=True, blank=True)
+    otherFamilyID = models.CharField(max_length=255, null=True, blank=True)
+    paper = models.ForeignKey(Papers, on_delete=models.CASCADE, null=True, blank=True)
+    
+    # Many-to-many relationship with Papers
+    papers = models.ManyToManyField(Papers, related_name='family_names', blank=True)
+
+    def __str__(self):
+        return self.familyName or f"Family {self.id}"
+
+
+class StarshipFeatures(models.Model):
+    """StarshipFeatures table from SQLite schema - more comprehensive than current Feature model"""
+    class Meta:
+        db_table = 'starship_features'
+    
+    contigID = models.CharField(max_length=255, null=True, blank=True)
+    starshipID = models.CharField(max_length=255, null=True, blank=True)
+    captainID = models.CharField(max_length=255, null=True, blank=True)
+    elementBegin = models.CharField(max_length=255, null=True, blank=True)
+    elementEnd = models.CharField(max_length=255, null=True, blank=True)
+    elementLength = models.CharField(max_length=255, null=True, blank=True)
+    strand = models.CharField(max_length=255, null=True, blank=True)
+    boundaryType = models.CharField(max_length=255, null=True, blank=True)
+    emptySiteID = models.CharField(max_length=255, null=True, blank=True)
+    emptyContig = models.CharField(max_length=255, null=True, blank=True)
+    emptyBegin = models.CharField(max_length=255, null=True, blank=True)
+    emptyEnd = models.CharField(max_length=255, null=True, blank=True)
+    emptySeq = models.CharField(max_length=255, null=True, blank=True)
+    upDR = models.CharField(max_length=255, null=True, blank=True)
+    downDR = models.CharField(max_length=255, null=True, blank=True)
+    DRedit = models.CharField(max_length=255, null=True, blank=True)
+    upTIR = models.CharField(max_length=255, null=True, blank=True)
+    downTIR = models.CharField(max_length=255, null=True, blank=True)
+    TIRedit = models.CharField(max_length=255, null=True, blank=True)
+    nestedInside = models.CharField(max_length=255, null=True, blank=True)
+    containNested = models.CharField(max_length=255, null=True, blank=True)
+    ship = models.ForeignKey(Accessions, on_delete=models.CASCADE, null=True, blank=True)
+    captain = models.ForeignKey(Captains, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f"Feature {self.starshipID} - {self.captainID}"
+
+
+class NavisHaplotype(models.Model):
+    """NavisHaplotype table from SQLite schema"""
+    class Meta:
+        db_table = 'navis_haplotype'
+    
+    navis_name = models.CharField(max_length=255, null=True, blank=True)
+    haplotype_name = models.CharField(max_length=255, null=True, blank=True)
+    ship_family = models.ForeignKey(FamilyNames, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.navis_name} - {self.haplotype_name}"
+
+
+class Gff(models.Model):
+    """Gff table from SQLite schema"""
+    class Meta:
+        db_table = 'gff'
+    
+    contigID = models.CharField(max_length=255, null=True, blank=True)
+    accession = models.CharField(max_length=255, null=True, blank=True)
+    source = models.CharField(max_length=255, null=True, blank=True)
+    type = models.CharField(max_length=255, null=True, blank=True)
+    start = models.IntegerField(null=True, blank=True)
+    end = models.IntegerField(null=True, blank=True)
+    phase = models.IntegerField(null=True, blank=True)
+    strand = models.CharField(max_length=255, null=True, blank=True)
+    score = models.CharField(max_length=255, null=True, blank=True)
+    attributes = models.CharField(max_length=255, null=True, blank=True)
+    ship = models.ForeignKey(Accessions, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f"GFF {self.contigID}:{self.start}-{self.end}"
+
+
+class JoinedShips(models.Model):
+    """JoinedShips table from SQLite schema - comprehensive starship data"""
+    class Meta:
+        db_table = 'joined_ships'
+    
+    starshipID = models.CharField(max_length=255, null=True, blank=True)
+    genus = models.CharField(max_length=255, null=True, blank=True)
+    species = models.CharField(max_length=255, null=True, blank=True)
+    strain = models.CharField(max_length=255, null=True, blank=True)
+    evidence = models.CharField(max_length=255, null=True, blank=True)
+    source = models.CharField(max_length=255, null=True, blank=True)
+    contigID = models.CharField(max_length=255, null=True, blank=True)
+    captainID = models.CharField(max_length=255, null=True, blank=True)
+    elementBegin = models.IntegerField(null=True, blank=True)
+    elementEnd = models.IntegerField(null=True, blank=True)
+    size = models.IntegerField(null=True, blank=True)
+    strand = models.CharField(max_length=255, null=True, blank=True)
+    boundaryType = models.CharField(max_length=255, null=True, blank=True)
+    emptySiteID = models.CharField(max_length=255, null=True, blank=True)
+    emptyContig = models.CharField(max_length=255, null=True, blank=True)
+    emptyBegin = models.IntegerField(null=True, blank=True)
+    emptyEnd = models.IntegerField(null=True, blank=True)
+    emptySeq = models.CharField(max_length=255, null=True, blank=True)
+    upDR = models.CharField(max_length=255, null=True, blank=True)
+    downDR = models.CharField(max_length=255, null=True, blank=True)
+    DRedit = models.CharField(max_length=255, null=True, blank=True)
+    upTIR = models.CharField(max_length=255, null=True, blank=True)
+    downTIR = models.CharField(max_length=255, null=True, blank=True)
+    TIRedit = models.CharField(max_length=255, null=True, blank=True)
+    nestedInside = models.CharField(max_length=255, null=True, blank=True)
+    containNested = models.CharField(max_length=255, null=True, blank=True)
+    dr = models.CharField(max_length=255, null=True, blank=True)
+    tir = models.CharField(max_length=255, null=True, blank=True)
+    navis_name = models.CharField(max_length=255, null=True, blank=True)
+    haplotype_name = models.CharField(max_length=255, null=True, blank=True)
+    target = models.CharField(max_length=255, null=True, blank=True)
+    spok = models.CharField(max_length=255, null=True, blank=True)
+    ars = models.CharField(max_length=255, null=True, blank=True)
+    other = models.CharField(max_length=255, null=True, blank=True)
+    hgt = models.CharField(max_length=255, null=True, blank=True)
+    ship_family = models.ForeignKey(FamilyNames, on_delete=models.CASCADE, null=True, blank=True)
+    curated_status = models.CharField(max_length=255, null=True, blank=True)
+    taxid = models.IntegerField(null=True, blank=True)
+    ship = models.ForeignKey(Accessions, on_delete=models.CASCADE, null=True, blank=True)
+    genome_id = models.CharField(max_length=255, null=True, blank=True)
+    ome = models.CharField(max_length=255, null=True, blank=True)
+    orphan = models.CharField(max_length=255, null=True, blank=True)
+    captainID_new = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.starshipID} - {self.genus} {self.species}"
