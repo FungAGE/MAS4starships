@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 
 {% load static %}
-{% load crispy_forms_tags %}
 
 {% block css %}
     <link rel="stylesheet" href="{% static 'starship/upload_starship.css' %}">
@@ -28,16 +27,52 @@
 
                 <div class="form-section">
                     <h3>Required Information</h3>
-                    {{ upload_form.name|crispy }}
-                    {{ upload_form.upload|crispy }}
-                    {{ upload_form.species|crispy }}
+                    <div class="form-group">
+                        {{ upload_form.name.label_tag }}
+                        {{ upload_form.name }}
+                        {% if upload_form.name.help_text %}
+                            <small class="form-text text-muted">{{ upload_form.name.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        {{ upload_form.upload.label_tag }}
+                        {{ upload_form.upload }}
+                        {% if upload_form.upload.help_text %}
+                            <small class="form-text text-muted">{{ upload_form.upload.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        {{ upload_form.species.label_tag }}
+                        {{ upload_form.species }}
+                        {% if upload_form.species.help_text %}
+                            <small class="form-text text-muted">{{ upload_form.species.help_text }}</small>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <div class="form-section">
                     <h3>Optional Information</h3>
-                    {{ upload_form.terminal_repeat|crispy }}
-                    {{ upload_form.annotation_file|crispy }}
-                    {{ upload_form.assign_to|crispy }}
+                    <div class="form-group">
+                        {{ upload_form.terminal_repeat.label_tag }}
+                        {{ upload_form.terminal_repeat }}
+                        {% if upload_form.terminal_repeat.help_text %}
+                            <small class="form-text text-muted">{{ upload_form.terminal_repeat.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        {{ upload_form.annotation_file.label_tag }}
+                        {{ upload_form.annotation_file }}
+                        {% if upload_form.annotation_file.help_text %}
+                            <small class="form-text text-muted">{{ upload_form.annotation_file.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        {{ upload_form.assign_to.label_tag }}
+                        {{ upload_form.assign_to }}
+                        {% if upload_form.assign_to.help_text %}
+                            <small class="form-text text-muted">{{ upload_form.assign_to.help_text }}</small>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <button class="btn btn-success" type="submit">Upload Starship</button>
