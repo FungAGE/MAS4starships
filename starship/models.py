@@ -256,6 +256,16 @@ class JoinedShips(models.Model):
     class Meta:
         db_table = 'joined_ships'
     
+    # Starship quality flag options
+    QUALITY_FLAG_CHOICES = (
+        (0, "COMPLETE"),           # All critical information present
+        (1, "MISSING_BOUNDARIES"), # Missing DR/TIR boundary information
+        (2, "MISSING_CAPTAIN"),    # Missing captain/transposase information  
+        (3, "MISSING_CLASSIFICATION"), # Missing family/navis classification
+        (4, "INCOMPLETE"),         # Multiple critical pieces missing
+        (5, "MISSING_CARGO_ANNOTATIONS"), # Missing cargo annotations
+    )
+    
     starshipID = models.CharField(max_length=255, null=True, blank=True)
     genus = models.CharField(max_length=255, null=True, blank=True)
     species = models.CharField(max_length=255, null=True, blank=True)
@@ -299,6 +309,106 @@ class JoinedShips(models.Model):
     ome = models.CharField(max_length=255, null=True, blank=True)
     orphan = models.CharField(max_length=255, null=True, blank=True)
     captainID_new = models.IntegerField(null=True, blank=True)
+    
+    # Quality flag field - defaults to INCOMPLETE
+    quality_flag = models.IntegerField(default=4, choices=QUALITY_FLAG_CHOICES)
+
+    def calculate_quality_flag(self):
+        """
+        Calculate the appropriate quality flag based on available data.
+        Returns the flag value (integer).
+        """
+        missing_data = []
+        
+        # Check for boundary information (DR/TIR)
+        has_boundaries = bool(
+            (self.upDR and self.downDR) or 
+            (self.upTIR and self.downTIR) or
+            self.dr or self.tir
+        )
+        if not has_boundaries:
+            missing_data.append('boundaries')
+        
+        # Check for captain/transposase information
+        has_captain = bool(self.captainID or self.captainID_new)
+        if not has_captain:
+            missing_data.append('captain')
+        
+        # Check for classification information
+        has_classification = bool(
+            self.ship_family or 
+            (self.navis_name and self.haplotype_name)
+        )
+        if not has_classification:
+            missing_data.append('classification')
+        
+        # Check for basic sequence information
+        has_basic_info = bool(
+            self.starshipID and 
+            self.elementBegin and 
+            self.elementEnd and
+            self.size
+        )
+        if not has_basic_info:
+            missing_data.append('basic_info')
+        
+        has_cargo_annotations = bool(self.ship.annotations.count() > 0)
+        if not has_cargo_annotations:
+            missing_data.append('cargo_annotations')
+
+        # Determine flag based on missing data
+        if not missing_data:
+            return 0  # COMPLETE
+        elif len(missing_data) >= 3:
+            return 4  # INCOMPLETE
+        elif 'boundaries' in missing_data:
+            return 1  # MISSING_BOUNDARIES
+        elif 'captain' in missing_data:
+            return 2  # MISSING_CAPTAIN
+        elif 'classification' in missing_data:
+            return 3  # MISSING_CLASSIFICATION
+        elif 'cargo_annotations' in missing_data:
+            return 5  # MISSING_CARGO_ANNOTATIONS
+        else:
+            return 4  # INCOMPLETE
+    
+    def update_quality_flag(self):
+        """Update the quality flag based on current data and save."""
+        self.quality_flag = self.calculate_quality_flag()
+        self.save(update_fields=['quality_flag'])
+    
+    def get_missing_data_summary(self):
+        """
+        Return a human-readable summary of what data is missing.
+        """
+        missing_items = []
+        
+        # Check boundaries
+        has_boundaries = bool(
+            (self.upDR and self.downDR) or 
+            (self.upTIR and self.downTIR) or
+            self.dr or self.tir
+        )
+        if not has_boundaries:
+            missing_items.append("Boundary elements (DR/TIR sequences)")
+        
+        # Check captain
+        if not (self.captainID or self.captainID_new):
+            missing_items.append("Captain/transposase identification")
+        
+        # Check classification
+        if not (self.ship_family or (self.navis_name and self.haplotype_name)):
+            missing_items.append("Family/classification information")
+        
+        # Check basic info
+        if not (self.starshipID and self.elementBegin and self.elementEnd and self.size):
+            missing_items.append("Basic sequence information (coordinates, size)")
+        
+        # Check cargo annotations
+        if not self.ship.annotations.count():
+            missing_items.append("Cargo annotations")
+        
+        return missing_items
 
     def __str__(self):
         return f"{self.starshipID} - {self.genus} {self.species}"
