@@ -28,3 +28,4 @@ media/**
 *.fna
 *.ffn
 *.fa
+*.sqlite*
