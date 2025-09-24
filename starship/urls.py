@@ -40,4 +40,5 @@ urlpatterns = [
     path('taxonomy/', views.TaxonomyList.as_view(), name='taxonomy_list'),
     path('papers/', views.PapersList.as_view(), name='papers_list'),
     path('bulk-upload/', views.BulkDataUpload.as_view(), name='bulk_data_upload'),
+    path('quality-overview/', views.StarshipQualityOverview.as_view(), name='quality_overview'),
 ]
