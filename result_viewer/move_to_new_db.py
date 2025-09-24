@@ -8,7 +8,7 @@ from Bio.Seq import Seq
 from Bio.Alphabet import IUPAC
 from simple_history.utils import get_history_manager_for_model
 
-from starship.models import Annotation, Feature, Starship
+from starship.models import Annotation, Feature, JoinedShips
 from starship.views import get_dna_sequence, get_protein_sequence, get_rna_sequence
 
 def move_users():

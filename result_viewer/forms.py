@@ -3,7 +3,7 @@ from django.db import models
 from django.contrib.auth.models import User
 
 # from result_viewer.models import Annotation, Starship
-from starship.models import Annotation, Starship
+from starship.models import Annotation, JoinedShips
 
 def is_ascii(string):
     '''
@@ -44,7 +44,7 @@ class AnnotationForm(forms.ModelForm):
 
 class GenomeSearchForm(forms.Form):
     search_starship = forms.ModelChoiceField(
-        queryset=JoinedShips.objects.order_by('starship_name'),
+        queryset=Accessions.objects.order_by('accession_tag'),
         empty_label='',
         required=False
     )

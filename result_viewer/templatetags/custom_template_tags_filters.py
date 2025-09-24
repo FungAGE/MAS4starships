@@ -87,6 +87,12 @@ def get_data_editors():
     return User.objects.filter(groups__name='Data Editors').exclude(username='luigi')
 
 
+@register.filter(name='lookup')
+def lookup(dictionary, key):
+    """Template filter to lookup dictionary values"""
+    return dictionary.get(key, '')
+
+
 @register.simple_tag()
 def get_version():
     try:

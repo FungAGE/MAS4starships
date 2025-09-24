@@ -393,6 +393,13 @@ class Upload_Annotation(forms.Form):
     )
 
 
+class AccessionForm(CrispyModelForm):
+    """Form for creating/editing Accessions"""
+    class Meta:
+        model = starship_models.Accessions
+        fields = ['ship_name', 'accession_tag', 'version_tag']
+
+
 class Confirm_Upload_Annotation(forms.Form):
 
     def __init__(self, *args, **kwargs):

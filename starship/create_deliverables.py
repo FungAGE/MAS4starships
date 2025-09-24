@@ -26,7 +26,7 @@ import pandas as pd
 from starship.genomic_loci_conversions import *
 from starship.feature_table import GetFeatureTable
 
-from result_viewer.models import Starship
+from starship.models import JoinedShips
 from MAS import settings
 
 

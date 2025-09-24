@@ -10,8 +10,8 @@ class ProteinSeqSerializer(serializers.ModelSerializer):
 
 
 class StarshipSeqSerializer(serializers.Serializer):
-    starship_name = serializers.CharField(max_length=JoinedShips._meta.get_field('starship_name').max_length)
-    starship_sequence = serializers.CharField(max_length=JoinedShips._meta.get_field('starship_sequence').max_length)
+    starship_name = serializers.CharField(max_length=9)  # Using accession_tag field
+    starship_sequence = serializers.CharField(max_length=15000000)  # Large text field
     num_cds = serializers.IntegerField()
     num_gene = serializers.IntegerField()
     num_trna = serializers.IntegerField()
@@ -82,14 +82,14 @@ class ToolsAndDatabasesSerializer(serializers.Serializer):
 
 
 class RunAllStarshipProteinsAjaxSerializer(serializers.Serializer):
-    starship = serializers.CharField(max_length=JoinedShips._meta.get_field('starship_name').max_length)
+    starship = serializers.CharField(max_length=9)  # Using accession_tag field
     rerun = serializers.BooleanField(default=False)
     tools_and_databases = ToolsAndDatabasesSerializer()
 
     def validate_starship(self, value):
         try:
-            JoinedShips.objects.get(starship_name=value)
-        except JoinedShips.DoesNotExist:
+            Accessions.objects.get(accession_tag=value)
+        except Accessions.DoesNotExist:
             raise serializers.ValidationError('Invalid starship name: Does not exist')
 
         return value
@@ -153,14 +153,17 @@ class DataTablesServerSideSerializer(serializers.Serializer):
 
 
 class StarshipDataSerializer(serializers.Serializer):
-    starship_name = serializers.CharField(max_length=JoinedShips._meta.get_field('starship_name').max_length)
-    species = serializers.CharField(max_length=JoinedShips._meta.get_field('species').max_length)
-    contigID = serializers.CharField(max_length=JoinedShips._meta.get_field('contigID').max_length)
-    elementBegin = serializers.CharField(max_length=JoinedShips._meta.get_field('elementBegin').max_length)
-    elementEnd = serializers.CharField(max_length=JoinedShips._meta.get_field('elementEnd').max_length)
-    starship_family = serializers.CharField(max_length=100)
-    starship_navis = serializers.CharField(max_length=100)
-    starship_haplotype = serializers.CharField(max_length=100)
+    """
+    This is used to collect the data from different tables into a single serializer, then used to display the data in the table.
+    """
+    starship_name = serializers.CharField(max_length=9)  # Using accession_tag field
+    species = serializers.CharField(max_length=Taxonomy._meta.get_field('species').max_length)
+    starship_family = serializers.CharField(max_length=JoinedShips._meta.get_field('ship_family_id').max_length)
+    starship_navis = serializers.CharField(max_length=JoinedShips._meta.get_field('navis_id').max_length)
+    starship_haplotype = serializers.CharField(max_length=JoinedShips._meta.get_field('haplotype_id').max_length)
+    contigID = serializers.CharField(max_length=StarshipFeatures._meta.get_field('contigID').max_length)
+    elementBegin = serializers.IntegerField()
+    elementEnd = serializers.IntegerField()
     starship_length = serializers.IntegerField()
     num_cds = serializers.IntegerField()
     num_gene = serializers.IntegerField()

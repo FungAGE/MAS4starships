@@ -4,7 +4,7 @@ from django.views import generic
 
 from result_viewer.views import MixinForBaseTemplate
 from starship.models import Annotation
-from starship.models import Starship
+from starship.models import JoinedShips
 
 
 class HomePageView(MixinForBaseTemplate, generic.TemplateView):

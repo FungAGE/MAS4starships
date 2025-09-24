@@ -172,14 +172,17 @@ class StarshipFeatures(models.Model):
     """StarshipFeatures table from SQLite schema - more comprehensive than current Feature model"""
     class Meta:
         db_table = 'starship_features'
-    
+
+    id
+    accession_id
+    ship_id
     contigID = models.CharField(max_length=255, null=True, blank=True)
     starshipID = models.CharField(max_length=255, null=True, blank=True)
     captainID = models.CharField(max_length=255, null=True, blank=True)
-    elementBegin = models.CharField(max_length=255, null=True, blank=True)
-    elementEnd = models.CharField(max_length=255, null=True, blank=True)
-    elementLength = models.CharField(max_length=255, null=True, blank=True)
+    elementBegin = models.IntegerField(null=True, blank=True)
+    elementEnd = models.IntegerField(null=True, blank=True)
     strand = models.CharField(max_length=255, null=True, blank=True)
+    elementLength = models.IntegerField(null=True, blank=True)
     boundaryType = models.CharField(max_length=255, null=True, blank=True)
     emptySiteID = models.CharField(max_length=255, null=True, blank=True)
     emptyContig = models.CharField(max_length=255, null=True, blank=True)
@@ -194,8 +197,13 @@ class StarshipFeatures(models.Model):
     TIRedit = models.CharField(max_length=255, null=True, blank=True)
     nestedInside = models.CharField(max_length=255, null=True, blank=True)
     containNested = models.CharField(max_length=255, null=True, blank=True)
-    ship = models.ForeignKey(Accessions, on_delete=models.CASCADE, null=True, blank=True)
-    captain = models.ForeignKey(Captains, on_delete=models.CASCADE, null=True, blank=True)
+    dr = models.CharField(max_length=255, null=True, blank=True)
+    tir = models.CharField(max_length=255, null=True, blank=True)
+    target = models.CharField(max_length=255, null=True, blank=True)
+    spok = models.CharField(max_length=255, null=True, blank=True)
+    ars = models.CharField(max_length=255, null=True, blank=True)
+    other = models.CharField(max_length=255, null=True, blank=True)
+    hgt = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"Feature {self.starshipID} - {self.captainID}"
@@ -265,51 +273,22 @@ class JoinedShips(models.Model):
         (4, "INCOMPLETE"),         # Multiple critical pieces missing
         (5, "MISSING_CARGO_ANNOTATIONS"), # Missing cargo annotations
     )
-    
+
+    id = models.IntegerField(primary_key=True)
     starshipID = models.CharField(max_length=255, null=True, blank=True)
-    genus = models.CharField(max_length=255, null=True, blank=True)
-    species = models.CharField(max_length=255, null=True, blank=True)
-    strain = models.CharField(max_length=255, null=True, blank=True)
     evidence = models.CharField(max_length=255, null=True, blank=True)
     source = models.CharField(max_length=255, null=True, blank=True)
-    contigID = models.CharField(max_length=255, null=True, blank=True)
-    captainID = models.CharField(max_length=255, null=True, blank=True)
-    elementBegin = models.IntegerField(null=True, blank=True)
-    elementEnd = models.IntegerField(null=True, blank=True)
-    size = models.IntegerField(null=True, blank=True)
-    strand = models.CharField(max_length=255, null=True, blank=True)
-    boundaryType = models.CharField(max_length=255, null=True, blank=True)
-    emptySiteID = models.CharField(max_length=255, null=True, blank=True)
-    emptyContig = models.CharField(max_length=255, null=True, blank=True)
-    emptyBegin = models.IntegerField(null=True, blank=True)
-    emptyEnd = models.IntegerField(null=True, blank=True)
-    emptySeq = models.CharField(max_length=255, null=True, blank=True)
-    upDR = models.CharField(max_length=255, null=True, blank=True)
-    downDR = models.CharField(max_length=255, null=True, blank=True)
-    DRedit = models.CharField(max_length=255, null=True, blank=True)
-    upTIR = models.CharField(max_length=255, null=True, blank=True)
-    downTIR = models.CharField(max_length=255, null=True, blank=True)
-    TIRedit = models.CharField(max_length=255, null=True, blank=True)
-    nestedInside = models.CharField(max_length=255, null=True, blank=True)
-    containNested = models.CharField(max_length=255, null=True, blank=True)
-    dr = models.CharField(max_length=255, null=True, blank=True)
-    tir = models.CharField(max_length=255, null=True, blank=True)
-    navis_name = models.CharField(max_length=255, null=True, blank=True)
-    haplotype_name = models.CharField(max_length=255, null=True, blank=True)
-    target = models.CharField(max_length=255, null=True, blank=True)
-    spok = models.CharField(max_length=255, null=True, blank=True)
-    ars = models.CharField(max_length=255, null=True, blank=True)
-    other = models.CharField(max_length=255, null=True, blank=True)
-    hgt = models.CharField(max_length=255, null=True, blank=True)
-    ship_family = models.ForeignKey(FamilyNames, on_delete=models.CASCADE, null=True, blank=True)
     curated_status = models.CharField(max_length=255, null=True, blank=True)
-    taxid = models.IntegerField(null=True, blank=True)
-    ship = models.ForeignKey(Accessions, on_delete=models.CASCADE, null=True, blank=True)
-    genome_id = models.CharField(max_length=255, null=True, blank=True)
-    ome = models.CharField(max_length=255, null=True, blank=True)
-    orphan = models.CharField(max_length=255, null=True, blank=True)
-    captainID_new = models.IntegerField(null=True, blank=True)
-    
+    ship_family_id = models.IntegerField(null=True, blank=True)
+    tax_id = models.IntegerField(null=True, blank=True)
+    ship_id = models.IntegerField(null=True, blank=True)
+    genome_id = models.IntegerField(null=True, blank=True)
+    captain_id = models.IntegerField(null=True, blank=True)
+    ship_navis_id = models.IntegerField(null=True, blank=True)
+    ship_haplotype_id = models.IntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
+
     # Quality flag field - defaults to INCOMPLETE
     quality_flag = models.IntegerField(default=4, choices=QUALITY_FLAG_CHOICES)
 
