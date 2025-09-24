@@ -553,8 +553,9 @@ class Starship_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailVi
             feature__in=context['features']
         ).prefetch_related('feature_set__starship', 'feature_set').select_related('assigned_to')
 
-        self.starship_dict['starship_name'] = starship.starship_name
-        self.starship_dict['starship'] = starship.starship_sequence
+        self.starship_dict['starship_name'] = starship.starshipID
+        # TODO: Fix sequence access - starship.starship_sequence doesn't exist in JoinedShips
+        # self.starship_dict['starship'] = starship.starship_sequence
         context['starship_data'] = self.starship_dict
 
         upload_form = starship_forms.Starship_Upload_Form
@@ -1059,16 +1060,22 @@ def get_starship_data_dicts(starships):
     objects = []
     for starship in starships:
         starship_dict = {}
-        starship_dict['starship_name'] = starship.starship_name
+        starship_dict['pk'] = starship.pk
+        starship_dict['starship_name'] = starship.starshipID  # Using starshipID field
         starship_dict['species'] = starship.species
         starship_dict['contigID'] = starship.contigID
         starship_dict['elementBegin'] = starship.elementBegin
         element_begin = int(starship.elementBegin) if starship.elementBegin else 0
         starship_dict['elementEnd'] = starship.elementEnd
         element_end = int(starship.elementEnd) if starship.elementEnd else 0
-        starship_dict["starship_family"] = starship.starship_family
-        starship_dict["starship_navis"] = starship.starship_navis
-        starship_dict["starship_haplotype"] = starship.starship_haplotype
+        starship_dict["starship_family"] = starship.ship_family.familyName if starship.ship_family else ''
+        starship_dict["starship_navis"] = starship.navis_name or ''
+        starship_dict["starship_haplotype"] = starship.haplotype_name or ''
+        
+        # Add quality flag information
+        starship_dict['quality_flag'] = starship.get_quality_flag_display()
+        starship_dict['quality_flag_value'] = starship.quality_flag
+        starship_dict['missing_data'] = starship.get_missing_data_summary()
         gene = starship.feature_set.filter(type='gene').count()
         gene_features = starship.feature_set.filter(type='gene')
         # Derived from stackoverflow.com/questions/4727327/
@@ -1247,6 +1254,42 @@ class JoinedShipDetail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailV
     model = starship_models.JoinedShips
     template_name = 'starship/joined_ship_detail.html'
     context_object_name = 'joined_ship'
+
+
+class StarshipQualityOverview(LoginRequiredMixin, MixinForBaseTemplate, generic.TemplateView):
+    """View for displaying Starship quality flag overview/dashboard"""
+    template_name = 'starship/quality_overview.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get flag distribution
+        from django.db.models import Count
+        flag_distribution = starship_models.JoinedShips.objects.values(
+            'quality_flag'
+        ).annotate(
+            count=Count('quality_flag')
+        ).order_by('quality_flag')
+        
+        # Convert to more readable format
+        flag_stats = {}
+        for item in flag_distribution:
+            flag_value = item['quality_flag']
+            flag_display = dict(starship_models.JoinedShips.QUALITY_FLAG_CHOICES)[flag_value]
+            flag_stats[flag_display] = item['count']
+        
+        context['flag_stats'] = flag_stats
+        context['total_starships'] = starship_models.JoinedShips.objects.count()
+        
+        # Get some examples of each flag type
+        context['flag_examples'] = {}
+        for flag_value, flag_display in starship_models.JoinedShips.QUALITY_FLAG_CHOICES:
+            examples = starship_models.JoinedShips.objects.filter(
+                quality_flag=flag_value
+            )[:3]  # Get first 3 examples
+            context['flag_examples'][flag_display] = examples
+        
+        return context
 
 
 class TaxonomyList(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):

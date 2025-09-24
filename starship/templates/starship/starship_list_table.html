@@ -4,6 +4,7 @@
   <thead>
     <tr>
       <th>Starship Name</th>
+      <th>Quality</th>
       <th>species</th>
       <th>Starship Length</th>
       <th># Genes</th>
@@ -29,6 +30,21 @@
         <a href="{% url 'starship:starship_detail' starship.pk %}"
           >{{ starship.starship_name }}</a
         >
+      </td>
+      <td>
+        {% if starship.quality_flag_value == 0 %}
+        <span class="label label-success" title="All critical information present">{{ starship.quality_flag }}</span>
+        {% elif starship.quality_flag_value == 1 %}
+        <span class="label label-warning" title="Missing boundary elements (DR/TIR)">{{ starship.quality_flag }}</span>
+        {% elif starship.quality_flag_value == 2 %}
+        <span class="label label-warning" title="Missing captain/transposase">{{ starship.quality_flag }}</span>
+        {% elif starship.quality_flag_value == 3 %}
+        <span class="label label-warning" title="Missing classification">{{ starship.quality_flag }}</span>
+        {% elif starship.quality_flag_value == 4 %}
+        <span class="label label-danger" title="Multiple critical pieces missing">{{ starship.quality_flag }}</span>
+        {% else %}
+        <span class="label label-default" title="Minimal annotation data">{{ starship.quality_flag }}</span>
+        {% endif %}
       </td>
       <td>{{ starship.species }}</td>
       <td>{{ starship.starship_length }}</td>
