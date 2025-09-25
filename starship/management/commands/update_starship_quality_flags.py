@@ -63,7 +63,3 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING('\nDRY RUN completed. Run without --dry-run to apply changes.'))
         else:
             self.stdout.write(self.style.SUCCESS(f'\nSuccessfully updated quality flags for {total_count} starships'))
-
-
-
-
