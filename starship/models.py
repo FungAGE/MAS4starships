@@ -61,6 +61,7 @@ class Ships(models.Model):
     
     sequence = models.TextField()
     md5 = models.CharField(max_length=32, null=True, blank=True)
+    rev_comp_md5 = models.CharField(max_length=32, null=True, blank=True)
     accession = models.ForeignKey(Accessions, on_delete=models.CASCADE, related_name='ships')
 
     def __str__(self):
@@ -74,7 +75,7 @@ class Captains(models.Model):
     
     captainID = models.CharField(max_length=255, unique=True)
     sequence = models.TextField()
-    ship = models.ForeignKey(Accessions, on_delete=models.CASCADE, related_name='captains')
+    ship = models.ForeignKey(Ships, on_delete=models.CASCADE, related_name='captains')
     reviewed = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
@@ -102,6 +103,9 @@ class Taxonomy(models.Model):
     genus = models.CharField(max_length=255, null=True, blank=True)
     species = models.CharField(max_length=255, null=True, blank=True)
     section = models.CharField(max_length=255, null=True, blank=True)
+    species_group = models.CharField(max_length=255, null=True, blank=True)
+    subgenus = models.CharField(max_length=255, null=True, blank=True)
+    strain = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} ({self.taxID})"
@@ -119,6 +123,7 @@ class Genome(models.Model):
     citation = models.CharField(max_length=50, null=True, blank=True)
     biosample = models.CharField(max_length=50, null=True, blank=True)
     acquisition_date = models.IntegerField(null=True, blank=True)
+    assembly_accession = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
         return f"{self.ome} v{self.version}"
@@ -173,16 +178,13 @@ class StarshipFeatures(models.Model):
     class Meta:
         db_table = 'starship_features'
 
-    id
-    accession_id
-    ship_id
     contigID = models.CharField(max_length=255, null=True, blank=True)
     starshipID = models.CharField(max_length=255, null=True, blank=True)
     captainID = models.CharField(max_length=255, null=True, blank=True)
-    elementBegin = models.IntegerField(null=True, blank=True)
-    elementEnd = models.IntegerField(null=True, blank=True)
+    elementBegin = models.CharField(max_length=255, null=True, blank=True)
+    elementEnd = models.CharField(max_length=255, null=True, blank=True)
+    elementLength = models.CharField(max_length=255, null=True, blank=True)
     strand = models.CharField(max_length=255, null=True, blank=True)
-    elementLength = models.IntegerField(null=True, blank=True)
     boundaryType = models.CharField(max_length=255, null=True, blank=True)
     emptySiteID = models.CharField(max_length=255, null=True, blank=True)
     emptyContig = models.CharField(max_length=255, null=True, blank=True)
@@ -197,29 +199,38 @@ class StarshipFeatures(models.Model):
     TIRedit = models.CharField(max_length=255, null=True, blank=True)
     nestedInside = models.CharField(max_length=255, null=True, blank=True)
     containNested = models.CharField(max_length=255, null=True, blank=True)
-    dr = models.CharField(max_length=255, null=True, blank=True)
-    tir = models.CharField(max_length=255, null=True, blank=True)
-    target = models.CharField(max_length=255, null=True, blank=True)
-    spok = models.CharField(max_length=255, null=True, blank=True)
-    ars = models.CharField(max_length=255, null=True, blank=True)
-    other = models.CharField(max_length=255, null=True, blank=True)
-    hgt = models.CharField(max_length=255, null=True, blank=True)
+    ship = models.ForeignKey(Ships, on_delete=models.CASCADE, null=True, blank=True)
+    captain = models.ForeignKey(Captains, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return f"Feature {self.starshipID} - {self.captainID}"
 
 
-class NavisHaplotype(models.Model):
-    """NavisHaplotype table from SQLite schema"""
+class Navis(models.Model):
+    """Navis table from SQLite schema"""
     class Meta:
-        db_table = 'navis_haplotype'
+        db_table = 'navis_names'
     
     navis_name = models.CharField(max_length=255, null=True, blank=True)
-    haplotype_name = models.CharField(max_length=255, null=True, blank=True)
+    previous_navis_name = models.CharField(max_length=255, null=True, blank=True)
     ship_family = models.ForeignKey(FamilyNames, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.navis_name} - {self.haplotype_name}"
+        return self.navis_name or f"Navis {self.id}"
+
+
+class Haplotype(models.Model):
+    """Haplotype table from SQLite schema"""
+    class Meta:
+        db_table = 'haplotype_names'
+    
+    haplotype_name = models.CharField(max_length=255, null=True, blank=True)
+    previous_haplotype_name = models.CharField(max_length=255, null=True, blank=True)
+    navis = models.ForeignKey(Navis, on_delete=models.CASCADE, null=True, blank=True)
+    ship_family = models.ForeignKey(FamilyNames, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return self.haplotype_name or f"Haplotype {self.id}"
 
 
 class Gff(models.Model):
@@ -227,8 +238,7 @@ class Gff(models.Model):
     class Meta:
         db_table = 'gff'
     
-    contigID = models.CharField(max_length=255, null=True, blank=True)
-    accession = models.CharField(max_length=255, null=True, blank=True)
+    accession = models.ForeignKey(Accessions, on_delete=models.CASCADE, null=True, blank=True)
     source = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=255, null=True, blank=True)
     start = models.IntegerField(null=True, blank=True)
@@ -237,27 +247,10 @@ class Gff(models.Model):
     strand = models.CharField(max_length=255, null=True, blank=True)
     score = models.CharField(max_length=255, null=True, blank=True)
     attributes = models.CharField(max_length=255, null=True, blank=True)
-    ship = models.ForeignKey(Accessions, on_delete=models.CASCADE, null=True, blank=True)
+    ship = models.ForeignKey(Ships, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return f"GFF {self.contigID}:{self.start}-{self.end}"
-
-# class Starship(models.Model):
-#     class Meta:
-#         db_table = 'starship_starship'
-    
-#     starship_name = models.CharField(max_length=100, unique=True)
-#     starship_sequence = models.TextField(max_length=15000000)
-#     species = models.CharField(max_length=100, unique=False)
-#     elementBegin = models.IntegerField(null=True, blank=True)
-#     elementEnd = models.IntegerField(null=True, blank=True)
-#     contigID = models.CharField(max_length=100, unique=False)
-#     starship_family = models.CharField(max_length=100, unique=False)
-#     starship_navis = models.CharField(max_length=100, unique=False)
-#     starship_haplotype = models.CharField(max_length=100, unique=False)
-
-#     def __str__(self):
-#         return self.starship_name
 
 class JoinedShips(models.Model):
     """JoinedShips table from SQLite schema - comprehensive starship data"""
@@ -279,13 +272,16 @@ class JoinedShips(models.Model):
     evidence = models.CharField(max_length=255, null=True, blank=True)
     source = models.CharField(max_length=255, null=True, blank=True)
     curated_status = models.CharField(max_length=255, null=True, blank=True)
-    ship_family_id = models.IntegerField(null=True, blank=True)
-    tax_id = models.IntegerField(null=True, blank=True)
-    ship_id = models.IntegerField(null=True, blank=True)
-    genome_id = models.IntegerField(null=True, blank=True)
-    captain_id = models.IntegerField(null=True, blank=True)
-    ship_navis_id = models.IntegerField(null=True, blank=True)
-    ship_haplotype_id = models.IntegerField(null=True, blank=True)
+    
+    # Foreign key relationships
+    accession = models.ForeignKey(Accessions, on_delete=models.CASCADE, null=True, blank=True)
+    ship_family = models.ForeignKey(FamilyNames, on_delete=models.CASCADE, null=True, blank=True)
+    taxonomy = models.ForeignKey(Taxonomy, on_delete=models.CASCADE, null=True, blank=True)
+    genome = models.ForeignKey(Genome, on_delete=models.CASCADE, null=True, blank=True)
+    captain = models.ForeignKey(Captains, on_delete=models.CASCADE, null=True, blank=True)
+    navis = models.ForeignKey(Navis, on_delete=models.CASCADE, null=True, blank=True)
+    haplotype = models.ForeignKey(Haplotype, on_delete=models.CASCADE, null=True, blank=True)
+    
     created_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(null=True, blank=True)
 
@@ -299,24 +295,15 @@ class JoinedShips(models.Model):
         """
         missing_data = []
         
-        # Check for boundary information (DR/TIR)
-        has_boundaries = bool(
-            (self.upDR and self.downDR) or 
-            (self.upTIR and self.downTIR) or
-            self.dr or self.tir
-        )
-        if not has_boundaries:
-            missing_data.append('boundaries')
-        
         # Check for captain/transposase information
-        has_captain = bool(self.captainID or self.captainID_new)
+        has_captain = bool(self.captain)
         if not has_captain:
             missing_data.append('captain')
         
         # Check for classification information
         has_classification = bool(
             self.ship_family or 
-            (self.navis_name and self.haplotype_name)
+            (self.navis and self.haplotype)
         )
         if not has_classification:
             missing_data.append('classification')
@@ -324,14 +311,19 @@ class JoinedShips(models.Model):
         # Check for basic sequence information
         has_basic_info = bool(
             self.starshipID and 
-            self.elementBegin and 
-            self.elementEnd and
-            self.size
+            self.accession
         )
         if not has_basic_info:
             missing_data.append('basic_info')
         
-        has_cargo_annotations = bool(self.ship.annotations.count() > 0)
+        # Check for cargo annotations (if we have a ship with annotations)
+        has_cargo_annotations = False
+        if self.accession and hasattr(self.accession, 'ships'):
+            for ship in self.accession.ships.all():
+                if hasattr(ship, 'annotations') and ship.annotations.count() > 0:
+                    has_cargo_annotations = True
+                    break
+        
         if not has_cargo_annotations:
             missing_data.append('cargo_annotations')
 
@@ -340,8 +332,6 @@ class JoinedShips(models.Model):
             return 0  # COMPLETE
         elif len(missing_data) >= 3:
             return 4  # INCOMPLETE
-        elif 'boundaries' in missing_data:
-            return 1  # MISSING_BOUNDARIES
         elif 'captain' in missing_data:
             return 2  # MISSING_CAPTAIN
         elif 'classification' in missing_data:
@@ -362,35 +352,35 @@ class JoinedShips(models.Model):
         """
         missing_items = []
         
-        # Check boundaries
-        has_boundaries = bool(
-            (self.upDR and self.downDR) or 
-            (self.upTIR and self.downTIR) or
-            self.dr or self.tir
-        )
-        if not has_boundaries:
-            missing_items.append("Boundary elements (DR/TIR sequences)")
-        
         # Check captain
-        if not (self.captainID or self.captainID_new):
+        if not self.captain:
             missing_items.append("Captain/transposase identification")
         
         # Check classification
-        if not (self.ship_family or (self.navis_name and self.haplotype_name)):
+        if not (self.ship_family or (self.navis and self.haplotype)):
             missing_items.append("Family/classification information")
         
         # Check basic info
-        if not (self.starshipID and self.elementBegin and self.elementEnd and self.size):
-            missing_items.append("Basic sequence information (coordinates, size)")
+        if not (self.starshipID and self.accession):
+            missing_items.append("Basic sequence information (ID, accession)")
         
         # Check cargo annotations
-        if not self.ship.annotations.count():
+        has_cargo_annotations = False
+        if self.accession and hasattr(self.accession, 'ships'):
+            for ship in self.accession.ships.all():
+                if hasattr(ship, 'annotations') and ship.annotations.count() > 0:
+                    has_cargo_annotations = True
+                    break
+        
+        if not has_cargo_annotations:
             missing_items.append("Cargo annotations")
         
         return missing_items
 
     def __str__(self):
-        return f"{self.starshipID} - {self.genus} {self.species}"
+        if self.taxonomy:
+            return f"{self.starshipID} - {self.taxonomy.genus} {self.taxonomy.species}"
+        return f"{self.starshipID}"
 
 
 # TODO: add features of interest here?
