@@ -39,6 +39,16 @@ else:
                 'password': os.getenv('MYSQL_ROOT_PASSWORD'),
                 'port': int(os.getenv('DB_PORT', '3306')),
             }
+        },
+        'starbase': {
+            'ENGINE': 'django.db.backends.mysql',
+            'OPTIONS': {
+                'host': os.getenv('DB_HOST', 'mas-sql-server'),
+                'database': 'starbase',
+                'user': 'root',
+                'password': os.getenv('MYSQL_ROOT_PASSWORD'),
+                'port': int(os.getenv('DB_PORT', '3306')),
+            }
         }
     }
 

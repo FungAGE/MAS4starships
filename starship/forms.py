@@ -282,7 +282,7 @@ class ComprehensiveDataForm(CrispyModelForm):
     def save(self):
         """Custom save method to create records across multiple models"""
         # Create Accession
-        accession = Accessions.objects.create(
+        accession = starship_models.Accessions.objects.create(
             accession_tag=self.cleaned_data['accession_tag'],
             ship_name=self.cleaned_data['ship_name'],
             version_tag=self.cleaned_data['version_tag']

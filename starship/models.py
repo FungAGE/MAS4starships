@@ -45,6 +45,7 @@ class Accessions(models.Model):
     """Accessions table from SQLite schema"""
     class Meta:
         db_table = 'accessions'
+        app_label = 'starship'
     
     ship_name = models.CharField(max_length=255, null=True, blank=True)
     accession_tag = models.CharField(max_length=255, unique=True)

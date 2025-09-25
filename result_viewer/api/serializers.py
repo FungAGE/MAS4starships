@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from result_viewer.models import *
+from starship.models import Accessions
 
 
 class ProteinSeqSerializer(serializers.ModelSerializer):

@@ -3,7 +3,7 @@ from django.db import models
 from django.contrib.auth.models import User
 
 # from result_viewer.models import Annotation, Starship
-from starship.models import Annotation, JoinedShips
+from starship.models import Annotation, JoinedShips, Accessions
 
 def is_ascii(string):
     '''
