@@ -274,113 +274,110 @@ class JoinedShips(models.Model):
     source = models.CharField(max_length=255, null=True, blank=True)
     curated_status = models.CharField(max_length=255, null=True, blank=True)
     
-    # Foreign key relationships
-    accession = models.ForeignKey(Accessions, on_delete=models.CASCADE, null=True, blank=True)
-    ship_family = models.ForeignKey(FamilyNames, on_delete=models.CASCADE, null=True, blank=True)
-    taxonomy = models.ForeignKey(Taxonomy, on_delete=models.CASCADE, null=True, blank=True)
-    genome = models.ForeignKey(Genome, on_delete=models.CASCADE, null=True, blank=True)
-    captain = models.ForeignKey(Captains, on_delete=models.CASCADE, null=True, blank=True)
-    navis = models.ForeignKey(Navis, on_delete=models.CASCADE, null=True, blank=True)
-    haplotype = models.ForeignKey(Haplotype, on_delete=models.CASCADE, null=True, blank=True)
+    # Integer foreign key fields to match starbase database schema
+    ship_family_id = models.IntegerField(null=True, blank=True)
+    tax_id = models.IntegerField(null=True, blank=True)
+    ship_id = models.IntegerField(null=True, blank=True)
+    genome_id = models.IntegerField(null=True, blank=True)
+    captain_id = models.IntegerField(null=True, blank=True)
+    ship_navis_id = models.IntegerField(null=True, blank=True)
+    ship_haplotype_id = models.IntegerField(null=True, blank=True)
     
-    created_at = models.DateTimeField(null=True, blank=True)
-    updated_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.CharField(max_length=255, null=True, blank=True)  # text field in starbase
+    updated_at = models.CharField(max_length=255, null=True, blank=True)  # text field in starbase
 
-    # Quality flag field - defaults to INCOMPLETE
-    quality_flag = models.IntegerField(default=4, choices=QUALITY_FLAG_CHOICES)
+    # Note: quality_flag field removed as it doesn't exist in starbase database
 
-    def calculate_quality_flag(self):
-        """
-        Calculate the appropriate quality flag based on available data.
-        Returns the flag value (integer).
-        """
-        missing_data = []
+    # def calculate_quality_flag(self):
+    #     """
+    #     Calculate the appropriate quality flag based on available data.
+    #     Returns the flag value (integer).
+    #     """
+    #     missing_data = []
         
-        # Check for captain/transposase information
-        has_captain = bool(self.captain)
-        if not has_captain:
-            missing_data.append('captain')
+    #     # Check for captain/transposase information
+    #     has_captain = bool(self.captain)
+    #     if not has_captain:
+    #         missing_data.append('captain')
         
-        # Check for classification information
-        has_classification = bool(
-            self.ship_family or 
-            (self.navis and self.haplotype)
-        )
-        if not has_classification:
-            missing_data.append('classification')
+    #     # Check for classification information
+    #     has_classification = bool(
+    #         self.ship_family or 
+    #         (self.navis and self.haplotype)
+    #     )
+    #     if not has_classification:
+    #         missing_data.append('classification')
         
-        # Check for basic sequence information
-        has_basic_info = bool(
-            self.starshipID and 
-            self.accession
-        )
-        if not has_basic_info:
-            missing_data.append('basic_info')
+    #     # Check for basic sequence information
+    #     has_basic_info = bool(
+    #         self.starshipID and 
+    #         self.accession
+    #     )
+    #     if not has_basic_info:
+    #         missing_data.append('basic_info')
         
-        # Check for cargo annotations (if we have a ship with annotations)
-        has_cargo_annotations = False
-        if self.accession and hasattr(self.accession, 'ships'):
-            for ship in self.accession.ships.all():
-                if hasattr(ship, 'annotations') and ship.annotations.count() > 0:
-                    has_cargo_annotations = True
-                    break
+    #     # Check for cargo annotations (if we have a ship with annotations)
+    #     has_cargo_annotations = False
+    #     if self.accession and hasattr(self.accession, 'ships'):
+    #         for ship in self.accession.ships.all():
+    #             if hasattr(ship, 'annotations') and ship.annotations.count() > 0:
+    #                 has_cargo_annotations = True
+    #                 break
         
-        if not has_cargo_annotations:
-            missing_data.append('cargo_annotations')
+    #     if not has_cargo_annotations:
+    #         missing_data.append('cargo_annotations')
 
-        # Determine flag based on missing data
-        if not missing_data:
-            return 0  # COMPLETE
-        elif len(missing_data) >= 3:
-            return 4  # INCOMPLETE
-        elif 'captain' in missing_data:
-            return 2  # MISSING_CAPTAIN
-        elif 'classification' in missing_data:
-            return 3  # MISSING_CLASSIFICATION
-        elif 'cargo_annotations' in missing_data:
-            return 5  # MISSING_CARGO_ANNOTATIONS
-        else:
-            return 4  # INCOMPLETE
+    #     # Determine flag based on missing data
+    #     if not missing_data:
+    #         return 0  # COMPLETE
+    #     elif len(missing_data) >= 3:
+    #         return 4  # INCOMPLETE
+    #     elif 'captain' in missing_data:
+    #         return 2  # MISSING_CAPTAIN
+    #     elif 'classification' in missing_data:
+    #         return 3  # MISSING_CLASSIFICATION
+    #     elif 'cargo_annotations' in missing_data:
+    #         return 5  # MISSING_CARGO_ANNOTATIONS
+    #     else:
+    #         return 4  # INCOMPLETE
     
-    def update_quality_flag(self):
-        """Update the quality flag based on current data and save."""
-        self.quality_flag = self.calculate_quality_flag()
-        self.save(update_fields=['quality_flag'])
+    # def update_quality_flag(self):
+    #     """Update the quality flag based on current data and save."""
+    #     self.quality_flag = self.calculate_quality_flag()
+    #     self.save(update_fields=['quality_flag'])
     
-    def get_missing_data_summary(self):
-        """
-        Return a human-readable summary of what data is missing.
-        """
-        missing_items = []
+    # def get_missing_data_summary(self):
+    #     """
+    #     Return a human-readable summary of what data is missing.
+    #     """
+    #     missing_items = []
         
-        # Check captain
-        if not self.captain:
-            missing_items.append("Captain/transposase identification")
+    #     # Check captain
+    #     if not self.captain:
+    #         missing_items.append("Captain/transposase identification")
         
-        # Check classification
-        if not (self.ship_family or (self.navis and self.haplotype)):
-            missing_items.append("Family/classification information")
+    #     # Check classification
+    #     if not (self.ship_family or (self.navis and self.haplotype)):
+    #         missing_items.append("Family/classification information")
         
-        # Check basic info
-        if not (self.starshipID and self.accession):
-            missing_items.append("Basic sequence information (ID, accession)")
+    #     # Check basic info
+    #     if not (self.starshipID and self.accession):
+    #         missing_items.append("Basic sequence information (ID, accession)")
         
-        # Check cargo annotations
-        has_cargo_annotations = False
-        if self.accession and hasattr(self.accession, 'ships'):
-            for ship in self.accession.ships.all():
-                if hasattr(ship, 'annotations') and ship.annotations.count() > 0:
-                    has_cargo_annotations = True
-                    break
+    #     # Check cargo annotations
+    #     has_cargo_annotations = False
+    #     if self.accession and hasattr(self.accession, 'ships'):
+    #         for ship in self.accession.ships.all():
+    #             if hasattr(ship, 'annotations') and ship.annotations.count() > 0:
+    #                 has_cargo_annotations = True
+    #                 break
         
-        if not has_cargo_annotations:
-            missing_items.append("Cargo annotations")
+    #     if not has_cargo_annotations:
+    #         missing_items.append("Cargo annotations")
         
-        return missing_items
+    #     return missing_items
 
     def __str__(self):
-        if self.taxonomy:
-            return f"{self.starshipID} - {self.taxonomy.genus} {self.taxonomy.species}"
         return f"{self.starshipID}"
 
 

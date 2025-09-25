@@ -162,7 +162,7 @@ class GetStarshipView(PipelineAPIMixin, APIView):
 
     def get(self, request, starship_name, format=None):
         try:
-            starship = self.queryset.get(starship_name=starship_name)
+            starship = self.queryset.get(starshipID=starship_name)
             starship_features = Feature.objects.filter(starship=starship)
             counts = starship_features.aggregate(
                 tRNAs=Count('id', filter=Q(type='tRNA')),
@@ -179,7 +179,7 @@ class GetStarshipView(PipelineAPIMixin, APIView):
             raise Http404
 
         s = StarshipSeqSerializer({
-            'starship_name': starship.starship_name,
+            'starship_name': starship.starshipID,
             'starship_sequence': starship.starship_sequence,
             'num_cds': counts['cds'],
             'num_gene': counts['gene'],
@@ -226,28 +226,30 @@ class StarshipData:
     def __init__(self, starship):
         self.starship_name = '<a href="{url}">{name}</a>'.format(
             url=reverse('starship:starship_detail', kwargs={'pk': starship.id}),
-            name=starship.starship_name
+            name=starship.starshipID
         )
-        self.species = starship.species
-        self.starship_length = len(starship.starship_sequence)
-        self.num_cds = starship.num_cds
-        self.num_gene = starship.num_gene
-        self.num_unannotated = starship.num_unannotated
-        self.num_review = starship.num_review
-        self.num_green = starship.num_green
-        self.num_yellow = starship.num_yellow
-        self.num_red = starship.num_red
-        self.contigID = starship.contigID
-        self.elementBegin = starship.elementBegin
-        self.elementEnd = starship.elementEnd
-        self.starship_family = starship.starship_family
-        self.starship_navis = starship.starship_navis
-        self.starship_haplotype = starship.starship_haplotype
+        # Note: Many fields removed as they don't exist in the starbase JoinedShips model
+        # These would need to be populated from related tables or calculated separately
+        self.species = "N/A"  # Would need to get from taxonomy table
+        self.starship_length = 0  # Would need to get from ships table
+        self.num_cds = 0  # Would need to calculate from features
+        self.num_gene = 0  # Would need to calculate from features
+        self.num_unannotated = 0  # Would need to calculate from annotations
+        self.num_review = 0  # Would need to calculate from annotations
+        self.num_green = 0  # Would need to calculate from annotations
+        self.num_yellow = 0  # Would need to calculate from annotations
+        self.num_red = 0  # Would need to calculate from annotations
+        self.contigID = "N/A"  # Would need to get from starship_features table
+        self.elementBegin = 0  # Would need to get from starship_features table
+        self.elementEnd = 0  # Would need to get from starship_features table
+        self.starship_family = "N/A"  # Would need to get from family_names table
+        self.starship_navis = "N/A"  # Would need to get from navis_names table
+        self.starship_haplotype = "N/A"  # Would need to get from haplotype_names table
         self.download = '<a href="{}">download fasta</a>'.format(
             reverse('starship:starship_download_fasta', kwargs={'starship_id': starship.id})
         )
         self.navigator = '<a href="{}"><div class="glyphicon glyphicon-hand-right"></div></a>'.format(
-            reverse('starship-nav-redirect', kwargs={'starship_name': starship.starship_name})
+            reverse('starship-nav-redirect', kwargs={'starship_name': starship.starshipID})
         )
 
 
@@ -255,24 +257,20 @@ class GetStarshipDataView(APIView):
     def get(self, request):
         params = self.read_parameters(request.GET)
 
-        flag_options_reverse = dict((v, k) for k, v in Annotation.flag_options)
-        cds = Count('feature', filter=Q(feature__type= 'CDS'))
-        gene = Count('feature', filter=Q(feature__type= 'gene'))
-        green = Count('feature__annotation__flag', filter=Q(feature__annotation__flag=flag_options_reverse['GREEN']))
-        yellow = Count('feature__annotation__flag', filter=Q(feature__annotation__flag=flag_options_reverse['YELLOW']))
-        red = Count('feature__annotation__flag', filter=Q(feature__annotation__flag=flag_options_reverse['RED']))
-        unannotated = Count('feature__annotation__flag', filter=Q(feature__annotation__flag=flag_options_reverse['UNANNOTATED']))
-        review = Count('feature__annotation__flag', filter=Q(feature__annotation__flag=flag_options_reverse['REVIEW NAME']))
-
-        starships = JoinedShips.objects.annotate(num_green=green).annotate(num_yellow=yellow).annotate(num_red=red).\
-            annotate(num_unannotated=unannotated).annotate(num_review=review).\
-            annotate(num_cds=cds).annotate(num_gene=gene)
+        # Note: Cross-database annotations removed due to multi-database setup
+        # The following annotations would require cross-database joins which Django doesn't support:
+        # - feature counts (Feature is in mas database, JoinedShips is in starbase database)
+        # - annotation flag counts (Annotation is in mas database, JoinedShips is in starbase database)
+        
+        # For now, we'll get the basic starship data without the cross-database annotations
+        # TODO: Implement separate queries to get feature and annotation counts if needed
+        starships = JoinedShips.objects.all()
 
         total_num_starships = starships.count()
 
-        # Update the filter to use species instead of organism
+        # Update the filter to use starshipID instead of starship_name
         starships = starships.filter(
-            Q(starship_name__icontains=params['search_val']) |
+            Q(starshipID__icontains=params['search_val']) |
             Q(species__icontains=params['search_val'])  # Changed from organism to species
         ).order_by(self.get_order_by_arg(params['order_col'], params['order_dir']))
 
@@ -302,7 +300,7 @@ class GetStarshipDataView(APIView):
 
     def get_order_by_arg(self, order_col, order_dir):
         if order_col == 0:
-            return 'starship_name' if order_dir == 'asc' else '-starship_name'
+            return 'starshipID' if order_dir == 'asc' else '-starshipID'
         elif order_col == 1:
             return 'species' if order_dir == 'asc' else '-species'
         elif order_col == 2:
@@ -382,7 +380,7 @@ class GetAnnotationListView(APIView):
 
         if params['starship_id']:
             annotations = Annotation.objects.filter(feature__starship_id=params['starship_id']).distinct()
-            starship_name = JoinedShips.objects.get(id=params['starship_id']).starship_name
+            starship_name = JoinedShips.objects.get(id=params['starship_id']).starshipID
         else:
             annotations = Annotation.objects
             starship_name = None

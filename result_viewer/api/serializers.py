@@ -160,8 +160,8 @@ class StarshipDataSerializer(serializers.Serializer):
     starship_name = serializers.CharField(max_length=9)  # Using accession_tag field
     species = serializers.CharField(max_length=Taxonomy._meta.get_field('species').max_length)
     starship_family = serializers.CharField(max_length=JoinedShips._meta.get_field('ship_family_id').max_length)
-    starship_navis = serializers.CharField(max_length=JoinedShips._meta.get_field('navis_id').max_length)
-    starship_haplotype = serializers.CharField(max_length=JoinedShips._meta.get_field('haplotype_id').max_length)
+    starship_navis = serializers.CharField(max_length=JoinedShips._meta.get_field('ship_navis_id').max_length)
+    starship_haplotype = serializers.CharField(max_length=JoinedShips._meta.get_field('ship_haplotype_id').max_length)
     contigID = serializers.CharField(max_length=StarshipFeatures._meta.get_field('contigID').max_length)
     elementBegin = serializers.IntegerField()
     elementEnd = serializers.IntegerField()
