@@ -1,85 +1,51 @@
 {% extends 'base.html' %} {% block head %}
 <title>MAS - Manual Annotation Studio</title>
-{% endblock %} {% block body %}
-<div class="block">
-  <div style="padding: 10px 0px 30px 40px">
-    <h2>Welcome to Manual Annotation Studio!</h2>
-    <h4>
-      Please use one of the navigation options above to continue. Start by
-      uploading a starship.
-    </h4>
-  </div>
-</div>
+{% endblock %}
 
-{% if user.is_authenticated %}
-<div class="block">
-  <div style="padding: 20px 40px">
-    <div class="row">
-      <div class="col-md-4">
-        <div class="well text-center">
-          <h2>{{ ship_count }}</h2>
-          <h4>Total Starships</h4>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="well text-center">
-          <h2>{{ annotated_this_week }}</h2>
-          <h4>Annotations This Week</h4>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="well text-center">
-          <h2>{{ annotated_last_week }}</h2>
-          <h4>Annotations Last Week</h4>
-        </div>
+<!-- #TODO: once users log in, redirect to a separate page (template is at: `templates/registration/logged_in.html`) for logged in users, with quick actions -->
+{% block body %}
+  {% if user.is_authenticated %}
+    <div class="block">
+      <div style="padding: 20px 40px">
+        <h2>Welcome, <b>{{ user.username }}!</b></h2>
       </div>
     </div>
-
-    <div style="margin-top: 30px">
-      <h4>Quick Actions</h4>
-      <div class="row" style="margin-top: 15px">
-        <div class="col-md-3">
-          <a
-            href="{% url 'starship:upload_starship' %}"
-            class="btn btn-primary btn-block"
-          >
-            <i class="fa fa-upload"></i> Upload Starship
-          </a>
-        </div>
-        <div class="col-md-3">
-          <a
-            href="{% url 'starship:bulk_data_upload' %}"
-            class="btn btn-warning btn-block"
-          >
-            <i class="fa fa-upload"></i> Bulk Upload
-          </a>
-        </div>
-        <div class="col-md-3">
-          <a
-            href="{% url 'starship:starship_list' %}"
-            class="btn btn-default btn-block"
-          >
-            <i class="fa fa-list"></i> View Starship List
-          </a>
-        </div>
-        <div class="col-md-3">
-          <a
-            href="{% url 'starship:annotation_list' %}"
-            class="btn btn-default btn-block"
-          >
-            <i class="fa fa-tags"></i> View Annotations
-          </a>
-        </div>
-        <div class="col-md-3">
-          <a
-            href="{% url 'starship:upload_annotations' %}"
-            class="btn btn-default btn-block"
-          >
-            <i class="fa fa-file-excel-o"></i> Upload Annotations
-          </a>
-        </div>
-      </div>
+  {% else %}
+  <div class="block">
+    <div style="padding: 20px 40px">
+      <h4>Please <a href="{% url 'login' %}">login</a> to continue.</h4>
     </div>
   </div>
-</div>
-{% endif %} {% endblock %}
+  {% endif %}
+
+  <div class="block">
+    <div style="padding: 10px 0px 30px 40px">
+      <h2>Welcome to Manual Annotation Studio (MAS) for <i>Starships</i>!</h2>
+      <h4>
+        <b>This is a work in progress.</b> 
+      </h4>
+      <h4>Please use the navigation options above to get started.</h4>
+      <h4> Currently, MAS can do the following: </h4>
+      <ul>
+        <li>Upload a starship</li>
+        <li>Upload a bulk of starships</li>
+        <li>View the list of starships</li>
+        <li>View the list of annotations</li>
+      </ul>
+      <h4>
+        <b>Features still under development:</b>
+      </h4>
+      <ul>
+        <li>Searches against multiple databases:
+          <ul>
+            <li>internal database</li>
+            <li>BLAST</li>
+            <li>HHpred</li>
+            <li>CD-Search</li>
+          </ul>
+        </li>
+        <li>Auto-updating annotations based on annotations search results</li>
+      </ul>
+    </div>
+  </div>
+{% endblock %}
