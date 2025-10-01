@@ -389,7 +389,7 @@ class JoinedShips(models.Model):
 # TODO: add features of interest here?
 class Feature(models.Model):
     class Meta:
-        db_table = 'starbase_starship_features'
+        db_table = 'starship_feature'
 
     feature_options = (
         ("gene", "Gene Annotation"),
@@ -430,6 +430,9 @@ class Feature(models.Model):
 
 
 class Annotation(models.Model):
+    class Meta:
+        db_table = 'starship_annotation'
+
     # if you update this, you need to update the flag dict in confirm_upload_annotations in starship views
     flag_options = (
         (0, "GREEN"),
