@@ -16,39 +16,27 @@ SECRET_KEY = (
 )
 
 if os.getenv("CELERY_WORKER") == "TRUE":
+    # Celery workers (running in Docker)
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
-            "OPTIONS": {
-                "host": "0.0.0.0",
-                "port": 3307,
-                "database": "mas",
-                "user": "root",
-                "password": os.getenv("MYSQL_ROOT_PASSWORD"),
-            },
+            "NAME": "mas",
+            "USER": "root",
+            "PASSWORD": os.getenv("MYSQL_ROOT_PASSWORD"),
+            "HOST": "mas-sql-server",
+            "PORT": "3306",
         }
     }
 else:
+    # Local development server
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'OPTIONS': {
-                'host': os.getenv('DB_HOST', 'mas-sql-server'),
-                'database': 'mas',
-                'user': 'root',
-                'password': os.getenv('MYSQL_ROOT_PASSWORD'),
-                'port': int(os.getenv('DB_PORT', '3306')),
-            }
-        },
-        'starbase': {
-            'ENGINE': 'django.db.backends.mysql',
-            'OPTIONS': {
-                'host': os.getenv('DB_HOST', 'mas-sql-server'),
-                'database': 'starbase',
-                'user': 'root',
-                'password': os.getenv('MYSQL_ROOT_PASSWORD'),
-                'port': int(os.getenv('DB_PORT', '3306')),
-            }
+            'NAME': 'mas',
+            'USER': 'root',
+            'PASSWORD': os.getenv('MYSQL_ROOT_PASSWORD'),
+            'HOST': '127.0.0.1',
+            'PORT': '3307',
         }
     }
 

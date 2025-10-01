@@ -105,7 +105,7 @@ echo "  ./scripts/development/cleanup-media.sh  - Clean up old media files"
 echo "  ./scripts/development/reset-dev-env.sh  - Complete environment reset"
 echo ""
 echo "When done, run './scripts/development/manage-services.sh stop' to stop all services"
-python manage.py runserver localhost:8000
+python manage.py runserver 0.0.0.0:8000
 
 # When the server is stopped with Ctrl+C, stop the services
 echo "Stopping services..."
