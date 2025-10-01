@@ -228,23 +228,24 @@ class StarshipData:
             url=reverse('starship:starship_detail', kwargs={'pk': starship.id}),
             name=starship.starshipID
         )
-        # Note: Many fields removed as they don't exist in the starbase JoinedShips model
-        # These would need to be populated from related tables or calculated separately
-        self.species = "N/A"  # Would need to get from taxonomy table
-        self.starship_length = 0  # Would need to get from ships table
-        self.num_cds = 0  # Would need to calculate from features
-        self.num_gene = 0  # Would need to calculate from features
-        self.num_unannotated = 0  # Would need to calculate from annotations
-        self.num_review = 0  # Would need to calculate from annotations
-        self.num_green = 0  # Would need to calculate from annotations
-        self.num_yellow = 0  # Would need to calculate from annotations
-        self.num_red = 0  # Would need to calculate from annotations
-        self.contigID = "N/A"  # Would need to get from starship_features table
-        self.elementBegin = 0  # Would need to get from starship_features table
-        self.elementEnd = 0  # Would need to get from starship_features table
-        self.starship_family = "N/A"  # Would need to get from family_names table
-        self.starship_navis = "N/A"  # Would need to get from navis_names table
-        self.starship_haplotype = "N/A"  # Would need to get from haplotype_names table
+        
+        # Now we can use the aggregated counts from the query
+        self.species = getattr(starship, 'species', 'N/A')
+        self.starship_length = getattr(starship, 'starship_length', 0)
+        self.num_cds = getattr(starship, 'num_cds', 0)
+        self.num_gene = getattr(starship, 'num_gene', 0)
+        self.num_unannotated = getattr(starship, 'num_unannotated', 0)
+        self.num_review = getattr(starship, 'num_review', 0)
+        self.num_green = getattr(starship, 'num_green', 0)
+        self.num_yellow = getattr(starship, 'num_yellow', 0)
+        self.num_red = getattr(starship, 'num_red', 0)
+        self.contigID = getattr(starship, 'contigID', 'N/A')
+        self.elementBegin = getattr(starship, 'elementBegin', 0)
+        self.elementEnd = getattr(starship, 'elementEnd', 0)
+        self.starship_family = getattr(starship, 'starship_family', 'N/A')
+        self.starship_navis = getattr(starship, 'starship_navis', 'N/A')
+        self.starship_haplotype = getattr(starship, 'starship_haplotype', 'N/A')
+        
         self.download = '<a href="{}">download fasta</a>'.format(
             reverse('starship:starship_download_fasta', kwargs={'starship_id': starship.id})
         )
@@ -257,28 +258,46 @@ class GetStarshipDataView(APIView):
     def get(self, request):
         params = self.read_parameters(request.GET)
 
-        # Note: Cross-database annotations removed due to multi-database setup
-        # The following annotations would require cross-database joins which Django doesn't support:
-        # - feature counts (Feature is in mas database, JoinedShips is in starbase database)
-        # - annotation flag counts (Annotation is in mas database, JoinedShips is in starbase database)
-        
-        # For now, we'll get the basic starship data without the cross-database annotations
-        # TODO: Implement separate queries to get feature and annotation counts if needed
-        starships = JoinedShips.objects.all()
+        # Now that all tables are in the same database, we can use proper joins and aggregations
+        starships = JoinedShips.objects.select_related(
+            'ship_family', 'taxonomy', 'ship_navis', 'ship_haplotype', 'ship'
+        ).prefetch_related(
+            'feature_set', 'feature_set__annotation'
+        ).annotate(
+            # Feature counts
+            num_cds=Count('feature', filter=Q(feature__type='CDS')),
+            num_gene=Count('feature', filter=Q(feature__type='gene')),
+            
+            # Annotation flag counts
+            num_unannotated=Count('feature__annotation', filter=Q(feature__annotation__flag=7)),
+            num_review=Count('feature__annotation', filter=Q(feature__annotation__flag=3)),
+            num_green=Count('feature__annotation', filter=Q(feature__annotation__flag=0)),
+            num_yellow=Count('feature__annotation', filter=Q(feature__annotation__flag=1)),
+            num_red=Count('feature__annotation', filter=Q(feature__annotation__flag=2)),
+            
+            # Related data using the ForeignKey relationships
+            species=F('taxonomy__species'),
+            starship_length=Length('ship__sequence'),  # Get length from Ships table
+            contigID=F('ship__starshipfeatures__contigID'),
+            elementBegin=F('ship__starshipfeatures__elementBegin'),
+            elementEnd=F('ship__starshipfeatures__elementEnd'),
+            starship_family=F('ship_family__familyName'),
+            starship_navis=F('ship_navis__navis_name'),
+            starship_haplotype=F('ship_haplotype__haplotype_name')
+        )
 
         total_num_starships = starships.count()
 
-        # Update the filter to use starshipID instead of starship_name
+        # Filter starships
         starships = starships.filter(
             Q(starshipID__icontains=params['search_val']) |
-            Q(species__icontains=params['search_val'])  # Changed from organism to species
+            Q(species__icontains=params['search_val'])
         ).order_by(self.get_order_by_arg(params['order_col'], params['order_dir']))
 
         filtered_num_starships = starships.count()
-        starships = starships[ params['start'] : params['start']+params['length'] ]
+        starships = starships[params['start'] : params['start']+params['length']]
 
         starship_data = [StarshipData(p) for p in starships]
-        # s = StarshipDataSerializer(starship_data, many=True)
 
         return response.Response(StarshipDataListSerializer({
             'data': starship_data,

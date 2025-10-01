@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from simple_history.models import HistoricalRecords
 from django.conf import settings
 import django.dispatch
+from django.db.models import Count, Q, F
 
 
 # Validators
@@ -44,7 +45,7 @@ starship_upload_complete = django.dispatch.Signal()
 class Accessions(models.Model):
     """Accessions table from SQLite schema"""
     class Meta:
-        db_table = 'accessions'
+        db_table = 'starbase_accessions'
         app_label = 'starship'
     
     ship_name = models.CharField(max_length=255, null=True, blank=True)
@@ -58,7 +59,7 @@ class Accessions(models.Model):
 class Ships(models.Model):
     """Ships table from SQLite schema"""
     class Meta:
-        db_table = 'ships'
+        db_table = 'starbase_ships'
     
     sequence = models.TextField()
     md5 = models.CharField(max_length=32, null=True, blank=True)
@@ -72,7 +73,7 @@ class Ships(models.Model):
 class Captains(models.Model):
     """Captains table from SQLite schema"""
     class Meta:
-        db_table = 'captains'
+        db_table = 'starbase_captains'
     
     captainID = models.CharField(max_length=255, unique=True)
     sequence = models.TextField()
@@ -86,7 +87,7 @@ class Captains(models.Model):
 class Taxonomy(models.Model):
     """Taxonomy table from SQLite schema"""
     class Meta:
-        db_table = 'taxonomy'
+        db_table = 'starbase_taxonomy'
     
     name = models.CharField(max_length=255, null=True, blank=True)
     taxID = models.CharField(max_length=255, null=True, blank=True)
@@ -115,7 +116,7 @@ class Taxonomy(models.Model):
 class Genome(models.Model):
     """Genome table from SQLite schema"""
     class Meta:
-        db_table = 'genomes'
+        db_table = 'starbase_genomes'
     
     ome = models.CharField(max_length=50, null=True, blank=True)
     taxonomy = models.ForeignKey(Taxonomy, on_delete=models.CASCADE, related_name='genomes', null=True)
@@ -133,7 +134,7 @@ class Genome(models.Model):
 class Papers(models.Model):
     """Papers table from SQLite schema"""
     class Meta:
-        db_table = 'papers'
+        db_table = 'starbase_papers'
     
     Key = models.CharField(max_length=255, null=True, blank=True)
     ItemType = models.CharField(max_length=255, null=True, blank=True)
@@ -156,7 +157,7 @@ class Papers(models.Model):
 class FamilyNames(models.Model):
     """FamilyNames table from SQLite schema"""
     class Meta:
-        db_table = 'family_names'
+        db_table = 'starbase_family_names'
     
     longFamilyID = models.CharField(max_length=255, null=True, blank=True)
     oldFamilyID = models.CharField(max_length=255, null=True, blank=True)
@@ -177,7 +178,7 @@ class FamilyNames(models.Model):
 class StarshipFeatures(models.Model):
     """StarshipFeatures table from SQLite schema - more comprehensive than current Feature model"""
     class Meta:
-        db_table = 'starship_features'
+        db_table = 'starbase_starship_features'
 
     contigID = models.CharField(max_length=255, null=True, blank=True)
     starshipID = models.CharField(max_length=255, null=True, blank=True)
@@ -210,7 +211,7 @@ class StarshipFeatures(models.Model):
 class Navis(models.Model):
     """Navis table from SQLite schema"""
     class Meta:
-        db_table = 'navis_names'
+        db_table = 'starbase_navis_names'
     
     navis_name = models.CharField(max_length=255, null=True, blank=True)
     previous_navis_name = models.CharField(max_length=255, null=True, blank=True)
@@ -223,7 +224,7 @@ class Navis(models.Model):
 class Haplotype(models.Model):
     """Haplotype table from SQLite schema"""
     class Meta:
-        db_table = 'haplotype_names'
+        db_table = 'starbase_haplotype_names'
     
     haplotype_name = models.CharField(max_length=255, null=True, blank=True)
     previous_haplotype_name = models.CharField(max_length=255, null=True, blank=True)
@@ -237,7 +238,7 @@ class Haplotype(models.Model):
 class Gff(models.Model):
     """Gff table from SQLite schema"""
     class Meta:
-        db_table = 'gff'
+        db_table = 'starbase_gff'
     
     accession = models.ForeignKey(Accessions, on_delete=models.CASCADE, null=True, blank=True)
     source = models.CharField(max_length=255, null=True, blank=True)
@@ -256,7 +257,7 @@ class Gff(models.Model):
 class JoinedShips(models.Model):
     """JoinedShips table from SQLite schema - comprehensive starship data"""
     class Meta:
-        db_table = 'joined_ships'
+        db_table = 'starbase_joined_ships'
     
     # Starship quality flag options
     QUALITY_FLAG_CHOICES = (
@@ -274,108 +275,112 @@ class JoinedShips(models.Model):
     source = models.CharField(max_length=255, null=True, blank=True)
     curated_status = models.CharField(max_length=255, null=True, blank=True)
     
-    # Integer foreign key fields to match starbase database schema
-    ship_family_id = models.IntegerField(null=True, blank=True)
-    tax_id = models.IntegerField(null=True, blank=True)
-    ship_id = models.IntegerField(null=True, blank=True)
-    genome_id = models.IntegerField(null=True, blank=True)
-    captain_id = models.IntegerField(null=True, blank=True)
-    ship_navis_id = models.IntegerField(null=True, blank=True)
-    ship_haplotype_id = models.IntegerField(null=True, blank=True)
+    ship_family = models.ForeignKey('FamilyNames', on_delete=models.SET_NULL, null=True, blank=True, db_column='ship_family_id')
+    taxonomy = models.ForeignKey('Taxonomy', on_delete=models.SET_NULL, null=True, blank=True, db_column='tax_id')
+    ship = models.ForeignKey('Ships', on_delete=models.SET_NULL, null=True, blank=True, db_column='ship_id')
+    genome = models.ForeignKey('Genome', on_delete=models.SET_NULL, null=True, blank=True, db_column='genome_id')
+    captain = models.ForeignKey('Captains', on_delete=models.SET_NULL, null=True, blank=True, db_column='captain_id')
+    ship_navis = models.ForeignKey('Navis', on_delete=models.SET_NULL, null=True, blank=True, db_column='ship_navis_id')
+    ship_haplotype = models.ForeignKey('Haplotype', on_delete=models.SET_NULL, null=True, blank=True, db_column='ship_haplotype_id')
     
     created_at = models.CharField(max_length=255, null=True, blank=True)  # text field in starbase
     updated_at = models.CharField(max_length=255, null=True, blank=True)  # text field in starbase
 
-    # Note: quality_flag field removed as it doesn't exist in starbase database
+    # Property to access the sequence from the related Ships table
+    @property
+    def starship_sequence(self):
+        return self.ship.sequence if self.ship else ""
 
-    # def calculate_quality_flag(self):
-    #     """
-    #     Calculate the appropriate quality flag based on available data.
-    #     Returns the flag value (integer).
-    #     """
-    #     missing_data = []
-        
-    #     # Check for captain/transposase information
-    #     has_captain = bool(self.captain)
-    #     if not has_captain:
-    #         missing_data.append('captain')
-        
-    #     # Check for classification information
-    #     has_classification = bool(
-    #         self.ship_family or 
-    #         (self.navis and self.haplotype)
-    #     )
-    #     if not has_classification:
-    #         missing_data.append('classification')
-        
-    #     # Check for basic sequence information
-    #     has_basic_info = bool(
-    #         self.starshipID and 
-    #         self.accession
-    #     )
-    #     if not has_basic_info:
-    #         missing_data.append('basic_info')
-        
-    #     # Check for cargo annotations (if we have a ship with annotations)
-    #     has_cargo_annotations = False
-    #     if self.accession and hasattr(self.accession, 'ships'):
-    #         for ship in self.accession.ships.all():
-    #             if hasattr(ship, 'annotations') and ship.annotations.count() > 0:
-    #                 has_cargo_annotations = True
-    #                 break
-        
-    #     if not has_cargo_annotations:
-    #         missing_data.append('cargo_annotations')
+    # TODO: integrate `quality_flag` into existing tables
 
-    #     # Determine flag based on missing data
-    #     if not missing_data:
-    #         return 0  # COMPLETE
-    #     elif len(missing_data) >= 3:
-    #         return 4  # INCOMPLETE
-    #     elif 'captain' in missing_data:
-    #         return 2  # MISSING_CAPTAIN
-    #     elif 'classification' in missing_data:
-    #         return 3  # MISSING_CLASSIFICATION
-    #     elif 'cargo_annotations' in missing_data:
-    #         return 5  # MISSING_CARGO_ANNOTATIONS
-    #     else:
-    #         return 4  # INCOMPLETE
+    def calculate_quality_flag(self):
+        """
+        Calculate the appropriate quality flag based on available data.
+        Returns the flag value (integer).
+        """
+        missing_data = []
+        
+        # Check for captain/transposase information
+        has_captain = bool(self.captain)
+        if not has_captain:
+            missing_data.append('captain')
+        
+        # Check for classification information
+        has_classification = bool(
+            self.ship_family or 
+            (self.navis and self.haplotype)
+        )
+        if not has_classification:
+            missing_data.append('classification')
+        
+        # Check for basic sequence information
+        has_basic_info = bool(
+            self.starshipID and 
+            self.accession
+        )
+        if not has_basic_info:
+            missing_data.append('basic_info')
+        
+        # Check for cargo annotations (if we have a ship with annotations)
+        has_cargo_annotations = False
+        if self.accession and hasattr(self.accession, 'ships'):
+            for ship in self.accession.ships.all():
+                if hasattr(ship, 'annotations') and ship.annotations.count() > 0:
+                    has_cargo_annotations = True
+                    break
+        
+        if not has_cargo_annotations:
+            missing_data.append('cargo_annotations')
+
+        # Determine flag based on missing data
+        if not missing_data:
+            return 0  # COMPLETE
+        elif len(missing_data) >= 3:
+            return 4  # INCOMPLETE
+        elif 'captain' in missing_data:
+            return 2  # MISSING_CAPTAIN
+        elif 'classification' in missing_data:
+            return 3  # MISSING_CLASSIFICATION
+        elif 'cargo_annotations' in missing_data:
+            return 5  # MISSING_CARGO_ANNOTATIONS
+        else:
+            return 4  # INCOMPLETE
     
-    # def update_quality_flag(self):
-    #     """Update the quality flag based on current data and save."""
-    #     self.quality_flag = self.calculate_quality_flag()
-    #     self.save(update_fields=['quality_flag'])
+    def update_quality_flag(self):
+        """Update the quality flag based on current data and save."""
+        self.quality_flag = self.calculate_quality_flag()
+        self.save(update_fields=['quality_flag'])
     
-    # def get_missing_data_summary(self):
-    #     """
-    #     Return a human-readable summary of what data is missing.
-    #     """
-    #     missing_items = []
+    def get_missing_data_summary(self):
+        """
+        Return a human-readable summary of what data is missing.
+        """
+        missing_items = []
         
-    #     # Check captain
-    #     if not self.captain:
-    #         missing_items.append("Captain/transposase identification")
+        # Check captain
+        if not self.captain:
+            missing_items.append("Captain/transposase identification")
         
-    #     # Check classification
-    #     if not (self.ship_family or (self.navis and self.haplotype)):
-    #         missing_items.append("Family/classification information")
+        # Check classification
+        if not (self.ship_family or (self.navis and self.haplotype)):
+            missing_items.append("Family/classification information")
         
-    #     # Check basic info
-    #     if not (self.starshipID and self.accession):
-    #         missing_items.append("Basic sequence information (ID, accession)")
+        # Check basic info
+        if not (self.starshipID and self.accession):
+            missing_items.append("Basic sequence information (ID, accession)")
         
-    #     # Check cargo annotations
-    #     has_cargo_annotations = False
-    #     if self.accession and hasattr(self.accession, 'ships'):
-    #         for ship in self.accession.ships.all():
-    #             if hasattr(ship, 'annotations') and ship.annotations.count() > 0:
-    #                 has_cargo_annotations = True
-    #                 break
+        # Check cargo annotations
+        has_cargo_annotations = False
+        if self.accession and hasattr(self.accession, 'ships'):
+            for ship in self.accession.ships.all():
+                if hasattr(ship, 'annotations') and ship.annotations.count() > 0:
+                    has_cargo_annotations = True
+                    break
         
-    #     if not has_cargo_annotations:
-    #         missing_items.append("Cargo annotations")
+        if not has_cargo_annotations:
+            missing_items.append("Cargo annotations")
         
-    #     return missing_items
+        return missing_items
 
     def __str__(self):
         return f"{self.starshipID}"
@@ -384,7 +389,7 @@ class JoinedShips(models.Model):
 # TODO: add features of interest here?
 class Feature(models.Model):
     class Meta:
-        db_table = 'starship_feature'
+        db_table = 'starbase_starship_features'
 
     feature_options = (
         ("gene", "Gene Annotation"),
