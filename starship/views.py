@@ -520,8 +520,8 @@ class Starship_List(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
         return context
 
 
-class Starship_List_SS(LoginRequiredMixin, MixinForBaseTemplate, generic.TemplateView):
-    template_name = 'starship/starship_list_serverside.html'
+class Starship_List(LoginRequiredMixin, MixinForBaseTemplate, generic.TemplateView):
+    template_name = 'starship/starship_list.html'
 
 
 # used for starship detail page

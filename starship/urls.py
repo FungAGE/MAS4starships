@@ -8,7 +8,7 @@ app_name = 'starship'
 
 urlpatterns = [
     path('starship/detail/<int:pk>', views.Starship_Detail.as_view(), name='starship_detail'),
-    path('starship/list/', views.Starship_List_SS.as_view(), name='starship_list'),
+    path('starship/list/', views.Starship_List.as_view(), name='starship_list'),
     path('starship/download/fasta/<int:starship_id>', views.starship_download_fasta, name='starship_download_fasta'),
     path('starship/download/deliverables/<int:starship_id>', views.download_deliverables, name='download_deliverables'),
     path('starship/upload/', views.StarshipUpload.as_view(), name='upload_starship'),
