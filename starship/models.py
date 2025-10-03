@@ -476,3 +476,134 @@ class Annotation(models.Model):
 
     def __str__(self):
         return "%s | %s" % (self.annotation, self.get_flag_display())
+
+
+class StarfishRun(models.Model):
+    """Model to track starfish-nextflow pipeline runs"""
+    class Meta:
+        db_table = 'starfish_run'
+        ordering = ['-created_at']
+    
+    # Run status choices
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('running', 'Running'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('cancelled', 'Cancelled'),
+    )
+    
+    # Run name and description
+    run_name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True, null=True)
+    
+    # Status and timing
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    # User who created the run
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='starfish_runs')
+    
+    # Pipeline parameters
+    model = models.CharField(max_length=50, default='tyr', help_text='Gene model for de novo annotations')
+    threads = models.IntegerField(default=20, help_text='Number of CPU threads')
+    missing = models.IntegerField(default=1, help_text='Maximum missing genes in orthogroup filtering')
+    maxcopy = models.IntegerField(default=5, help_text='Maximum copy number in orthogroup filtering')
+    pid = models.IntegerField(default=90, help_text='Minimum percent identity for BLAST')
+    hsp = models.IntegerField(default=1000, help_text='Minimum HSP length for BLAST')
+    flank = models.IntegerField(default=6, help_text='Flank size for repeat detection')
+    neighbourhood = models.IntegerField(default=10000, help_text='Neighborhood size for sourmash sketch')
+    
+    # File paths
+    samplesheet_path = models.CharField(max_length=500, help_text='Path to samplesheet CSV file')
+    output_dir = models.CharField(max_length=500, help_text='Output directory for results')
+    log_file = models.CharField(max_length=500, blank=True, null=True, help_text='Path to log file')
+    
+    # Celery task tracking
+    celery_task_id = models.CharField(max_length=255, blank=True, null=True)
+    
+    # Error information
+    error_message = models.TextField(blank=True, null=True)
+    
+    # Results summary
+    num_genomes = models.IntegerField(null=True, blank=True, help_text='Number of genomes processed')
+    num_elements_found = models.IntegerField(null=True, blank=True, help_text='Number of starship elements found')
+    
+    def __str__(self):
+        return f"StarfishRun: {self.run_name} ({self.status})"
+    
+    @property
+    def duration(self):
+        """Calculate run duration if completed"""
+        if self.started_at and self.completed_at:
+            return self.completed_at - self.started_at
+        return None
+    
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('starship:starfish_run_detail', kwargs={'pk': self.pk})
+
+
+class StarfishRunGenome(models.Model):
+    """Model to track individual genomes in a starfish run"""
+    class Meta:
+        db_table = 'starfish_run_genome'
+        unique_together = ['run', 'genome_id']
+    
+    run = models.ForeignKey(StarfishRun, on_delete=models.CASCADE, related_name='genomes')
+    genome_id = models.CharField(max_length=255, help_text='Unique identifier for the genome')
+    tax_id = models.CharField(max_length=50, blank=True, null=True, help_text='Taxonomy ID')
+    fna_path = models.CharField(max_length=500, help_text='Path to genome assembly file')
+    gff3_path = models.CharField(max_length=500, help_text='Path to GFF3 annotation file')
+    emapper_path = models.CharField(max_length=500, blank=True, null=True, help_text='Path to emapper annotations')
+    cds_path = models.CharField(max_length=500, blank=True, null=True, help_text='Path to CDS sequences')
+    faa_path = models.CharField(max_length=500, blank=True, null=True, help_text='Path to protein sequences')
+    
+    # Results
+    num_elements = models.IntegerField(null=True, blank=True, help_text='Number of elements found in this genome')
+    status = models.CharField(max_length=20, default='pending', choices=StarfishRun.STATUS_CHOICES)
+    error_message = models.TextField(blank=True, null=True)
+    
+    def __str__(self):
+        return f"{self.run.run_name} - {self.genome_id}"
+
+
+class StarfishElement(models.Model):
+    """Model to store starship elements found by starfish-nextflow"""
+    class Meta:
+        db_table = 'starfish_element'
+        ordering = ['-created_at']
+    
+    # Element identification
+    element_id = models.CharField(max_length=255, unique=True)
+    run = models.ForeignKey(StarfishRun, on_delete=models.CASCADE, related_name='elements')
+    genome = models.ForeignKey(StarfishRunGenome, on_delete=models.CASCADE, related_name='elements')
+    
+    # Element coordinates and sequence
+    contig_id = models.CharField(max_length=255)
+    start = models.IntegerField()
+    end = models.IntegerField()
+    strand = models.CharField(max_length=1)
+    sequence = models.TextField(help_text='Element sequence')
+    
+    # Element classification
+    family = models.CharField(max_length=255, blank=True, null=True)
+    navis = models.CharField(max_length=255, blank=True, null=True)
+    haplotype = models.CharField(max_length=255, blank=True, null=True)
+    
+    # Quality metrics
+    quality_score = models.FloatField(null=True, blank=True)
+    confidence = models.CharField(max_length=50, blank=True, null=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True, null=True)
+    
+    def __str__(self):
+        return f"Element {self.element_id} from {self.genome.genome_id}"
+    
+    @property
+    def length(self):
+        return self.end - self.start + 1
