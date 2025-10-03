@@ -1529,6 +1529,7 @@ class StarfishRunUpdateView(LoginRequiredMixin, MixinForBaseTemplate, generic.Up
     model = starship_models.StarfishRun
     form_class = starship_forms.StarfishRunForm
     template_name = 'starship/starfish/starfish_run_update.html'
+    context_object_name = 'run'
     
     def get_queryset(self):
         return starship_models.StarfishRun.objects.filter(created_by=self.request.user)
@@ -1542,6 +1543,7 @@ class StarfishRunDeleteView(LoginRequiredMixin, MixinForBaseTemplate, generic.De
     model = starship_models.StarfishRun
     template_name = 'starship/starfish/starfish_run_confirm_delete.html'
     success_url = reverse_lazy('starfish:starfish_run_list')
+    context_object_name = 'run'
     
     def get_queryset(self):
         return starship_models.StarfishRun.objects.filter(created_by=self.request.user)
