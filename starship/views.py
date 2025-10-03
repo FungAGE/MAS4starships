@@ -538,10 +538,17 @@ class Starship_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailVi
         context = super(Starship_Detail, self).get_context_data(**kwargs)
         starship = self.get_object()
         
-        # Calculate starship length
-        element_end = int(starship.elementEnd) if starship.elementEnd else 0
-        element_begin = int(starship.elementBegin) if starship.elementBegin else 0
-        context['starship_length'] = (element_end + 1) - element_begin
+        # Calculate starship length - get elementBegin and elementEnd from StarshipFeatures
+        starship_features = starship_models.StarshipFeatures.objects.filter(
+            ship=starship.ship
+        ).first()
+        
+        if starship_features and starship_features.elementEnd and starship_features.elementBegin:
+            element_end = int(starship_features.elementEnd)
+            element_begin = int(starship_features.elementBegin)
+            context['starship_length'] = (element_end + 1) - element_begin
+        else:
+            context['starship_length'] = 0
         
         context = add_context_for_starship_viz(context, starship)
 
