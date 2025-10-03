@@ -73,6 +73,10 @@
                                                class="btn btn-outline-secondary btn-sm">
                                                 <i class="fas fa-edit"></i>
                                             </a>
+                                            <a href="{% url 'starfish:starfish_run_delete' run.pk %}" 
+                                               class="btn btn-outline-danger btn-sm"
+                                                <i class="fas fa-trash"></i>
+                                            </a>
                                         {% endif %}
                                         {% if run.status == 'completed' %}
                                             <a href="{% url 'starfish:starfish_import_to_mas' run.pk %}" 
