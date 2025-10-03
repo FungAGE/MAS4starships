@@ -268,6 +268,7 @@ def run_starfish_pipeline(self, run_id):
     """
     Celery task to run the starfish-nextflow pipeline
     """
+    run = None
     try:
         # Get the run object
         run = StarfishRun.objects.get(id=run_id)
@@ -330,12 +331,13 @@ def run_starfish_pipeline(self, run_id):
             
     except Exception as e:
         logger.error(f"Error in starfish pipeline for run {run_id}: {str(e)}")
-        run.status = 'failed'
-        run.error_message = str(e)
+        if run is not None:
+            run.status = 'failed'
+            run.error_message = str(e)
         
     finally:
-        run.save()
-
+        if run is not None:
+            run.save()
 
 def verify_starfish_outputs(run):
     """Verify that all expected starfish output files and directories exist and are not empty"""
