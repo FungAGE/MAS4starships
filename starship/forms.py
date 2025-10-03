@@ -519,6 +519,13 @@ class Confirm_Upload_Annotation(forms.Form):
 class StarfishRunForm(forms.ModelForm):
     """Form for creating and configuring starfish-nextflow pipeline runs"""
     
+    samplesheet_csv = forms.CharField(
+        label='Samplesheet CSV',
+        widget=forms.Textarea(attrs={'rows': 8, 'placeholder': 'genomeID,taxID,fna,gff3,emapper,cds,faa\n...'}),
+        required=True,
+        help_text='Paste CSV contents with columns: genomeID,taxID,fna,gff3,emapper,cds,faa'
+    )
+
     class Meta:
         model = starship_models.StarfishRun
         fields = [
@@ -534,6 +541,21 @@ class StarfishRunForm(forms.ModelForm):
         self.helper = CrispyHorizontalFormHelper()
         self.helper.form_tag = False
         self.helper.disable_csrf = True
+        
+        # Field order
+        self.order_fields([
+            'run_name',
+            'samplesheet_csv',
+            'description',
+            'model',
+            'threads',
+            'missing',
+            'maxcopy',
+            'pid',
+            'hsp',
+            'flank',
+            'neighbourhood',
+        ])
         
         # Add help text and validation
         self.fields['run_name'].help_text = 'Unique name for this starfish run'
@@ -553,6 +575,22 @@ class StarfishRunForm(forms.ModelForm):
             if starship_models.StarfishRun.objects.filter(run_name=run_name).exists():
                 raise forms.ValidationError('A run with this name already exists.')
         return run_name
+
+    def clean_samplesheet_csv(self):
+        value = self.cleaned_data.get('samplesheet_csv', '')
+        import io
+        import pandas as pd
+        try:
+            df = pd.read_csv(io.StringIO(value))
+        except Exception as e:
+            raise forms.ValidationError(f'Invalid CSV: {e}')
+        required = ['genomeID', 'fna', 'gff3']
+        missing = [c for c in required if c not in df.columns]
+        if missing:
+            raise forms.ValidationError('Missing required columns: ' + ', '.join(missing))
+        if df.empty:
+            raise forms.ValidationError('CSV is empty.')
+        return value
 
 
 class StarfishGenomeInputForm(forms.Form):

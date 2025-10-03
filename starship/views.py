@@ -1520,7 +1520,28 @@ class StarfishRunCreateView(LoginRequiredMixin, MixinForBaseTemplate, generic.Cr
     success_url = reverse_lazy('starfish:starfish_run_list')
     
     def form_valid(self, form):
+        import os
+        from datetime import datetime
+        from django.conf import settings
+        
+        # Set creator
         form.instance.created_by = self.request.user
+        
+        # Build output directory path and write samplesheet.csv from pasted textarea
+        timestamp = datetime.now().strftime('%Y-%m-%d_h%H-m%M-s%S')
+        safe_name = form.cleaned_data['run_name']
+        output_root = os.path.join(settings.BASE_DIR, 'output')
+        output_dir = os.path.join(output_root, f"{timestamp}_{safe_name}")
+        os.makedirs(output_dir, exist_ok=True)
+        
+        samplesheet_path = os.path.join(output_dir, 'samplesheet.csv')
+        with open(samplesheet_path, 'w') as fh:
+            fh.write(form.cleaned_data['samplesheet_csv'])
+        
+        # Set fields used by pipeline
+        form.instance.samplesheet_path = samplesheet_path
+        form.instance.output_dir = output_dir
+        
         return super().form_valid(form)
 
 
