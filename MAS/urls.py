@@ -33,7 +33,9 @@ urlpatterns = [
     # path('accounts/', include('django.contrib.auth.urls')),
 
     path('home/', include('home.urls')),
-    path('starship/', include('starship.urls'))
+    path('starship/', include('starship.urls')),
+    # Direct starfish URLs for easier access
+    path('starfish/', include('starship.starfish_urls'))
     # path('similarity_viewer/', include('similarity_viewer.urls'))
 ]
 
