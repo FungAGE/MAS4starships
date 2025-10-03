@@ -19,15 +19,19 @@
                         <a href="{% url 'starfish:starfish_run_update' run.pk %}" class="btn btn-outline-secondary">
                             <i class="fas fa-edit"></i> Edit
                         </a>
-                        <a href="{% url 'starfish:starfish_run_start' run.pk %}" class="btn btn-success"
-                           onclick="return confirm('Start this starfish run?')">
-                            <i class="fas fa-play"></i> Start Run
-                        </a>
+                        <form method="post" action="{% url 'starfish:starfish_run_start' run.pk %}" style="display:inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success" onclick="return confirm('Start this starfish run?')">
+                                <i class="fas fa-play"></i> Start Run
+                            </button>
+                        </form>
                     {% elif run.status == 'running' %}
-                        <a href="{% url 'starfish:starfish_run_cancel' run.pk %}" class="btn btn-danger"
-                           onclick="return confirm('Cancel this run?')">
-                            <i class="fas fa-stop"></i> Cancel
-                        </a>
+                        <form method="post" action="{% url 'starfish:starfish_run_cancel' run.pk %}" style="display:inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Cancel this run?')">
+                                <i class="fas fa-stop"></i> Cancel
+                            </button>
+                        </form>
                     {% elif run.status == 'completed' %}
                         <a href="{% url 'starfish:starfish_import_to_mas' run.pk %}" class="btn btn-primary"
                            onclick="return confirm('Import elements to MAS database?')">
