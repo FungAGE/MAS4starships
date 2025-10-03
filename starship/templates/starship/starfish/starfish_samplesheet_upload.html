@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Bulk Upload Genomes for {{ run.run_name }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-upload"></i> Bulk Upload Genomes for Run: {{ run.run_name }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> Upload Samplesheet
+                            </button>
+                            <a href="{% url 'starfish:starfish_genome_list' run.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="alert alert-info">
+                <h6><i class="fas fa-info-circle"></i> Alternative Method</h6>
+                <p class="small">This is an alternative to adding genomes one by one. For single genomes, use the "Add Genome" button instead.</p>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-file-csv"></i> Samplesheet Format</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small">The samplesheet should be a CSV file with the following columns:</p>
+                    
+                    <h6>Required Columns:</h6>
+                    <ul class="list-unstyled small">
+                        <li><strong>genomeID:</strong> Unique identifier for the genome</li>
+                        <li><strong>fna:</strong> Path to genome assembly file (FASTA)</li>
+                        <li><strong>gff3:</strong> Path to GFF3 annotation file</li>
+                    </ul>
+                    
+                    <h6>Optional Columns:</h6>
+                    <ul class="list-unstyled small">
+                        <li><strong>taxID:</strong> NCBI taxonomy ID</li>
+                        <li><strong>emapper:</strong> Path to eggNOG mapper annotations</li>
+                        <li><strong>cds:</strong> Path to CDS sequences (FASTA)</li>
+                        <li><strong>faa:</strong> Path to protein sequences (FASTA)</li>
+                    </ul>
+                    
+                    <div class="alert alert-info">
+                        <small>
+                            <strong>Example:</strong><br>
+                            genomeID,taxID,fna,gff3,emapper,cds,faa<br>
+                            genome1,12345,/path/to/genome1.fasta,/path/to/genome1.gff3,,,<br>
+                            genome2,67890,/path/to/genome2.fasta,/path/to/genome2.gff3,/path/to/emapper.annotations,,
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5><i class="fas fa-download"></i> Download Template</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small">Download a template CSV file to get started:</p>
+                    <button class="btn btn-outline-primary btn-sm" onclick="downloadTemplate()">
+                        <i class="fas fa-download"></i> Download Template
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function downloadTemplate() {
+    const csvContent = "genomeID,taxID,fna,gff3,emapper,cds,faa\n" +
+                      "example_genome1,12345,/path/to/genome1.fasta,/path/to/genome1.gff3,,,\n" +
+                      "example_genome2,67890,/path/to/genome2.fasta,/path/to/genome2.gff3,/path/to/emapper.annotations,,";
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'starfish_samplesheet_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}

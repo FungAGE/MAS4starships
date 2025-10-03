@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Element: {{ element.element_id }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-dna"></i> Element: {{ element.element_id }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Genomic Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Element ID:</strong></td>
+                                    <td>{{ element.element_id }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Genome:</strong></td>
+                                    <td>{{ element.genome.genome_id }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Contig:</strong></td>
+                                    <td>{{ element.contig_id }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Position:</strong></td>
+                                    <td>{{ element.start }} - {{ element.end }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Length:</strong></td>
+                                    <td>{{ element.end|add:"-"|add:element.start|add:"1" }} bp</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Strand:</strong></td>
+                                    <td>
+                                        <span class="badge badge-{% if element.strand == '+' %}success{% else %}info{% endif %}">
+                                            {{ element.strand }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Run Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Run:</strong></td>
+                                    <td>
+                                        <a href="{% url 'starfish:starfish_run_detail' element.run.pk %}">
+                                            {{ element.run.run_name }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Status:</strong></td>
+                                    <td>
+                                        <span class="badge badge-{% if element.run.status == 'completed' %}success{% elif element.run.status == 'failed' %}danger{% else %}warning{% endif %}">
+                                            {{ element.run.get_status_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Created:</strong></td>
+                                    <td>{{ element.run.created_at|date:"M d, Y H:i" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    {% if element.sequence %}
+                        <div class="mt-4">
+                            <h6>Sequence</h6>
+                            <div class="card">
+                                <div class="card-body">
+                                    <pre class="mb-0" style="font-size: 12px; max-height: 300px; overflow-y: auto;">{{ element.sequence }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    {% if element.notes %}
+                        <div class="mt-4">
+                            <h6>Notes</h6>
+                            <p>{{ element.notes }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Element Details</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Element ID:</strong> {{ element.element_id }}</p>
+                    <p><strong>Genome:</strong> {{ element.genome.genome_id }}</p>
+                    <p><strong>Contig:</strong> {{ element.contig_id }}</p>
+                    <p><strong>Position:</strong> {{ element.start }} - {{ element.end }}</p>
+                    <p><strong>Length:</strong> {{ element.end|add:"-"|add:element.start|add:"1" }} bp</p>
+                    <p><strong>Strand:</strong> {{ element.strand }}</p>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5><i class="fas fa-cog"></i> Actions</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'starfish:starfish_element_list' element.run.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list"></i> All Elements
+                    </a>
+                    <a href="{% url 'starfish:starfish_run_detail' element.run.pk %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Back to Run
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

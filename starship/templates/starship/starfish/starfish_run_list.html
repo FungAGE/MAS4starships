@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Starfish Runs{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1><i class="fas fa-dna"></i> Starfish Dashboard</h1>
+                    <p class="text-muted">Detect and analyze <em>Starships</em> in fungal genomes</p>
+                </div>
+                <a href="{% url 'starfish:starfish_run_create' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus"></i> New Run
+                </a>
+            </div>
+            
+            {% if runs %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Run Name</th>
+                                <th>Status</th>
+                                <th>Genomes</th>
+                                <th>Elements Found</th>
+                                <th>Created</th>
+                                <th>Duration</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for run in runs %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'starfish:starfish_run_detail' run.pk %}">
+                                        {{ run.run_name }}
+                                    </a>
+                                    {% if run.description %}
+                                        <br><small class="text-muted">{{ run.description|truncatechars:50 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if run.status == 'completed' %}bg-success
+                                        {% elif run.status == 'running' %}bg-warning
+                                        {% elif run.status == 'failed' %}bg-danger
+                                        {% elif run.status == 'cancelled' %}bg-secondary
+                                        {% else %}bg-info{% endif %}">
+                                        {{ run.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ run.num_genomes|default:"-" }}</td>
+                                <td>{{ run.num_elements_found|default:"-" }}</td>
+                                <td>{{ run.created_at|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    {% if run.duration %}
+                                        {{ run.duration }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'starfish:starfish_run_detail' run.pk %}" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if run.status == 'pending' %}
+                                            <a href="{% url 'starfish:starfish_run_update' run.pk %}" 
+                                               class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        {% endif %}
+                                        {% if run.status == 'completed' %}
+                                            <a href="{% url 'starfish:starfish_import_to_mas' run.pk %}" 
+                                               class="btn btn-outline-success btn-sm"
+                                               onclick="return confirm('Import elements to MAS database?')">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if is_paginated %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1">&laquo; First</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="alert alert-info">
+                            <h4><i class="fas fa-info-circle"></i> Welcome to Starfish</h4>
+                            <p>You haven't created any starfish runs yet. Starfish is a computational pipeline for detecting and analyzing <em>Starships</em> in fungal genomes.</p>
+                            <p>To get started, click the "New Run" button to create your first starfish analysis.</p>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-rocket"></i> Quick Start</h5>
+                            </div>
+                            <div class="card-body">
+                                <ol>
+                                    <li><strong>Create a new run</strong> - Click "New Run" to configure your analysis</li>
+                                    <li><strong>Add genomes</strong> - Upload genome assemblies and annotations</li>
+                                    <li><strong>Start the pipeline</strong> - Run the starfish-nextflow analysis</li>
+                                    <li><strong>View results</strong> - Explore detected starship elements</li>
+                                </ol>
+                                <a href="{% url 'starfish:starfish_run_create' %}" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-plus"></i> Create Your First Run
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-info-circle"></i> About Starfish</h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Starfish</strong> is a computational pipeline for detecting and analyzing <em>Starships</em> in fungal genomes.</p>
+                                
+                                <h6>What it does:</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success"></i> Detects starship elements</li>
+                                    <li><i class="fas fa-check text-success"></i> Analyzes genomic regions</li>
+                                    <li><i class="fas fa-check text-success"></i> Generates visualizations</li>
+                                    <li><i class="fas fa-check text-success"></i> Exports results</li>
+                                </ul>
+                                
+                                <h6>Input requirements:</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-dna text-primary"></i> Genome assembly (FASTA)</li>
+                                    <li><i class="fas fa-file-text text-primary"></i> Genome annotation (GFF3)</li>
+                                    <li><i class="fas fa-cog text-primary"></i> Optional: Pre-computed annotations</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-question-circle"></i> Need Help?</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>Check the documentation or contact support for assistance with starfish analysis.</p>
+                                <a href="#" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-book"></i> Documentation
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

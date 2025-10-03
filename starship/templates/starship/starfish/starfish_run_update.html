@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Edit Starfish Run: {{ run.run_name }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-edit"></i> Edit Starfish Run: {{ run.run_name }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update Run
+                            </button>
+                            <a href="{% url 'starfish:starfish_run_detail' run.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Run Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Status:</strong> {{ run.get_status_display }}</p>
+                    <p><strong>Created:</strong> {{ run.created_at|date:"M d, Y H:i" }}</p>
+                    {% if run.started_at %}
+                        <p><strong>Started:</strong> {{ run.started_at|date:"M d, Y H:i" }}</p>
+                    {% endif %}
+                    {% if run.completed_at %}
+                        <p><strong>Completed:</strong> {{ run.completed_at|date:"M d, Y H:i" }}</p>
+                    {% endif %}
+                    {% if run.num_genomes %}
+                        <p><strong>Genomes:</strong> {{ run.num_genomes }}</p>
+                    {% endif %}
+                    {% if run.num_elements_found %}
+                        <p><strong>Elements Found:</strong> {{ run.num_elements_found }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

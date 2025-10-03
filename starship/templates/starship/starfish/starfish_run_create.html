@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Create Starfish Run{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-play"></i> Create New Starfish Run</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create Run
+                            </button>
+                            <a href="{% url 'starfish:starfish_run_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> About Starfish</h5>
+                </div>
+                <div class="card-body">
+                    <p>The starfish-nextflow pipeline automates the detection and analysis of <em>Starships</em>, which are large mobile genetic elements found in fungal genomes.</p>
+                    
+                    <h6>Key Features:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> Automatic file formatting</li>
+                        <li><i class="fas fa-check text-success"></i> Parallel processing</li>
+                        <li><i class="fas fa-check text-success"></i> Functional annotation</li>
+                        <li><i class="fas fa-check text-success"></i> Element detection</li>
+                        <li><i class="fas fa-check text-success"></i> Visualization</li>
+                    </ul>
+                    
+                    <h6>Required Input:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-dna text-primary"></i> Genome assembly (FASTA)</li>
+                        <li><i class="fas fa-list text-primary"></i> GFF3 annotation file</li>
+                        <li><i class="fas fa-cog text-secondary"></i> Optional: eggNOG annotations</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5><i class="fas fa-cogs"></i> Pipeline Parameters</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Gene Models:</h6>
+                    <ul class="list-unstyled small">
+                        <li><strong>tyr:</strong> Tyrosine recombinase (default)</li>
+                        <li><strong>nlr:</strong> NLR proteins</li>
+                        <li><strong>fre:</strong> FRE proteins</li>
+                        <li><strong>plp:</strong> PLP proteins</li>
+                        <li><strong>duf3723:</strong> DUF3723 domain</li>
+                    </ul>
+                    
+                    <h6>Filtering Parameters:</h6>
+                    <ul class="list-unstyled small">
+                        <li><strong>Missing:</strong> Max missing genes in orthogroup</li>
+                        <li><strong>Max Copy:</strong> Max copy number in orthogroup</li>
+                        <li><strong>PID:</strong> Min percent identity for BLAST</li>
+                        <li><strong>HSP:</strong> Min HSP length for BLAST</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

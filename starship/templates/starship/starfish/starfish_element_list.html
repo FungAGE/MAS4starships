@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Elements for {{ run.run_name }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Elements for {{ run.run_name }}</h1>
+                <div class="btn-group">
+                    <a href="{% url 'starfish:starfish_run_detail' run.pk %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Run
+                    </a>
+                </div>
+            </div>
+            
+            {% if elements %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Element ID</th>
+                                <th>Genome</th>
+                                <th>Contig</th>
+                                <th>Position</th>
+                                <th>Length</th>
+                                <th>Strand</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for element in elements %}
+                            <tr>
+                                <td>
+                                    <strong>{{ element.element_id }}</strong>
+                                </td>
+                                <td>
+                                    {{ element.genome.genome_id }}
+                                </td>
+                                <td>
+                                    {{ element.contig_id }}
+                                </td>
+                                <td>
+                                    {{ element.start }} - {{ element.end }}
+                                </td>
+                                <td>
+                                    {{ element.end|add:"-"|add:element.start|add:"1" }}
+                                </td>
+                                <td>
+                                    <span class="badge badge-{% if element.strand == '+' %}success{% else %}info{% endif %}">
+                                        {{ element.strand }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'starfish:starfish_element_detail' element.pk %}" class="btn btn-outline-primary btn-sm" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if is_paginated %}
+                    <nav aria-label="Element pagination">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1">&laquo; First</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle"></i> No Elements Found</h5>
+                    <p>No elements have been detected yet. This could mean:</p>
+                    <ul>
+                        <li>The pipeline hasn't been run yet</li>
+                        <li>The pipeline is still running</li>
+                        <li>No elements were found in the genomes</li>
+                    </ul>
+                    <a href="{% url 'starfish:starfish_run_detail' run.pk %}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Run Details
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
