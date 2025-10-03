@@ -123,68 +123,18 @@
                     </nav>
                 {% endif %}
             {% else %}
+                <br>
                 <div class="row">
                     <div class="col-md-8">
                         <div class="alert alert-info">
-                            <h4><i class="fas fa-info-circle"></i> Welcome to Starfish</h4>
-                            <p>You haven't created any starfish runs yet. Starfish is a computational pipeline for detecting and analyzing <em>Starships</em> in fungal genomes.</p>
+                            <h4><i class="fas fa-info-circle"></i> You haven't created any starfish runs yet.</h4>
                             <p>To get started, click the "New Run" button to create your first starfish analysis.</p>
-                        </div>
-                        
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-rocket"></i> Quick Start</h5>
-                            </div>
-                            <div class="card-body">
-                                <ol>
-                                    <li><strong>Create a new run</strong> - Click "New Run" to configure your analysis</li>
-                                    <li><strong>Add genomes</strong> - Upload genome assemblies and annotations</li>
-                                    <li><strong>Start the pipeline</strong> - Run the starfish-nextflow analysis</li>
-                                    <li><strong>View results</strong> - Explore detected starship elements</li>
-                                </ol>
-                                <a href="{% url 'starfish:starfish_run_create' %}" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-plus"></i> Create Your First Run
-                                </a>
-                            </div>
-                        </div>
+                        </div>                       
                     </div>
                     
                     <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-info-circle"></i> About Starfish</h5>
-                            </div>
-                            <div class="card-body">
-                                <p><strong>Starfish</strong> is a computational pipeline for detecting and analyzing <em>Starships</em> in fungal genomes.</p>
-                                
-                                <h6>What it does:</h6>
-                                <ul class="list-unstyled">
-                                    <li><i class="fas fa-check text-success"></i> Detects starship elements</li>
-                                    <li><i class="fas fa-check text-success"></i> Analyzes genomic regions</li>
-                                    <li><i class="fas fa-check text-success"></i> Generates visualizations</li>
-                                    <li><i class="fas fa-check text-success"></i> Exports results</li>
-                                </ul>
-                                
-                                <h6>Input requirements:</h6>
-                                <ul class="list-unstyled">
-                                    <li><i class="fas fa-dna text-primary"></i> Genome assembly (FASTA)</li>
-                                    <li><i class="fas fa-file-text text-primary"></i> Genome annotation (GFF3)</li>
-                                    <li><i class="fas fa-cog text-primary"></i> Optional: Pre-computed annotations</li>
-                                </ul>
-                            </div>
-                        </div>
-                        
-                        <div class="card mt-3">
-                            <div class="card-header">
-                                <h5><i class="fas fa-question-circle"></i> Need Help?</h5>
-                            </div>
-                            <div class="card-body">
-                                <p>Check the documentation or contact support for assistance with starfish analysis.</p>
-                                <a href="#" class="btn btn-outline-primary btn-sm">
-                                    <i class="fas fa-book"></i> Documentation
-                                </a>
-                            </div>
-                        </div>
+                        {% include 'starship/starfish/includes/starfish_info.html' %}
+                        {% include 'starship/starfish/includes/starfish_help.html' %}
                     </div>
                 </div>
             {% endif %}
