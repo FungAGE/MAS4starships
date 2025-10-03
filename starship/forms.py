@@ -514,3 +514,239 @@ class Confirm_Upload_Annotation(forms.Form):
         #     # 'public_notes'
         #     # 'flag'
         # )
+
+
+class StarfishRunForm(forms.ModelForm):
+    """Form for creating and configuring starfish-nextflow pipeline runs"""
+    
+    class Meta:
+        model = starship_models.StarfishRun
+        fields = [
+            'run_name', 'description', 'model', 'threads', 'missing', 
+            'maxcopy', 'pid', 'hsp', 'flank', 'neighbourhood'
+        ]
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = CrispyHorizontalFormHelper()
+        self.helper.form_tag = False
+        self.helper.disable_csrf = True
+        
+        # Add help text and validation
+        self.fields['run_name'].help_text = 'Unique name for this starfish run'
+        self.fields['model'].help_text = 'Gene model for de novo annotations (tyr, nlr, fre, plp, duf3723)'
+        self.fields['threads'].help_text = 'Number of CPU threads to use'
+        self.fields['missing'].help_text = 'Maximum missing genes in orthogroup filtering'
+        self.fields['maxcopy'].help_text = 'Maximum copy number in orthogroup filtering'
+        self.fields['pid'].help_text = 'Minimum percent identity for BLAST searches'
+        self.fields['hsp'].help_text = 'Minimum HSP length for BLAST searches'
+        self.fields['flank'].help_text = 'Flank size for repeat detection'
+        self.fields['neighbourhood'].help_text = 'Neighborhood size for sourmash sketch'
+    
+    def clean_run_name(self):
+        run_name = self.cleaned_data.get('run_name')
+        if run_name:
+            # Check if run name already exists
+            if starship_models.StarfishRun.objects.filter(run_name=run_name).exists():
+                raise forms.ValidationError('A run with this name already exists.')
+        return run_name
+
+
+class StarfishGenomeInputForm(forms.Form):
+    """Form for adding genome information directly (no CSV upload needed)"""
+    
+    # Required fields
+    genome_id = forms.CharField(
+        max_length=255,
+        help_text='Unique identifier for this genome',
+        widget=forms.TextInput(attrs={'placeholder': 'e.g., genome_001'})
+    )
+    
+    tax_id = forms.CharField(
+        max_length=50,
+        required=False,
+        help_text='NCBI taxonomy ID (optional)',
+        widget=forms.TextInput(attrs={'placeholder': 'e.g., 12345'})
+    )
+    
+    fna_path = forms.CharField(
+        max_length=500,
+        help_text='Path to genome assembly file (FASTA format)',
+        widget=forms.TextInput(attrs={'placeholder': '/path/to/genome.fasta'})
+    )
+    
+    gff3_path = forms.CharField(
+        max_length=500,
+        help_text='Path to genome annotation file (GFF3 format)',
+        widget=forms.TextInput(attrs={'placeholder': '/path/to/annotation.gff3'})
+    )
+    
+    # Optional fields
+    emapper_path = forms.CharField(
+        max_length=500,
+        required=False,
+        help_text='Path to existing eggNOG mapper annotations (optional)',
+        widget=forms.TextInput(attrs={'placeholder': '/path/to/emapper.annotations'})
+    )
+    
+    cds_path = forms.CharField(
+        max_length=500,
+        required=False,
+        help_text='Path to CDS sequences (optional)',
+        widget=forms.TextInput(attrs={'placeholder': '/path/to/cds.fasta'})
+    )
+    
+    faa_path = forms.CharField(
+        max_length=500,
+        required=False,
+        help_text='Path to protein sequences (optional)',
+        widget=forms.TextInput(attrs={'placeholder': '/path/to/proteins.faa'})
+    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = CrispyHorizontalFormHelper()
+        self.helper.form_tag = False
+        self.helper.disable_csrf = True
+    
+    def clean_fna_path(self):
+        fna_path = self.cleaned_data.get('fna_path')
+        if fna_path:
+            # Basic validation - check if file exists and is readable
+            import os
+            if not os.path.exists(fna_path):
+                raise forms.ValidationError(f'Genome file not found: {fna_path}')
+            if not os.access(fna_path, os.R_OK):
+                raise forms.ValidationError(f'Cannot read genome file: {fna_path}')
+        return fna_path
+    
+    def clean_gff3_path(self):
+        gff3_path = self.cleaned_data.get('gff3_path')
+        if gff3_path:
+            # Basic validation - check if file exists and is readable
+            import os
+            if not os.path.exists(gff3_path):
+                raise forms.ValidationError(f'GFF3 file not found: {gff3_path}')
+            if not os.access(gff3_path, os.R_OK):
+                raise forms.ValidationError(f'Cannot read GFF3 file: {gff3_path}')
+        return gff3_path
+    
+    def clean_emapper_path(self):
+        emapper_path = self.cleaned_data.get('emapper_path')
+        if emapper_path and emapper_path.strip():
+            import os
+            if not os.path.exists(emapper_path):
+                raise forms.ValidationError(f'eggNOG file not found: {emapper_path}')
+            if not os.access(emapper_path, os.R_OK):
+                raise forms.ValidationError(f'Cannot read eggNOG file: {emapper_path}')
+        return emapper_path
+    
+    def clean_cds_path(self):
+        cds_path = self.cleaned_data.get('cds_path')
+        if cds_path and cds_path.strip():
+            import os
+            if not os.path.exists(cds_path):
+                raise forms.ValidationError(f'CDS file not found: {cds_path}')
+            if not os.access(cds_path, os.R_OK):
+                raise forms.ValidationError(f'Cannot read CDS file: {cds_path}')
+        return cds_path
+    
+    def clean_faa_path(self):
+        faa_path = self.cleaned_data.get('faa_path')
+        if faa_path and faa_path.strip():
+            import os
+            if not os.path.exists(faa_path):
+                raise forms.ValidationError(f'Protein file not found: {faa_path}')
+            if not os.access(faa_path, os.R_OK):
+                raise forms.ValidationError(f'Cannot read protein file: {faa_path}')
+        return faa_path
+
+
+class StarfishSamplesheetForm(forms.Form):
+    """Form for uploading and managing samplesheet for starfish runs (alternative to direct input)"""
+    
+    samplesheet_file = forms.FileField(
+        help_text='CSV file with genome information. Required columns: genomeID, fna, gff3. Optional: taxID, emapper, cds, faa',
+        required=True
+    )
+    
+    def clean_samplesheet_file(self):
+        file = self.cleaned_data.get('samplesheet_file')
+        if file:
+            # Basic validation - check if it's a CSV file
+            if not file.name.endswith('.csv'):
+                raise forms.ValidationError('File must be a CSV file.')
+            
+            # Read and validate CSV structure
+            try:
+                import pandas as pd
+                import io
+                
+                # Read the CSV content
+                content = file.read().decode('utf-8')
+                df = pd.read_csv(io.StringIO(content))
+                
+                # Check required columns
+                required_columns = ['genomeID', 'fna', 'gff3']
+                missing_columns = [col for col in required_columns if col not in df.columns]
+                if missing_columns:
+                    raise forms.ValidationError(f'Missing required columns: {", ".join(missing_columns)}')
+                
+                # Check for empty rows
+                if df.empty:
+                    raise forms.ValidationError('CSV file is empty.')
+                
+                # Validate file paths exist (basic check)
+                for idx, row in df.iterrows():
+                    if pd.isna(row['genomeID']) or not row['genomeID'].strip():
+                        raise forms.ValidationError(f'Row {idx + 1}: genomeID cannot be empty')
+                    if pd.isna(row['fna']) or not row['fna'].strip():
+                        raise forms.ValidationError(f'Row {idx + 1}: fna path cannot be empty')
+                    if pd.isna(row['gff3']) or not row['gff3'].strip():
+                        raise forms.ValidationError(f'Row {idx + 1}: gff3 path cannot be empty')
+                
+            except Exception as e:
+                raise forms.ValidationError(f'Error reading CSV file: {str(e)}')
+        
+        return file
+
+
+class StarfishGenomeForm(forms.ModelForm):
+    """Form for adding individual genomes to a starfish run"""
+    
+    class Meta:
+        model = starship_models.StarfishRunGenome
+        fields = [
+            'genome_id', 'tax_id', 'fna_path', 'gff3_path', 
+            'emapper_path', 'cds_path', 'faa_path'
+        ]
+        widgets = {
+            'fna_path': forms.TextInput(attrs={'placeholder': '/path/to/genome.fasta'}),
+            'gff3_path': forms.TextInput(attrs={'placeholder': '/path/to/annotation.gff3'}),
+            'emapper_path': forms.TextInput(attrs={'placeholder': '/path/to/emapper.annotations (optional)'}),
+            'cds_path': forms.TextInput(attrs={'placeholder': '/path/to/cds.fasta (optional)'}),
+            'faa_path': forms.TextInput(attrs={'placeholder': '/path/to/proteins.faa (optional)'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = CrispyHorizontalFormHelper()
+        self.helper.form_tag = False
+        self.helper.disable_csrf = True
+        
+        # Make required fields clear
+        self.fields['genome_id'].required = True
+        self.fields['fna_path'].required = True
+        self.fields['gff3_path'].required = True
+        
+        # Add help text
+        self.fields['genome_id'].help_text = 'Unique identifier for this genome'
+        self.fields['tax_id'].help_text = 'NCBI taxonomy ID (optional)'
+        self.fields['fna_path'].help_text = 'Path to genome assembly file (FASTA format)'
+        self.fields['gff3_path'].help_text = 'Path to genome annotation file (GFF3 format)'
+        self.fields['emapper_path'].help_text = 'Path to existing eggNOG mapper annotations (optional)'
+        self.fields['cds_path'].help_text = 'Path to CDS sequences (optional)'
+        self.fields['faa_path'].help_text = 'Path to protein sequences (optional)'
