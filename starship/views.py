@@ -1521,28 +1521,60 @@ class StarfishRunCreateView(LoginRequiredMixin, MixinForBaseTemplate, generic.Cr
     
     def form_valid(self, form):
         import os
+        import io
+        import csv
         from datetime import datetime
         from django.conf import settings
-        
+
         # Set creator
         form.instance.created_by = self.request.user
-        
+
         # Build output directory path and write samplesheet.csv from pasted textarea
         timestamp = datetime.now().strftime('%Y-%m-%d_h%H-m%M-s%S')
         safe_name = form.cleaned_data['run_name']
         output_root = os.path.join(settings.BASE_DIR, 'output')
         output_dir = os.path.join(output_root, f"{timestamp}_{safe_name}")
         os.makedirs(output_dir, exist_ok=True)
-        
+
         samplesheet_path = os.path.join(output_dir, 'samplesheet.csv')
         with open(samplesheet_path, 'w') as fh:
             fh.write(form.cleaned_data['samplesheet_csv'])
-        
+
         # Set fields used by pipeline
         form.instance.samplesheet_path = samplesheet_path
         form.instance.output_dir = output_dir
-        
-        return super().form_valid(form)
+
+        # Persist run first
+        self.object = form.save()
+
+        # Create genome rows from CSV
+        reader = csv.DictReader(io.StringIO(form.cleaned_data['samplesheet_csv']))
+        created = 0
+        for row in reader:
+            genome_id = (row.get('genomeID') or '').strip()
+            fna = (row.get('fna') or '').strip()
+            gff3 = (row.get('gff3') or '').strip()
+            if not genome_id or not fna or not gff3:
+                continue
+            starship_models.StarfishRunGenome.objects.get_or_create(
+                run=self.object,
+                genome_id=genome_id,
+                defaults={
+                    'tax_id': (row.get('taxID') or '').strip() or None,
+                    'fna_path': fna,
+                    'gff3_path': gff3,
+                    'emapper_path': (row.get('emapper') or '').strip() or None,
+                    'cds_path': (row.get('cds') or '').strip() or None,
+                    'faa_path': (row.get('faa') or '').strip() or None,
+                }
+            )
+            created += 1
+
+        if created > 0:
+            self.object.num_genomes = self.object.genomes.count()
+            self.object.save(update_fields=['num_genomes'])
+
+        return redirect(self.get_success_url())
 
 
 class StarfishRunUpdateView(LoginRequiredMixin, MixinForBaseTemplate, generic.UpdateView):
@@ -1670,18 +1702,48 @@ class StarfishRunStartView(LoginRequiredMixin, MixinForBaseTemplate, generic.Vie
     """Start a starfish run"""
     
     def post(self, request, pk):
+        import io
+        import csv
         run = get_object_or_404(starship_models.StarfishRun, pk=pk, created_by=request.user)
-        
+
         if run.status != 'pending':
             return HttpResponse('Run is not in pending status', status=400)
-        
+
+        # If no genomes yet, try to populate from samplesheet
+        if not run.genomes.exists() and run.samplesheet_path:
+            try:
+                with open(run.samplesheet_path, 'r') as fh:
+                    reader = csv.DictReader(io.StringIO(fh.read()))
+                    for row in reader:
+                        genome_id = (row.get('genomeID') or '').strip()
+                        fna = (row.get('fna') or '').strip()
+                        gff3 = (row.get('gff3') or '').strip()
+                        if not genome_id or not fna or not gff3:
+                            continue
+                        starship_models.StarfishRunGenome.objects.get_or_create(
+                            run=run,
+                            genome_id=genome_id,
+                            defaults={
+                                'tax_id': (row.get('taxID') or '').strip() or None,
+                                'fna_path': fna,
+                                'gff3_path': gff3,
+                                'emapper_path': (row.get('emapper') or '').strip() or None,
+                                'cds_path': (row.get('cds') or '').strip() or None,
+                                'faa_path': (row.get('faa') or '').strip() or None,
+                            }
+                        )
+                run.num_genomes = run.genomes.count()
+                run.save(update_fields=['num_genomes'])
+            except Exception:
+                pass
+
         if not run.genomes.exists():
             return HttpResponse('No genomes added to run', status=400)
-        
+
         # Start the pipeline
         from starship.tasks import run_starfish_pipeline
         task = run_starfish_pipeline.delay(run.id)
-        
+
         return redirect('starfish:starfish_run_detail', pk=pk)
 
 
