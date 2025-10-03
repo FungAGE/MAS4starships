@@ -1488,3 +1488,256 @@ class BulkDataUpload(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTe
         )
         
         return len(created_records)
+
+
+# Starfish Views
+class StarfishRunListView(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
+    """List all starfish runs"""
+    model = starship_models.StarfishRun
+    template_name = 'starship/starfish/starfish_run_list.html'
+    context_object_name = 'runs'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        return starship_models.StarfishRun.objects.filter(created_by=self.request.user).order_by('-created_at')
+
+
+class StarfishRunDetailView(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailView):
+    """Detail view for a starfish run"""
+    model = starship_models.StarfishRun
+    template_name = 'starship/starfish/starfish_run_detail.html'
+    context_object_name = 'run'
+    
+    def get_queryset(self):
+        return starship_models.StarfishRun.objects.filter(created_by=self.request.user)
+
+
+class StarfishRunCreateView(LoginRequiredMixin, MixinForBaseTemplate, generic.CreateView):
+    """Create a new starfish run"""
+    model = starship_models.StarfishRun
+    form_class = starship_forms.StarfishRunForm
+    template_name = 'starship/starfish/starfish_run_create.html'
+    success_url = reverse_lazy('starfish:starfish_run_list')
+    
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        return super().form_valid(form)
+
+
+class StarfishRunUpdateView(LoginRequiredMixin, MixinForBaseTemplate, generic.UpdateView):
+    """Update a starfish run"""
+    model = starship_models.StarfishRun
+    form_class = starship_forms.StarfishRunForm
+    template_name = 'starship/starfish/starfish_run_update.html'
+    
+    def get_queryset(self):
+        return starship_models.StarfishRun.objects.filter(created_by=self.request.user)
+    
+    def get_success_url(self):
+        return reverse_lazy('starfish:starfish_run_detail', kwargs={'pk': self.object.pk})
+
+
+class StarfishRunDeleteView(LoginRequiredMixin, MixinForBaseTemplate, generic.DeleteView):
+    """Delete a starfish run"""
+    model = starship_models.StarfishRun
+    template_name = 'starship/starfish/starfish_run_confirm_delete.html'
+    success_url = reverse_lazy('starfish:starfish_run_list')
+    
+    def get_queryset(self):
+        return starship_models.StarfishRun.objects.filter(created_by=self.request.user)
+
+
+class StarfishGenomeListView(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
+    """List genomes for a starfish run"""
+    model = starship_models.StarfishRunGenome
+    template_name = 'starship/starfish/starfish_genome_list.html'
+    context_object_name = 'genomes'
+    
+    def get_queryset(self):
+        run_id = self.kwargs.get('run_id')
+        return starship_models.StarfishRunGenome.objects.filter(run_id=run_id, run__created_by=self.request.user)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        run_id = self.kwargs.get('run_id')
+        context['run'] = get_object_or_404(starship_models.StarfishRun, id=run_id, created_by=self.request.user)
+        return context
+
+
+class StarfishGenomeCreateView(LoginRequiredMixin, MixinForBaseTemplate, generic.FormView):
+    """Add a genome to a starfish run using direct input form"""
+    form_class = starship_forms.StarfishGenomeInputForm
+    template_name = 'starship/starfish/starfish_genome_create.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        run_id = self.kwargs.get('run_id')
+        context['run'] = get_object_or_404(starship_models.StarfishRun, id=run_id, created_by=self.request.user)
+        return context
+    
+    def form_valid(self, form):
+        run_id = self.kwargs.get('run_id')
+        run = get_object_or_404(starship_models.StarfishRun, id=run_id, created_by=self.request.user)
+        
+        # Create StarfishRunGenome from form data
+        genome = starship_models.StarfishRunGenome.objects.create(
+            run=run,
+            genome_id=form.cleaned_data['genome_id'],
+            tax_id=form.cleaned_data.get('tax_id', ''),
+            fna_path=form.cleaned_data['fna_path'],
+            gff3_path=form.cleaned_data['gff3_path'],
+            emapper_path=form.cleaned_data.get('emapper_path', ''),
+            cds_path=form.cleaned_data.get('cds_path', ''),
+            faa_path=form.cleaned_data.get('faa_path', '')
+        )
+        
+        return redirect('starfish:starfish_genome_list', run_id=run_id)
+    
+    def get_success_url(self):
+        return reverse_lazy('starfish:starfish_genome_list', kwargs={'run_id': self.kwargs.get('run_id')})
+
+
+class StarfishSamplesheetUploadView(LoginRequiredMixin, MixinForBaseTemplate, generic.FormView):
+    """Upload samplesheet for starfish run"""
+    form_class = starship_forms.StarfishSamplesheetForm
+    template_name = 'starship/starfish/starfish_samplesheet_upload.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        run_id = self.kwargs.get('run_id')
+        context['run'] = get_object_or_404(starship_models.StarfishRun, id=run_id, created_by=self.request.user)
+        return context
+    
+    def form_valid(self, form):
+        run_id = self.kwargs.get('run_id')
+        run = get_object_or_404(starship_models.StarfishRun, id=run_id, created_by=self.request.user)
+        
+        # Parse CSV and create genome records
+        samplesheet_file = form.cleaned_data['samplesheet_file']
+        
+        try:
+            import pandas as pd
+            import io
+            
+            # Read CSV content
+            content = samplesheet_file.read().decode('utf-8')
+            df = pd.read_csv(io.StringIO(content))
+            
+            # Create genome records
+            for _, row in df.iterrows():
+                starship_models.StarfishRunGenome.objects.create(
+                    run=run,
+                    genome_id=row['genomeID'],
+                    tax_id=row.get('taxID', ''),
+                    fna_path=row['fna'],
+                    gff3_path=row['gff3'],
+                    emapper_path=row.get('emapper', ''),
+                    cds_path=row.get('cds', ''),
+                    faa_path=row.get('faa', '')
+                )
+            
+            return redirect('starfish:starfish_genome_list', run_id=run_id)
+            
+        except Exception as e:
+            form.add_error('samplesheet_file', f'Error processing samplesheet: {str(e)}')
+            return self.form_invalid(form)
+
+
+class StarfishRunStartView(LoginRequiredMixin, MixinForBaseTemplate, generic.View):
+    """Start a starfish run"""
+    
+    def post(self, request, pk):
+        run = get_object_or_404(starship_models.StarfishRun, pk=pk, created_by=request.user)
+        
+        if run.status != 'pending':
+            return HttpResponse('Run is not in pending status', status=400)
+        
+        if not run.genomes.exists():
+            return HttpResponse('No genomes added to run', status=400)
+        
+        # Start the pipeline
+        from starship.tasks import run_starfish_pipeline
+        task = run_starfish_pipeline.delay(run.id)
+        
+        return redirect('starfish:starfish_run_detail', pk=pk)
+
+
+class StarfishRunCancelView(LoginRequiredMixin, MixinForBaseTemplate, generic.View):
+    """Cancel a running starfish run"""
+    
+    def post(self, request, pk):
+        run = get_object_or_404(starship_models.StarfishRun, pk=pk, created_by=request.user)
+        
+        if run.status == 'running':
+            # Cancel the Celery task
+            if run.celery_task_id:
+                from celery import current_app
+                current_app.control.revoke(run.celery_task_id, terminate=True)
+            
+            run.status = 'cancelled'
+            run.save()
+        
+        return redirect('starfish:starfish_run_detail', pk=pk)
+
+
+class StarfishElementListView(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
+    """List elements found by starfish run"""
+    model = starship_models.StarfishElement
+    template_name = 'starship/starfish/starfish_element_list.html'
+    context_object_name = 'elements'
+    paginate_by = 50
+    
+    def get_queryset(self):
+        run_id = self.kwargs.get('run_id')
+        return starship_models.StarfishElement.objects.filter(
+            run_id=run_id, 
+            run__created_by=self.request.user
+        ).order_by('-created_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        run_id = self.kwargs.get('run_id')
+        context['run'] = get_object_or_404(starship_models.StarfishRun, id=run_id, created_by=self.request.user)
+        return context
+
+
+class StarfishElementDetailView(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailView):
+    """Detail view for a starfish element"""
+    model = starship_models.StarfishElement
+    template_name = 'starship/starfish/starfish_element_detail.html'
+    context_object_name = 'element'
+    
+    def get_queryset(self):
+        return starship_models.StarfishElement.objects.filter(run__created_by=self.request.user)
+
+
+class StarfishImportToMasView(LoginRequiredMixin, MixinForBaseTemplate, generic.View):
+    """Import starfish elements to main MAS database"""
+    
+    def post(self, request, pk):
+        run = get_object_or_404(starship_models.StarfishRun, pk=pk, created_by=request.user)
+        
+        if run.status != 'completed':
+            return HttpResponse('Run must be completed to import elements', status=400)
+        
+        # Start import task
+        from starship.tasks import import_starfish_elements_to_mas
+        task = import_starfish_elements_to_mas.delay(run.id)
+        
+        return redirect('starfish:starfish_run_detail', pk=pk)
+
+
+class StarfishRunStatusView(LoginRequiredMixin, generic.View):
+    """AJAX view to get run status"""
+    
+    def get(self, request, pk):
+        run = get_object_or_404(starship_models.StarfishRun, pk=pk, created_by=request.user)
+        
+        from django.http import JsonResponse
+        return JsonResponse({
+            'status': run.status,
+            'num_genomes': run.num_genomes or 0,
+            'num_elements': run.num_elements_found or 0,
+            'error_message': run.error_message or '',
+            'duration': str(run.duration) if run.duration else None
+        })
