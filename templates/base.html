@@ -220,9 +220,9 @@
                 starship_nav.change(function () {
                     console.log(this);
                     var starship_name = $(this).children("option:selected").text();
-                    {# Solution found on stackoverflow.com/questions/17832194/ to use javascript variable in Django URL #}
-                    location.href = '{% url 'starship-nav-redirect' 12345 %}'.replace(/12345/, starship_name);
-                    {#location.href = '/viewer/GenomeNavigator-' + $(this).children("option:selected").text();#}
+                    // Solution found on stackoverflow.com/questions/17832194/ to use javascript variable in Django URL
+                    location.href = "{% url 'starship-nav-redirect' 12345 %}".replace(/12345/, starship_name);
+                    // location.href = '/viewer/GenomeNavigator-' + $(this).children("option:selected").text();
                 });
 
                 $('#show-reviewer-nav').click(function(e) {
@@ -235,15 +235,15 @@
 
         </script>
     </div>
-        <footer class="footer">
+    <footer class="footer">
             <div class="container-fluid">
-                <span class="text-muted">MAS (Manual Annotation Studio) {{ version }}</span>
-                {% if in_dev %}
-                    <br>
-                    <i>In development mode</i>
-                {% endif %}
-            </div>
-        </footer>
+            <span class="text-muted">MAS (Manual Annotation Studio) {{ version }}</span>
+            {% if in_dev %}
+                <br>
+                <i>In development mode</i>
+            {% endif %}
+        </div>
+    </footer>
     </div>
 </body>
 </html>
