@@ -15,7 +15,7 @@ SECRET_KEY = (
     .strip()
 )
 
-if os.getenv("CELERY_WORKER") == "TRUE":
+if os.getenv("CELERY_WORKER") == "TRUE" and os.getenv("DEVELOPER_MODE") != "TRUE":
     # Celery workers (running in Docker)
     DATABASES = {
         "default": {
@@ -28,7 +28,7 @@ if os.getenv("CELERY_WORKER") == "TRUE":
         }
     }
 else:
-    # Local development server
+    # Local development server or development Celery worker
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -132,7 +132,7 @@ INTERPRO_PATH = "/mnt/sda/johannesson_lab/adrian/bin/conda-envs/mas/share/InterP
 
 GIT_DIR = os.path.join(BASE_DIR, ".git")
 
-if os.getenv('CELERY_WORKER') == 'TRUE':
+if os.getenv('CELERY_WORKER') == 'TRUE' and os.getenv('DEVELOPER_MODE') != 'TRUE':
     CELERY_BROKER_URL = 'amqp://mas:{password}@mas-message-broker:{port}'.format(
         password=os.getenv('RABBITMQ_DEFAULT_PASS'),
         port=os.getenv('RABBITMQ_PORT', '5672')

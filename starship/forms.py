@@ -21,7 +21,6 @@ from Bio.Data.CodonTable import TranslationError
 import pandas as pd
 
 from starship import models as starship_models
-from starship import views as starship_views
 from starship.genomic_loci_conversions import *
 
 # TODO: add/update validation methods that already exist in starbase
