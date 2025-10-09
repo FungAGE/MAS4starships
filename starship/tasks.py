@@ -286,8 +286,9 @@ def run_starfish_pipeline(self, run_id):
         
         logger.info(f"Starting starfish pipeline for run: {run.run_name}")
         
-        # Set up paths
-        base_dir = os.path.join(settings.MEDIA_ROOT, 'starfish_runs', run.run_name)
+        # Set up paths using run ID for uniqueness
+        run_dir_name = f"{run.id}_{run.run_name}"
+        base_dir = os.path.join(settings.MEDIA_ROOT, 'starfish_runs', run_dir_name)
         os.makedirs(base_dir, exist_ok=True)
         
         # Update paths in the run object

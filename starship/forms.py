@@ -569,10 +569,6 @@ class StarfishRunForm(forms.ModelForm):
     
     def clean_run_name(self):
         run_name = self.cleaned_data.get('run_name')
-        if run_name:
-            # Check if run name already exists
-            if starship_models.StarfishRun.objects.filter(run_name=run_name).exists():
-                raise forms.ValidationError('A run with this name already exists.')
         return run_name
 
     def clean_samplesheet_csv(self):
