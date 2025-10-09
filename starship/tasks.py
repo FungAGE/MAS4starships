@@ -302,6 +302,7 @@ def run_starfish_pipeline(self, run_id):
         # Build nextflow command
         nextflow_cmd = build_nextflow_command(run)
         
+        logger.info(f"Running command (raw): {nextflow_cmd}")
         logger.info(f"Running command: {' '.join(nextflow_cmd)}")
         
         # Run the pipeline
@@ -433,27 +434,40 @@ def create_samplesheet(run):
     run.num_genomes = len(genomes)
     run.save()
 
-
 def build_nextflow_command(run):
     """Build the nextflow command for running starfish"""
-    starfish_dir = os.path.join(settings.BASE_DIR, 'starfish-nextflow')
-    main_nf = os.path.join(starfish_dir, 'main.nf')
+    pipeline_path = os.getenv('STARFISH_NEXTFLOW_PATH',
+                              '/mnt/sda/johannesson_lab/adrian/starfish_pipeline/starfish-nextflow'
+    )
+    main_nf = os.path.join(pipeline_path, 'main.nf')
+        
+    # Build command that:
+    # 1. Saves the current JAVA_CMD and JAVA_HOME
+    # 2. Activates starfish environment
+    # 3. Restores Java paths so nextflow can run
+    # 4. Runs nextflow (which will use starfish env for its processes)
+    cmd_string = (
+        f'SAVED_JAVA_CMD=$JAVA_CMD && '
+        f'SAVED_JAVA_HOME=$JAVA_HOME && '
+        f'. /usr/bin/miniconda3/bin/activate starfish && '
+        f'export JAVA_CMD=$SAVED_JAVA_CMD && '
+        f'export JAVA_HOME=$SAVED_JAVA_HOME && '
+        f'nextflow run {main_nf} '
+        f'--samplesheet {run.samplesheet_path} '
+        f'--run_name {run.run_name} '
+        f'--model {run.model} '
+        f'--threads {run.threads} '
+        f'--missing {run.missing} '
+        f'--maxcopy {run.maxcopy} '
+        f'--pid {run.pid} '
+        f'--hsp {run.hsp} '
+        f'--flank {run.flank} '
+        f'--neighbourhood {run.neighbourhood} '
+        f'-w {os.path.join(run.output_dir, "work")} '
+        f'--outdir {run.output_dir}'
+    )
     
-    cmd = [
-        'nextflow', 'run', main_nf,
-        '--samplesheet', run.samplesheet_path,
-        '--run_name', run.run_name,
-        '--model', run.model,
-        '--threads', str(run.threads),
-        '--missing', str(run.missing),
-        '--maxcopy', str(run.maxcopy),
-        '--pid', str(run.pid),
-        '--hsp', str(run.hsp),
-        '--flank', str(run.flank),
-        '--neighbourhood', str(run.neighbourhood),
-        '-w', os.path.join(run.output_dir, 'work'),
-        '--outdir', run.output_dir
-    ]
+    cmd = ['bash', '-c', cmd_string]
     
     return cmd
 
