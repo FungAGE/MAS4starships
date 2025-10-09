@@ -273,6 +273,11 @@ def run_starfish_pipeline(self, run_id):
         # Get the run object
         run = StarfishRun.objects.get(id=run_id)
         
+        # Check if run is already running
+        if run.status == 'running':
+            logger.warning(f"Run {run.run_name} is already running, skipping")
+            return
+        
         # Update status to running
         run.status = 'running'
         run.started_at = datetime.now()

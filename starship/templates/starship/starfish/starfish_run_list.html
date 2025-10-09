@@ -85,6 +85,16 @@
                                                 <i class="fas fa-download"></i>
                                             </a>
                                         {% endif %}
+                                        {% if run.status == 'failed' or run.status == 'cancelled' or run.status == 'completed' %}
+                                            <form method="post" action="{% url 'starfish:starfish_run_rerun' run.pk %}" style="display:inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-outline-warning btn-sm" 
+                                                        onclick="return confirm('Re-run this starfish pipeline? This will clear previous results.')"
+                                                        title="Re-run">
+                                                    <i class="fas fa-redo"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>

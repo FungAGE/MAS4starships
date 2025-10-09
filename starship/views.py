@@ -1765,6 +1765,42 @@ class StarfishRunCancelView(LoginRequiredMixin, MixinForBaseTemplate, generic.Vi
         return redirect('starfish:starfish_run_detail', pk=pk)
 
 
+class StarfishRunRerunView(LoginRequiredMixin, MixinForBaseTemplate, generic.View):
+    """Re-run a failed or completed starfish run"""
+    
+    def post(self, request, pk):
+        run = get_object_or_404(starship_models.StarfishRun, pk=pk, created_by=request.user)
+        
+        # Only allow re-running if the run is failed, completed, or cancelled
+        if run.status not in ['failed', 'completed', 'cancelled']:
+            return HttpResponse('Run is not in a state that allows re-running', status=400)
+        
+        # Reset the run status and clear previous results
+        run.status = 'pending'
+        run.started_at = None
+        run.completed_at = None
+        run.celery_task_id = None
+        run.error_message = None
+        run.num_elements_found = None
+        
+        # Clear any existing elements from previous runs
+        run.elements.all().delete()
+        
+        # Reset genome statuses
+        for genome in run.genomes.all():
+            genome.status = 'pending'
+            genome.num_elements = None
+            genome.save()
+        
+        run.save()
+        
+        # Start the pipeline
+        from starship.tasks import run_starfish_pipeline
+        task = run_starfish_pipeline.delay(run.id)
+        
+        return redirect('starfish:starfish_run_detail', pk=pk)
+
+
 class StarfishElementListView(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
     """List elements found by starfish run"""
     model = starship_models.StarfishElement

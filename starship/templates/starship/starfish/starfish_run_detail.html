@@ -37,6 +37,19 @@
                            onclick="return confirm('Import elements to MAS database?')">
                             <i class="fas fa-download"></i> Import to MAS
                         </a>
+                        <form method="post" action="{% url 'starfish:starfish_run_rerun' run.pk %}" style="display:inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning" onclick="return confirm('Re-run this starfish pipeline? This will clear previous results.')">
+                                <i class="fas fa-redo"></i> Re-run
+                            </button>
+                        </form>
+                    {% elif run.status == 'failed' or run.status == 'cancelled' %}
+                        <form method="post" action="{% url 'starfish:starfish_run_rerun' run.pk %}" style="display:inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning" onclick="return confirm('Re-run this starfish pipeline? This will clear previous results.')">
+                                <i class="fas fa-redo"></i> Re-run
+                            </button>
+                        </form>
                     {% endif %}
                 </div>
             </div>
