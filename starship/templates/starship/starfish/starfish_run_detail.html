@@ -44,6 +44,12 @@
                             </button>
                         </form>
                     {% elif run.status == 'failed' or run.status == 'cancelled' %}
+                        <form method="post" action="{% url 'starfish:starfish_run_resume' run.pk %}" style="display:inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-info" onclick="return confirm('Resume this starfish pipeline from where it left off?')">
+                                <i class="fas fa-play-circle"></i> Resume
+                            </button>
+                        </form>
                         <form method="post" action="{% url 'starfish:starfish_run_rerun' run.pk %}" style="display:inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-warning" onclick="return confirm('Re-run this starfish pipeline? This will clear previous results.')">

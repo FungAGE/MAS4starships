@@ -14,6 +14,7 @@ urlpatterns = [
     path('<int:pk>/start/', views.StarfishRunStartView.as_view(), name='starfish_run_start'),
     path('<int:pk>/cancel/', views.StarfishRunCancelView.as_view(), name='starfish_run_cancel'),
     path('<int:pk>/rerun/', views.StarfishRunRerunView.as_view(), name='starfish_run_rerun'),
+    path('<int:pk>/resume/', views.StarfishRunResumeView.as_view(), name='starfish_run_resume'),
     path('<int:pk>/import/', views.StarfishImportToMasView.as_view(), name='starfish_import_to_mas'),
     path('<int:pk>/status/', views.StarfishRunStatusView.as_view(), name='starfish_run_status'),
     

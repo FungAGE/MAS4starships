@@ -264,18 +264,27 @@ def add_annotations_and_features_to_db(new_annotations, new_features):
 
 # Starfish-specific tasks
 @shared_task(bind=True)
-def run_starfish_pipeline(self, run_id):
+def run_starfish_pipeline(self, run_id, resume=False):
     """
     Celery task to run the starfish-nextflow pipeline
+    
+    Args:
+        run_id: ID of the StarfishRun
+        resume: If True, use Nextflow's -resume flag to continue from previous run
     """
     run = None
     try:
         # Get the run object
         run = StarfishRun.objects.get(id=run_id)
         
-        # Check if run is already running
-        if run.status == 'running':
+        # Check if run is already running (unless we're resuming)
+        if run.status == 'running' and not resume:
             logger.warning(f"Run {run.run_name} is already running, skipping")
+            return
+        
+        # For resume, verify the run was previously failed or cancelled
+        if resume and run.status not in ['failed', 'cancelled', 'running']:
+            logger.error(f"Cannot resume run {run.run_name} with status {run.status}")
             return
         
         # Update status to running
@@ -284,7 +293,10 @@ def run_starfish_pipeline(self, run_id):
         run.celery_task_id = self.request.id
         run.save()
         
-        logger.info(f"Starting starfish pipeline for run: {run.run_name}")
+        if resume:
+            logger.info(f"Resuming starfish pipeline for run: {run.run_name} (using -resume flag)")
+        else:
+            logger.info(f"Starting starfish pipeline for run: {run.run_name}")
         
         # Set up paths using run ID for uniqueness
         run_dir_name = f"{run.id}_{run.run_name}"
@@ -301,10 +313,17 @@ def run_starfish_pipeline(self, run_id):
         create_samplesheet(run)
         
         # Build nextflow command
-        nextflow_cmd = build_nextflow_command(run)
+        nextflow_cmd = build_nextflow_command(run, resume=resume)
                 
         # Run the pipeline
-        with open(run.log_file, 'w') as log_f:
+        # When resuming, append to log file instead of overwriting
+        log_mode = 'a' if resume else 'w'
+        with open(run.log_file, log_mode) as log_f:
+            if resume:
+                log_f.write(f"\n\n{'='*80}\n")
+                log_f.write(f"RESUMING RUN AT {datetime.now()}\n")
+                log_f.write(f"{'='*80}\n\n")
+            
             process = subprocess.run(
                 nextflow_cmd,
                 stdout=log_f,
@@ -367,8 +386,8 @@ def verify_starfish_outputs(run):
     
     # Check required directories
     required_dirs = [
-        'pairViz',
-        'locusViz'
+        'pairViz'
+        # 'locusViz'
     ]
     
     # Verify files exist and are not empty
@@ -432,12 +451,20 @@ def create_samplesheet(run):
     run.num_genomes = len(genomes)
     run.save()
 
-def build_nextflow_command(run):
-    """Build the nextflow command for running starfish"""
+def build_nextflow_command(run, resume=False):
+    """Build the nextflow command for running starfish
+    
+    Args:
+        run: StarfishRun instance
+        resume: If True, add -resume flag to continue from previous run
+    """
     pipeline_path = os.getenv('STARFISH_NEXTFLOW_PATH',
                               '/mnt/sda/johannesson_lab/adrian/starfish_pipeline/starfish-nextflow'
     )
     main_nf = os.path.join(pipeline_path, 'main.nf')
+    
+    # Add -resume flag if requested
+    resume_flag = '-resume ' if resume else ''
         
     # Build command that:
     # 1. Saves the current JAVA_CMD and JAVA_HOME
@@ -448,6 +475,7 @@ def build_nextflow_command(run):
         f'SAVED_JAVA_CMD=$JAVA_CMD && '
         f'SAVED_JAVA_HOME=$JAVA_HOME && '
         f'nextflow run {main_nf} '
+        f'{resume_flag}'
         f'-profile local '
         f'--samplesheet {run.samplesheet_path} '
         f'--run_name {run.run_name} '

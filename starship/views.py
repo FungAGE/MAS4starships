@@ -1801,6 +1801,26 @@ class StarfishRunRerunView(LoginRequiredMixin, MixinForBaseTemplate, generic.Vie
         return redirect('starfish:starfish_run_detail', pk=pk)
 
 
+class StarfishRunResumeView(LoginRequiredMixin, MixinForBaseTemplate, generic.View):
+    """Resume a failed or cancelled starfish run using Nextflow's -resume flag"""
+    
+    def post(self, request, pk):
+        run = get_object_or_404(starship_models.StarfishRun, pk=pk, created_by=request.user)
+        
+        # Only allow resuming if the run is failed or cancelled
+        if run.status not in ['failed', 'cancelled']:
+            return HttpResponse('Run can only be resumed if it is failed or cancelled', status=400)
+        
+        run.error_message = None
+        run.save()
+        
+        # Start the pipeline with resume=True
+        from starship.tasks import run_starfish_pipeline
+        task = run_starfish_pipeline.delay(run.id, resume=True)
+        
+        return redirect('starfish:starfish_run_detail', pk=pk)
+
+
 class StarfishElementListView(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
     """List elements found by starfish run"""
     model = starship_models.StarfishElement
