@@ -11,7 +11,6 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$PROJECT_ROOT" || exit
 
 export STARFISH_NEXTFLOW_PATH="/mnt/sda/johannesson_lab/adrian/starfish_pipeline/starfish-nextflow"
-export STARFISH_CONDA_ENV="/usr/bin/miniconda3/envs/starfish"
 
 # Function to check if Docker is running
 check_docker() {

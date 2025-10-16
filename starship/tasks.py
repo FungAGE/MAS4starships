@@ -302,10 +302,7 @@ def run_starfish_pipeline(self, run_id):
         
         # Build nextflow command
         nextflow_cmd = build_nextflow_command(run)
-        
-        logger.info(f"Running command (raw): {nextflow_cmd}")
-        logger.info(f"Running command: {' '.join(nextflow_cmd)}")
-        
+                
         # Run the pipeline
         with open(run.log_file, 'w') as log_f:
             process = subprocess.run(
@@ -450,10 +447,8 @@ def build_nextflow_command(run):
     cmd_string = (
         f'SAVED_JAVA_CMD=$JAVA_CMD && '
         f'SAVED_JAVA_HOME=$JAVA_HOME && '
-        f'. /usr/bin/miniconda3/bin/activate starfish && '
-        f'export JAVA_CMD=$SAVED_JAVA_CMD && '
-        f'export JAVA_HOME=$SAVED_JAVA_HOME && '
         f'nextflow run {main_nf} '
+        f'-profile local '
         f'--samplesheet {run.samplesheet_path} '
         f'--run_name {run.run_name} '
         f'--model {run.model} '

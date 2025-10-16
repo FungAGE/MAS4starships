@@ -155,4 +155,3 @@ STARFISH_NEXTFLOW_PATH = os.getenv(
     "STARFISH_NEXTFLOW_PATH",
     "/mnt/sda/johannesson_lab/adrian/starfish_pipeline/starfish-nextflow"
 )
-STARFISH_CONDA_ENV = os.getenv("STARFISH_CONDA_ENV", "/usr/bin/miniconda3/envs/starfish")
