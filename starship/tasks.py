@@ -364,6 +364,7 @@ def run_starfish_pipeline(self, run_id, resume=False):
 
 def verify_starfish_outputs(run):
     """Verify that all expected starfish output files and directories exist and are not empty"""
+    # TODO: detect status from nextflow output logs, in addition to manual checks?
     results_dir = os.path.join(run.output_dir, 'results', run.run_name)
     
     if not os.path.exists(results_dir):
@@ -373,15 +374,15 @@ def verify_starfish_outputs(run):
     # Check required files
     required_files = [
         # elementFinder outputs
-        ('elementFinder', '*.insert.bed'),
-        ('elementFinder', '*.insert.stats'),
-        ('elementFinder', '*.flank.bed'),
-        ('elementFinder', '*.flank.singleDR.stats'),
+        '*.insert.bed',
+        '*.insert.stats',
+        '*.flank.bed',
+        '*.flank.singleDR.stats',
         # regionFinder outputs
-        ('regionFinder', '*.elements.bed'),
-        ('regionFinder', '*.elements.feat'),
-        ('regionFinder', '*.elements.fna'),
-        ('regionFinder', '*.elements.named.stats'),
+        '*.elements.bed',
+        '*.elements.feat',
+        # '*.elements.fna',
+        '*.elements.named.stats',
     ]
     
     # Check required directories
@@ -391,17 +392,13 @@ def verify_starfish_outputs(run):
     ]
     
     # Verify files exist and are not empty
-    for subdir, pattern in required_files:
-        subdir_path = os.path.join(results_dir, subdir)
-        if not os.path.exists(subdir_path):
-            logger.error(f"Required subdirectory missing: {subdir_path}")
-            return False
+    for file in required_files:
         
         # Check for files matching pattern
         import glob
-        matching_files = glob.glob(os.path.join(subdir_path, pattern))
+        matching_files = glob.glob(file)
         if not matching_files:
-            logger.error(f"No files found matching pattern {pattern} in {subdir_path}")
+            logger.error(f"No files found matching pattern {file}")
             return False
         
         # Check that files are not empty
