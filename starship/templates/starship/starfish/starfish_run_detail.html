@@ -57,6 +57,12 @@
                             </button>
                         </form>
                     {% endif %}
+                    {% if run.status != 'running' %}
+                        <a href="{% url 'starfish:starfish_run_delete' run.pk %}" class="btn btn-outline-danger"
+                           onclick="return confirm('Are you sure you want to delete this starfish run? This action cannot be undone.')">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    {% endif %}
                 </div>
             </div>
             
