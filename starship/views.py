@@ -1882,3 +1882,23 @@ class StarfishRunStatusView(LoginRequiredMixin, generic.View):
             'error_message': run.error_message or '',
             'duration': str(run.duration) if run.duration else None
         })
+
+
+class StarfishRunLogView(LoginRequiredMixin, generic.View):
+    """View to serve starfish run log files"""
+    
+    def get(self, request, pk):
+        run = get_object_or_404(starship_models.StarfishRun, pk=pk, created_by=request.user)
+        
+        if not run.log_file or not os.path.exists(run.log_file):
+            from django.http import HttpResponse
+            return HttpResponse("Log file not found or not available yet.", status=404)
+        
+        try:
+            with open(run.log_file, 'r') as f:
+                content = f.read()
+            from django.http import HttpResponse
+            return HttpResponse(content, content_type='text/plain')
+        except Exception as e:
+            from django.http import HttpResponse
+            return HttpResponse(f"Error reading log file: {str(e)}", status=500)

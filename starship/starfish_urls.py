@@ -17,6 +17,7 @@ urlpatterns = [
     path('<int:pk>/resume/', views.StarfishRunResumeView.as_view(), name='starfish_run_resume'),
     path('<int:pk>/import/', views.StarfishImportToMasView.as_view(), name='starfish_import_to_mas'),
     path('<int:pk>/status/', views.StarfishRunStatusView.as_view(), name='starfish_run_status'),
+    path('<int:pk>/log/', views.StarfishRunLogView.as_view(), name='starfish_run_log'),
     
     # Starfish genome management
     path('<int:run_id>/genomes/', views.StarfishGenomeListView.as_view(), name='starfish_genome_list'),

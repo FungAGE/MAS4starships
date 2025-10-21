@@ -375,13 +375,19 @@ setInterval(function() {
 {% if run.log_file and run.log_file != "" %}
 <script>
 // Load log content
-fetch('{{ run.log_file }}')
-    .then(response => response.text())
+fetch('{% url "starfish:starfish_run_log" run.pk %}')
+    .then(response => {
+        if (response.ok) {
+            return response.text();
+        } else {
+            throw new Error('Log file not found or not available yet');
+        }
+    })
     .then(data => {
         document.getElementById('log-content').textContent = data;
     })
     .catch(error => {
-        document.getElementById('log-content').textContent = 'Error loading logs: ' + error;
+        document.getElementById('log-content').textContent = 'Error loading logs: ' + error.message;
     });
 </script>
 {% endif %}
