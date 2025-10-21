@@ -10,6 +10,8 @@ SCRIPT_DIR="$(dirname "$0")"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$PROJECT_ROOT" || exit
 
+export STARFISH_NEXTFLOW_PATH="/mnt/sda/johannesson_lab/adrian/starfish_pipeline/starfish-nextflow"
+
 # Function to check if Docker is running
 check_docker() {
     if ! sudo docker info >/dev/null 2>&1; then

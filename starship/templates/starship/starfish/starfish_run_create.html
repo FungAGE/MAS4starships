@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Create Starfish Run{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4><i class="fa fa-play"></i> Create New Starfish Run</h4>
+                </div>
+                <div class="panel-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save"></i> Create Run
+                            </button>
+                            <a href="{% url 'starfish:starfish_run_list' %}" class="btn btn-default">
+                                <i class="fa fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            {% include 'starship/starfish/includes/starfish_info.html' %}
+            {% include 'starship/starfish/includes/starfish_params.html' %}            
+        </div>
+    </div>
+</div>
+{% endblock %}

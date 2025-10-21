@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+{% load static %}
+{% csrf_token %}
+
+{% block title %}{{ run.run_name }} - Starfish Run{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h1>{{ run.run_name }}</h1>
+                    {% if run.description %}
+                        <p class="text-muted">{{ run.description }}</p>
+                    {% endif %}
+                </div>
+                <div class="col-sm-6">
+                    <div class="btn-group" role="group">
+                    {% if run.status == 'pending' %}
+                        <a href="{% url 'starfish:starfish_run_update' run.pk %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <form method="post" action="{% url 'starfish:starfish_run_start' run.pk %}" style="display:inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success" onclick="return confirm('Start this starfish run?')">
+                                <i class="fas fa-play"></i> Start Run
+                            </button>
+                        </form>
+                    {% elif run.status == 'running' %}
+                        <form method="post" action="{% url 'starfish:starfish_run_cancel' run.pk %}" style="display:inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Cancel this run?')">
+                                <i class="fas fa-stop"></i> Cancel
+                            </button>
+                        </form>
+                    {% elif run.status == 'completed' %}
+                        <a href="{% url 'starfish:starfish_import_to_mas' run.pk %}" class="btn btn-primary"
+                           onclick="return confirm('Import elements to MAS database?')">
+                            <i class="fas fa-download"></i> Import to MAS
+                        </a>
+                        <form method="post" action="{% url 'starfish:starfish_run_rerun' run.pk %}" style="display:inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning" onclick="return confirm('Re-run this starfish pipeline? This will clear previous results.')">
+                                <i class="fas fa-redo"></i> Re-run
+                            </button>
+                        </form>
+                    {% elif run.status == 'failed' or run.status == 'cancelled' %}
+                        <form method="post" action="{% url 'starfish:starfish_run_resume' run.pk %}" style="display:inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-info" onclick="return confirm('Resume this starfish pipeline from where it left off?')">
+                                <i class="fas fa-play-circle"></i> Resume
+                            </button>
+                        </form>
+                        <form method="post" action="{% url 'starfish:starfish_run_rerun' run.pk %}" style="display:inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning" onclick="return confirm('Re-run this starfish pipeline? This will clear previous results.')">
+                                <i class="fas fa-redo"></i> Re-run
+                            </button>
+                        </form>
+                    {% endif %}
+                    {% if run.status != 'running' %}
+                        <a href="{% url 'starfish:starfish_run_delete' run.pk %}" class="btn btn-outline-danger"
+                           onclick="return confirm('Are you sure you want to delete this starfish run? This action cannot be undone.')">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Status and Progress -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h5>Run Status</h5>
+                        </div>
+                        <div class="panel-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Status:</strong>
+                                    <span class="label 
+                                        {% if run.status == 'completed' %}label-success
+                                        {% elif run.status == 'running' %}label-warning
+                                        {% elif run.status == 'failed' %}label-danger
+                                        {% elif run.status == 'cancelled' %}label-default
+                                        {% else %}label-info{% endif %}">
+                                        {{ run.get_status_display }}
+                                    </span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Created:</strong> {{ run.created_at|date:"M d, Y H:i" }}
+                                </div>
+                            </div>
+                            
+                            {% if run.started_at %}
+                            <div class="row mt-2">
+                                <div class="col-md-6">
+                                    <strong>Started:</strong> {{ run.started_at|date:"M d, Y H:i" }}
+                                </div>
+                                {% if run.completed_at %}
+                                <div class="col-md-6">
+                                    <strong>Completed:</strong> {{ run.completed_at|date:"M d, Y H:i" }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            {% if run.duration %}
+                            <div class="row mt-2">
+                                <div class="col-md-6">
+                                    <strong>Duration:</strong> {{ run.duration }}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if run.error_message %}
+                            <div class="alert alert-danger mt-3">
+                                <strong>Error:</strong> {{ run.error_message }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h5>Statistics</h5>
+                        </div>
+                        <div class="panel-body">
+                            <div class="row text-center">
+                                <div class="col-xs-6">
+                                    <h3 class="text-primary">{{ run.num_genomes|default:"0" }}</h3>
+                                    <small class="text-muted">Genomes</small>
+                                </div>
+                                <div class="col-xs-6">
+                                    <h3 class="text-success">{{ run.num_elements_found|default:"0" }}</h3>
+                                    <small class="text-muted">Elements Found</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Run Configuration -->
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h5>Run Configuration</h5>
+                        </div>
+                        <div class="panel-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>Model:</strong> {{ run.model }}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Threads:</strong> {{ run.threads }}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Missing:</strong> {{ run.missing }}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Max Copy:</strong> {{ run.maxcopy }}
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-3">
+                                    <strong>PID:</strong> {{ run.pid }}%
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>HSP:</strong> {{ run.hsp }}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Flank:</strong> {{ run.flank }}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Neighbourhood:</strong> {{ run.neighbourhood }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs" id="runTabs">
+                <li class="active">
+                    <a href="#genomes" data-toggle="tab">
+                        <i class="fa fa-dna"></i> Genomes ({{ run.genomes.count }})
+                    </a>
+                </li>
+                <li>
+                    <a href="#elements" data-toggle="tab">
+                        <i class="fa fa-search"></i> Elements ({{ run.elements.count }})
+                    </a>
+                </li>
+                <li>
+                    <a href="#logs" data-toggle="tab">
+                        <i class="fa fa-file-text-o"></i> Logs
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="tab-content">
+                <!-- Genomes Tab -->
+                <div class="tab-pane active" id="genomes">
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <h5>Genomes in this Run</h5>
+                                </div>
+                                <div class="col-sm-6 text-right">
+                                    <a href="{% url 'starfish:starfish_genome_create' run.pk %}" class="btn btn-primary btn-sm">
+                                        <i class="fa fa-plus"></i> Add Genome
+                                    </a>
+                                    <a href="{% url 'starfish:starfish_samplesheet_upload' run.pk %}" class="btn btn-default btn-sm">
+                                        <i class="fa fa-upload"></i> Bulk Upload CSV
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            {% if run.genomes.exists %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Genome ID</th>
+                                                <th>Tax ID</th>
+                                                <th>Status</th>
+                                                <th>Elements</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for genome in run.genomes.all %}
+                                            <tr>
+                                                <td>{{ genome.genome_id }}</td>
+                                                <td>{{ genome.tax_id|default:"-" }}</td>
+                                                <td>
+                                                    <span class="label 
+                                                        {% if genome.status == 'completed' %}label-success
+                                                        {% elif genome.status == 'running' %}label-warning
+                                                        {% elif genome.status == 'failed' %}label-danger
+                                                        {% elif genome.status == 'pending' and run.status == 'completed' %}label-warning
+                                                        {% else %}label-info{% endif %}">
+                                                        {% if genome.status == 'pending' and run.status == 'completed' %}
+                                                            Not Processed
+                                                        {% else %}
+                                                            {{ genome.get_status_display }}
+                                                        {% endif %}
+                                                    </span>
+                                                </td>
+                                                <td>{{ genome.num_elements|default:"0" }}</td>
+                                                <td>
+                                                    {% if run.status != 'running' %}
+                                                        <button class="btn btn-danger btn-xs" 
+                                                                onclick="removeGenome('{{ genome.genome_id }}')"
+                                                                title="Remove genome from run">
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                                    {% else %}
+                                                        <small class="text-muted">Running</small>
+                                                    {% endif %}
+                                                    {% if genome.error_message %}
+                                                        <br><small class="text-danger">{{ genome.error_message|truncatechars:50 }}</small>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <p>No genomes added to this run yet.</p>
+                                    <a href="{% url 'starfish:starfish_genome_create' run.pk %}" class="btn btn-primary">
+                                        Add First Genome
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Elements Tab -->
+                <div class="tab-pane" id="elements">
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            {% if run.elements.exists %}
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <h5>Found Elements ({{ run.elements.count }})</h5>
+                                    </div>
+                                    <div class="col-sm-6 text-right">
+                                        <a href="{% url 'starfish:starfish_element_list' run.pk %}" class="btn btn-primary btn-sm">
+                                            View All Elements
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Element ID</th>
+                                                <th>Genome</th>
+                                                <th>Contig</th>
+                                                <th>Position</th>
+                                                <th>Length</th>
+                                                <th>Family</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for element in run.elements.all|slice:":10" %}
+                                            <tr>
+                                                <td>
+                                                    <a href="{% url 'starfish:starfish_element_detail' element.pk %}">
+                                                        {{ element.element_id }}
+                                                    </a>
+                                                </td>
+                                                <td>{{ element.genome.genome_id }}</td>
+                                                <td>{{ element.contig_id }}</td>
+                                                <td>{{ element.start }}-{{ element.end }}</td>
+                                                <td>{{ element.length }}</td>
+                                                <td>{{ element.family|default:"-" }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                {% if run.elements.count > 10 %}
+                                    <div class="text-center mt-3">
+                                        <a href="{% url 'starfish:starfish_element_list' run.pk %}" class="btn btn-primary">
+                                            View All {{ run.elements.count }} Elements
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <p>No elements found yet. Run the pipeline to detect starship elements.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Logs Tab -->
+                <div class="tab-pane" id="logs">
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <h5>Run Logs</h5>
+                            {% if run.log_file and run.log_file != "" %}
+                                <div class="well" style="max-height: 400px; overflow-y: auto; background-color: #333; color: #fff;">
+                                    <pre id="log-content">Loading logs...</pre>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <p>No log file available yet.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if run.status == 'running' %}
+<script>
+// Auto-refresh for running jobs
+setInterval(function() {
+    fetch('{% url "starfish:starfish_run_status" run.pk %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status !== 'running') {
+                location.reload();
+            }
+        });
+}, 5000);
+</script>
+{% endif %}
+
+{% if run.log_file and run.log_file != "" %}
+<script>
+// Load log content
+fetch('{% url "starfish:starfish_run_log" run.pk %}')
+    .then(response => {
+        if (response.ok) {
+            return response.text();
+        } else {
+            throw new Error('Log file not found or not available yet');
+        }
+    })
+    .then(data => {
+        document.getElementById('log-content').textContent = data;
+    })
+    .catch(error => {
+        document.getElementById('log-content').textContent = 'Error loading logs: ' + error.message;
+    });
+</script>
+{% endif %}
+
+<script>
+// Function to remove a genome from the run
+function removeGenome(genomeId) {
+    if (!confirm('Are you sure you want to remove genome ' + genomeId + ' from this run?')) {
+        return;
+    }
+    
+    fetch('{% url "starfish:starfish_genome_delete" run.pk "PLACEHOLDER" %}'.replace('PLACEHOLDER', genomeId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload the page to show updated genome list
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error removing genome: ' + error);
+    });
+}
+</script>
+{% endblock %}

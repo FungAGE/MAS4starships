@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Starfish Runs{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h1><i class="fa fa-dna"></i> Starfish Dashboard</h1>
+                    <p class="text-muted">Detect and analyze <em>Starships</em> in fungal genomes</p>
+                </div>
+                <div class="col-sm-6 text-right">
+                    <a href="{% url 'starfish:starfish_run_create' %}" class="btn btn-primary btn-lg">
+                        <i class="fa fa-plus"></i> New Run
+                    </a>
+                </div>
+            </div>
+            
+            {% if runs %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Run Name</th>
+                                <th>Status</th>
+                                <th>Genomes</th>
+                                <th>Elements Found</th>
+                                <th>Created</th>
+                                <th>Duration</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for run in runs %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'starfish:starfish_run_detail' run.pk %}">
+                                        {{ run.run_name }}
+                                    </a>
+                                    {% if run.description %}
+                                        <br><small class="text-muted">{{ run.description|truncatechars:50 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="label 
+                                        {% if run.status == 'completed' %}label-success
+                                        {% elif run.status == 'running' %}label-warning
+                                        {% elif run.status == 'failed' %}label-danger
+                                        {% elif run.status == 'cancelled' %}label-default
+                                        {% else %}label-info{% endif %}">
+                                        {{ run.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ run.num_genomes|default:"-" }}</td>
+                                <td>{{ run.num_elements_found|default:"-" }}</td>
+                                <td>{{ run.created_at|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    {% if run.duration %}
+                                        {{ run.duration }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'starfish:starfish_run_detail' run.pk %}" 
+                                           class="btn btn-primary btn-sm">
+                                            <i class="fa fa-eye"></i>
+                                        </a>
+                                        {% if run.status == 'pending' %}
+                                            <a href="{% url 'starfish:starfish_run_update' run.pk %}" 
+                                               class="btn btn-default btn-sm">
+                                                <i class="fa fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'starfish:starfish_run_delete' run.pk %}" 
+                                               class="btn btn-danger btn-sm">
+                                                <i class="fa fa-trash"></i>
+                                            </a>
+                                        {% endif %}
+                                        {% if run.status == 'running' %}
+                                            <form method="post" action="{% url 'starfish:starfish_run_cancel' run.pk %}" style="display:inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger btn-sm" 
+                                                        onclick="return confirm('Are you sure you want to cancel this running starfish pipeline?')"
+                                                        title="Cancel run">
+                                                    <i class="fa fa-stop"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        <!-- include the option to delete if not running -->
+                                        {% if run.status != 'running' %}
+                                            <form method="post" action="{% url 'starfish:starfish_run_rerun' run.pk %}" style="display:inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-warning btn-sm" 
+                                                        onclick="return confirm('Re-run this starfish pipeline? This will clear previous results.')"
+                                                        title="Re-run from scratch">
+                                                    <i class="fa fa-redo"></i>
+                                                </button>
+                                            </form>
+                                            <a href="{% url 'starfish:starfish_run_delete' run.pk %}" 
+                                               class="btn btn-danger btn-sm">
+                                                <i class="fa fa-trash"></i>
+                                            </a>
+                                        {% endif %}
+                                        {% if run.status == 'completed' %}
+                                            <a href="{% url 'starfish:starfish_import_to_mas' run.pk %}" 
+                                               class="btn btn-success btn-sm"
+                                               onclick="return confirm('Import elements to MAS database?')">
+                                                <i class="fa fa-download"></i>
+                                            </a>
+                                        {% endif %}
+                                        {% if run.status == 'failed' or run.status == 'cancelled' %}
+                                            <form method="post" action="{% url 'starfish:starfish_run_resume' run.pk %}" style="display:inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-info btn-sm" 
+                                                        onclick="return confirm('Resume this starfish pipeline from where it left off?')"
+                                                        title="Resume from checkpoint">
+                                                    <i class="fa fa-play-circle"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if is_paginated %}
+                    <nav>
+                        <ul class="pagination">
+                            {% if page_obj.has_previous %}
+                                <li>
+                                    <a href="?page=1">&laquo; First</a>
+                                </li>
+                                <li>
+                                    <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            <li class="active">
+                                <span>
+                                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+                            
+                            {% if page_obj.has_next %}
+                                <li>
+                                    <a href="?page={{ page_obj.next_page_number }}">Next</a>
+                                </li>
+                                <li>
+                                    <a href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <br>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="alert alert-info">
+                            <h4><i class="fas fa-info-circle"></i> You haven't created any starfish runs yet.</h4>
+                            <p>To get started, click the "New Run" button to create your first starfish analysis.</p>
+                        </div>                       
+                    </div>
+                    
+                    <div class="col-md-4">
+                        {% include 'starship/starfish/includes/starfish_info.html' %}
+                        {% include 'starship/starfish/includes/starfish_help.html' %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

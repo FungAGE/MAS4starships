@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Genomes for {{ run.run_name }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h1>Genomes for {{ run.run_name }}</h1>
+                </div>
+                <div class="col-sm-6 text-right">
+                    <a href="{% url 'starfish:starfish_genome_create' run.pk %}" class="btn btn-primary">
+                        <i class="fa fa-plus"></i> Add Genome
+                    </a>
+                    <a href="{% url 'starfish:starfish_samplesheet_upload' run.pk %}" class="btn btn-default">
+                        <i class="fa fa-upload"></i> Bulk Upload
+                    </a>
+                </div>
+            </div>
+            
+            {% if genomes %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Genome ID</th>
+                                <th>Taxonomy ID</th>
+                                <th>Assembly File</th>
+                                <th>Annotation File</th>
+                                <th>Status</th>
+                                <th>Elements</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for genome in genomes %}
+                            <tr>
+                                <td>
+                                    <strong>{{ genome.genome_id }}</strong>
+                                </td>
+                                <td>
+                                    {% if genome.tax_id %}
+                                        {{ genome.tax_id }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ genome.fna_path|truncatechars:30 }}</small>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ genome.gff3_path|truncatechars:30 }}</small>
+                                </td>
+                                <td>
+                                    <span class="label label-{% if genome.status == 'completed' %}success{% elif genome.status == 'failed' %}danger{% else %}warning{% endif %}">
+                                        {{ genome.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if genome.num_elements %}
+                                        {{ genome.num_elements }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="#" class="btn btn-primary btn-sm" title="View Details">
+                                            <i class="fa fa-eye"></i>
+                                        </a>
+                                        <a href="#" class="btn btn-danger btn-sm" title="Remove" onclick="return confirm('Remove this genome?')">
+                                            <i class="fa fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <h5><i class="fa fa-info-circle"></i> No Genomes Added</h5>
+                    <p>This starfish run doesn't have any genomes yet. Add genomes to get started.</p>
+                    <a href="{% url 'starfish:starfish_genome_create' run.pk %}" class="btn btn-primary">
+                        <i class="fa fa-plus"></i> Add First Genome
+                    </a>
+                </div>
+            {% endif %}
+            
+            <div style="margin-top: 20px;">
+                <a href="{% url 'starfish:starfish_run_detail' run.pk %}" class="btn btn-default">
+                    <i class="fa fa-arrow-left"></i> Back to Run Details
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
