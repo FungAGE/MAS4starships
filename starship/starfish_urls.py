@@ -22,6 +22,7 @@ urlpatterns = [
     # Starfish genome management
     path('<int:run_id>/genomes/', views.StarfishGenomeListView.as_view(), name='starfish_genome_list'),
     path('<int:run_id>/genomes/add/', views.StarfishGenomeCreateView.as_view(), name='starfish_genome_create'),
+    path('<int:run_id>/genomes/<str:genome_id>/delete/', views.StarfishGenomeDeleteView.as_view(), name='starfish_genome_delete'),
     path('<int:run_id>/samplesheet/', views.StarfishSamplesheetUploadView.as_view(), name='starfish_samplesheet_upload'),
     
     # Starfish elements

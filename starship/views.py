@@ -1902,3 +1902,30 @@ class StarfishRunLogView(LoginRequiredMixin, generic.View):
         except Exception as e:
             from django.http import HttpResponse
             return HttpResponse(f"Error reading log file: {str(e)}", status=500)
+
+
+class StarfishGenomeDeleteView(LoginRequiredMixin, generic.View):
+    """Delete a genome from a starfish run"""
+    
+    def post(self, request, run_id, genome_id):
+        run = get_object_or_404(starship_models.StarfishRun, id=run_id, created_by=request.user)
+        
+        # Only allow deletion if run is not currently running
+        if run.status == 'running':
+            from django.http import HttpResponse
+            return HttpResponse('Cannot remove genomes from a running pipeline', status=400)
+        
+        try:
+            genome = run.genomes.get(genome_id=genome_id)
+            genome.delete()
+            
+            # Update run genome count
+            run.num_genomes = run.genomes.count()
+            run.save(update_fields=['num_genomes'])
+            
+            from django.http import JsonResponse
+            return JsonResponse({'success': True, 'message': f'Genome {genome_id} removed successfully'})
+            
+        except starship_models.StarfishRunGenome.DoesNotExist:
+            from django.http import JsonResponse
+            return JsonResponse({'success': False, 'message': 'Genome not found'}, status=404)

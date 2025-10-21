@@ -504,6 +504,7 @@ def parse_starfish_results(run):
         # Process each genome's results from regionFinder outputs
         for genome in run.genomes.all():
             genome_elements = 0
+            genome_processed = False
             
             # Look for genome-specific result files in regionFinder directory
             region_finder_dir = os.path.join(results_dir, 'regionFinder')
@@ -513,10 +514,15 @@ def parse_starfish_results(run):
                         elements = parse_bed_file(os.path.join(region_finder_dir, bed_file), run, genome)
                         genome_elements += len(elements)
                         total_elements += len(elements)
+                        genome_processed = True
             
-            # Update genome with element count
+            # Update genome with element count and status
             genome.num_elements = genome_elements
-            genome.status = 'completed'
+            if genome_processed:
+                genome.status = 'completed'
+            else:
+                # Genome was not processed (likely added after run started)
+                genome.status = 'pending'
             genome.save()
         
         # Update run with total elements found

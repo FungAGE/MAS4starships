@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% csrf_token %}
 
 {% block title %}{{ run.run_name }} - Starfish Run{% endblock %}
 
@@ -245,14 +246,28 @@
                                                         {% if genome.status == 'completed' %}label-success
                                                         {% elif genome.status == 'running' %}label-warning
                                                         {% elif genome.status == 'failed' %}label-danger
+                                                        {% elif genome.status == 'pending' and run.status == 'completed' %}label-warning
                                                         {% else %}label-info{% endif %}">
-                                                        {{ genome.get_status_display }}
+                                                        {% if genome.status == 'pending' and run.status == 'completed' %}
+                                                            Not Processed
+                                                        {% else %}
+                                                            {{ genome.get_status_display }}
+                                                        {% endif %}
                                                     </span>
                                                 </td>
-                                                <td>{{ genome.num_elements|default:"-" }}</td>
+                                                <td>{{ genome.num_elements|default:"0" }}</td>
                                                 <td>
+                                                    {% if run.status != 'running' %}
+                                                        <button class="btn btn-danger btn-xs" 
+                                                                onclick="removeGenome('{{ genome.genome_id }}')"
+                                                                title="Remove genome from run">
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                                    {% else %}
+                                                        <small class="text-muted">Running</small>
+                                                    {% endif %}
                                                     {% if genome.error_message %}
-                                                        <small class="text-danger">{{ genome.error_message|truncatechars:50 }}</small>
+                                                        <br><small class="text-danger">{{ genome.error_message|truncatechars:50 }}</small>
                                                     {% endif %}
                                                 </td>
                                             </tr>
@@ -391,4 +406,33 @@ fetch('{% url "starfish:starfish_run_log" run.pk %}')
     });
 </script>
 {% endif %}
+
+<script>
+// Function to remove a genome from the run
+function removeGenome(genomeId) {
+    if (!confirm('Are you sure you want to remove genome ' + genomeId + ' from this run?')) {
+        return;
+    }
+    
+    fetch('{% url "starfish:starfish_genome_delete" run.pk "PLACEHOLDER" %}'.replace('PLACEHOLDER', genomeId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload the page to show updated genome list
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error removing genome: ' + error);
+    });
+}
+</script>
 {% endblock %}
