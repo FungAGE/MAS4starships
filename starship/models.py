@@ -7,6 +7,7 @@ from simple_history.models import HistoricalRecords
 from django.conf import settings
 import django.dispatch
 from django.db.models import Count, Q, F
+from django.utils import timezone
 
 
 # Validators
@@ -29,10 +30,9 @@ def validate_starship_error(option):
 
 
 def validate_duplicate_name(name):
-    # starships = Features.objects.filter(name=name)
     starships = JoinedShips.objects.all()
     for starship in starships:
-        if starship.starship_name == name:
+        if starship.starshipID == name:
             raise ValidationError("%s is already a Starship name." % name, code=3)
 
 
@@ -275,6 +275,10 @@ class JoinedShips(models.Model):
     source = models.CharField(max_length=255, null=True, blank=True)
     curated_status = models.CharField(max_length=255, null=True, blank=True)
     
+    # Direct fields for simplified upload process
+    sequence = models.TextField(null=True, blank=True, help_text='Starship sequence')
+    species = models.CharField(max_length=255, null=True, blank=True, help_text='Species name')
+    
     ship_family = models.ForeignKey('FamilyNames', on_delete=models.SET_NULL, null=True, blank=True, db_column='ship_family_id')
     taxonomy = models.ForeignKey('Taxonomy', on_delete=models.SET_NULL, null=True, blank=True, db_column='tax_id')
     ship = models.ForeignKey('Ships', on_delete=models.SET_NULL, null=True, blank=True, db_column='ship_id')
@@ -286,10 +290,10 @@ class JoinedShips(models.Model):
     created_at = models.CharField(max_length=255, null=True, blank=True)  # text field in starbase
     updated_at = models.CharField(max_length=255, null=True, blank=True)  # text field in starbase
 
-    # Property to access the sequence from the related Ships table
+    # Property to access the sequence - now uses direct field
     @property
     def starship_sequence(self):
-        return self.ship.sequence if self.ship else ""
+        return self.sequence or ""
 
     # TODO: integrate `quality_flag` into existing tables
 
@@ -607,3 +611,106 @@ class StarfishElement(models.Model):
     @property
     def length(self):
         return self.end - self.start + 1
+
+
+class StagingStarship(models.Model):
+    """Staging model for starship submissions before approval"""
+    class Meta:
+        db_table = 'staging_starship'
+        ordering = ['-submitted_at']
+    
+    # Submission status choices
+    STATUS_CHOICES = (
+        ('pending', 'Pending Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('needs_revision', 'Needs Revision'),
+    )
+    
+    # Basic submission data
+    starshipID = models.CharField(max_length=255, help_text='Starship name/ID')
+    sequence = models.TextField(help_text='Starship sequence')
+    species = models.CharField(max_length=255, help_text='Species name')
+    
+    # Optional additional data
+    evidence = models.CharField(max_length=255, blank=True, null=True, help_text='Evidence for this starship')
+    source = models.CharField(max_length=255, blank=True, null=True, help_text='Source of the data')
+    notes = models.TextField(blank=True, null=True, help_text='Additional notes')
+    
+    # File uploads (stored as text for simplicity)
+    annotation_file_content = models.TextField(blank=True, null=True, help_text='Annotation file content')
+    annotation_file_name = models.CharField(max_length=255, blank=True, null=True, help_text='Original annotation file name')
+    
+    # Terminal repeat information
+    terminal_repeat_length = models.IntegerField(blank=True, null=True, help_text='Length of terminal repeat')
+    terminal_repeat_sequence = models.TextField(blank=True, null=True, help_text='Terminal repeat sequence')
+    
+    # Submission tracking
+    submitted_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='staging_submissions')
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_submissions')
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    review_notes = models.TextField(blank=True, null=True, help_text='Reviewer notes')
+    
+    # Validation results
+    validation_passed = models.BooleanField(default=False)
+    validation_errors = models.TextField(blank=True, null=True, help_text='Validation error messages')
+    
+    def __str__(self):
+        return f"Staging: {self.starshipID} ({self.status})"
+    
+    def approve(self, reviewer, notes=""):
+        """Approve this submission"""
+        self.status = 'approved'
+        self.reviewed_by = reviewer
+        self.reviewed_at = timezone.now()
+        self.review_notes = notes
+        self.save()
+    
+    def reject(self, reviewer, notes=""):
+        """Reject this submission"""
+        self.status = 'rejected'
+        self.reviewed_by = reviewer
+        self.reviewed_at = timezone.now()
+        self.review_notes = notes
+        self.save()
+    
+    def request_revision(self, reviewer, notes=""):
+        """Request revision of this submission"""
+        self.status = 'needs_revision'
+        self.reviewed_by = reviewer
+        self.reviewed_at = timezone.now()
+        self.review_notes = notes
+        self.save()
+    
+    def migrate_to_main_database(self):
+        """Migrate this staging entry to the main JoinedShips database"""
+        # Create the main JoinedShips entry
+        main_starship = JoinedShips(
+            starshipID=self.starshipID,
+            evidence=self.evidence,
+            source=self.source,
+            curated_status='staged_import'
+        )
+        main_starship.save()
+        
+        # Create related Accessions and Ships objects
+        accession = Accessions(
+            ship_name=self.starshipID,
+            accession_tag=f"{self.starshipID}_{main_starship.id}",
+            version_tag="1.0"
+        )
+        accession.save()
+        
+        ship = Ships(
+            sequence=self.sequence,
+            accession=accession
+        )
+        ship.save()
+        
+        # Link the main starship to the ship
+        main_starship.ship = ship
+        main_starship.save()
+        
+        return main_starship

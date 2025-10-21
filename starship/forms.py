@@ -193,7 +193,8 @@ class Starship_Upload_Form(forms.Form):
     def __init__(self, *args, **kwargs):
         super(Starship_Upload_Form, self).__init__(*args, **kwargs)
         # User choices should be limited to those with permissions to change annotations
-        self.fields['assign_to'].queryset = starship_views.get_annotation_editors()
+        from starship.views import get_annotation_editors
+        self.fields['assign_to'].queryset = get_annotation_editors()
 
 
 # Does not perform validation to ensure value is one of the selected options
@@ -204,10 +205,6 @@ class DynamicChoiceField(forms.ChoiceField):
 # displayed in upload_starship.html
 class StarshipUploadForm(forms.Form):
     name = forms.CharField(
-        validators=[
-            starship_models.validate_starship_name,
-            starship_models.validate_duplicate_name
-        ],
         max_length=100,
         required=True,
     )
@@ -241,7 +238,30 @@ class StarshipUploadForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['assign_to'].queryset = starship_views.get_annotation_editors()
+        from starship.views import get_annotation_editors
+        self.fields['assign_to'].queryset = get_annotation_editors()
+    
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if not name:
+            return name
+            
+        # Validate starship name format
+        from django.conf import settings
+        if settings.STARSHIP_NAME_FORMAT:
+            import re
+            pattern = re.compile(settings.STARSHIP_NAME_FORMAT)
+            if pattern.match(name) is None:
+                raise forms.ValidationError(
+                    "%s is not a valid Starship name. Would You like to continue with this name?" % name
+                )
+        
+        # Check for duplicate names
+        from starship.models import JoinedShips
+        if JoinedShips.objects.filter(starshipID=name).exists():
+            raise forms.ValidationError("%s is already a Starship name." % name)
+            
+        return name
 
 class Starship_Delete(forms.Form):
     starship = forms.ModelChoiceField(queryset=starship_models.JoinedShips.objects.all())

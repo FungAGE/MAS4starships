@@ -230,7 +230,7 @@ class StarshipData:
         )
         
         # Now we can use the aggregated counts from the query
-        self.species = getattr(starship, 'species', 'N/A')
+        self.species = getattr(starship, 'taxonomy_species', 'N/A')
         self.starship_length = getattr(starship, 'starship_length', 0)
         self.num_cds = getattr(starship, 'num_cds', 0)
         self.num_gene = getattr(starship, 'num_gene', 0)
@@ -276,7 +276,7 @@ class GetStarshipDataView(APIView):
             num_red=Count('feature__annotation', filter=Q(feature__annotation__flag=2)),
             
             # Related data using the ForeignKey relationships
-            species=F('taxonomy__species'),
+            taxonomy_species=F('taxonomy__species'),
             starship_length=Length('ship__sequence'),  # Get length from Ships table
             contigID=F('ship__starshipfeatures__contigID'),
             elementBegin=F('ship__starshipfeatures__elementBegin'),
@@ -291,7 +291,7 @@ class GetStarshipDataView(APIView):
         # Filter starships
         starships = starships.filter(
             Q(starshipID__icontains=params['search_val']) |
-            Q(species__icontains=params['search_val'])
+            Q(taxonomy_species__icontains=params['search_val'])
         ).order_by(self.get_order_by_arg(params['order_col'], params['order_dir']))
 
         filtered_num_starships = starships.count()
@@ -321,7 +321,7 @@ class GetStarshipDataView(APIView):
         if order_col == 0:
             return 'starshipID' if order_dir == 'asc' else '-starshipID'
         elif order_col == 1:
-            return 'species' if order_dir == 'asc' else '-species'
+            return 'taxonomy_species' if order_dir == 'asc' else '-taxonomy_species'
         elif order_col == 2:
             return Length('starship_sequence').asc() if order_dir == 'asc' else Length('starship_sequence').desc()
         elif order_col == 3:

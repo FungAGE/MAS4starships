@@ -11,6 +11,7 @@ from django.core.cache import cache
 from django.db.models import Q
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db import transaction
+from django.contrib import messages
 
 import os
 from copy import deepcopy
@@ -309,36 +310,29 @@ class StarshipUpload(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTe
                     name = upload_form.cleaned_data['name']
                     species = upload_form.cleaned_data['species']
 
-                    # Create Starship object
-                    starship = starship_models.JoinedShips(
-                        starship_name=name,
-                        starship_sequence=genome,
-                        species=species
+                    # Create staging submission
+                    staging_submission = starship_models.StagingStarship(
+                        starshipID=name,
+                        sequence=genome,
+                        species=species,
+                        submitted_by=request.user
                     )
-                    starship.save()
-
-                    # Handle terminal repeats if provided
-                    tr_length = upload_form.cleaned_data.get('terminal_repeat_length')
-                    tr_sequence = upload_form.cleaned_data.get('terminal_repeat_sequence')
                     
-                    if tr_length and tr_sequence:
-                        self.process_terminal_repeats(tr_sequence, starship, new_annotations, new_features)
-
-                    # Process annotation file if provided
+                    # Store annotation file if provided
                     if 'annotation_file' in request.FILES:
-                        self.process_annotation_file(
-                            request.FILES['annotation_file'],
-                            starship,
-                            upload_form.cleaned_data['assign_to'],
-                            new_annotations,
-                            new_features
-                        )
-                    else:
-                        # Run metaeuk for gene prediction
-                        self.run_metaeuk_prediction(tempdir, starship, new_annotations, new_features)
+                        annotation_file = request.FILES['annotation_file']
+                        staging_submission.annotation_file_name = annotation_file.name
+                        staging_submission.annotation_file_content = annotation_file.read().decode('utf-8')
+                    
+                    # Store terminal repeat information if provided
+                    tr_length = upload_form.cleaned_data.get('terminal_repeat')
+                    if tr_length:
+                        staging_submission.terminal_repeat_length = tr_length
+                    
+                    staging_submission.save()
 
-                    add_annotations_and_features_to_db(new_annotations, new_features)
-                    starship_models.starship_upload_complete.send(sender=None)
+                    # Send success message
+                    messages.success(request, f"Starship '{name}' has been submitted for review. You will be notified when it's approved.")
 
             return redirect('starship:starship_list')
         
@@ -1929,3 +1923,52 @@ class StarfishGenomeDeleteView(LoginRequiredMixin, generic.View):
         except starship_models.StarfishRunGenome.DoesNotExist:
             from django.http import JsonResponse
             return JsonResponse({'success': False, 'message': 'Genome not found'}, status=404)
+
+
+class StagingSubmissionListView(LoginRequiredMixin, generic.ListView):
+    """View to list staging submissions for review"""
+    model = starship_models.StagingStarship
+    template_name = 'starship/staging_submission_list.html'
+    context_object_name = 'submissions'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        return starship_models.StagingStarship.objects.all().order_by('-submitted_at')
+
+
+class StagingSubmissionDetailView(LoginRequiredMixin, generic.DetailView):
+    """View to review a specific staging submission"""
+    model = starship_models.StagingStarship
+    template_name = 'starship/staging_submission_detail.html'
+    context_object_name = 'submission'
+
+
+class StagingSubmissionApproveView(LoginRequiredMixin, generic.View):
+    """View to approve a staging submission"""
+    
+    def post(self, request, pk):
+        submission = get_object_or_404(starship_models.StagingStarship, pk=pk)
+        notes = request.POST.get('notes', '')
+        
+        try:
+            # Migrate to main database
+            main_starship = submission.migrate_to_main_database()
+            submission.approve(request.user, notes)
+            messages.success(request, f"Submission '{submission.starshipID}' approved and migrated to main database.")
+        except Exception as e:
+            messages.error(request, f"Error approving submission: {str(e)}")
+        
+        return redirect('starship:staging_submission_detail', pk=pk)
+
+
+class StagingSubmissionRejectView(LoginRequiredMixin, generic.View):
+    """View to reject a staging submission"""
+    
+    def post(self, request, pk):
+        submission = get_object_or_404(starship_models.StagingStarship, pk=pk)
+        notes = request.POST.get('notes', '')
+        
+        submission.reject(request.user, notes)
+        messages.success(request, f"Submission '{submission.starshipID}' rejected.")
+        
+        return redirect('starship:staging_submission_detail', pk=pk)
