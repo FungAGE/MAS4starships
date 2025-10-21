@@ -84,6 +84,29 @@ conda activate mas-env
 # Create logs directory if it doesn't exist
 mkdir -p "$PROJECT_ROOT/logs"
 
+# make migrations
+python manage.py makemigrations
+
+# Handle migration dependency issues
+echo "Checking for migration dependency issues..."
+if python manage.py migrate --check 2>/dev/null; then
+    echo "Migrations are consistent, proceeding..."
+    python manage.py migrate
+else
+    echo "Migration dependency issues detected, fixing..."
+    # Try to fix the dependency issue
+    python manage.py migrate result_viewer 0001 --fake 2>/dev/null || true
+    python manage.py migrate starship 0005
+    python manage.py migrate result_viewer 0001
+    python manage.py migrate
+fi
+
+# load data
+python manage.py loaddata starship/fixtures/groups.json
+
+# collect static files
+python manage.py collectstatic --noinput
+
 # Stop any existing services and clean up
 echo "Stopping any existing services..."
 "$SCRIPT_DIR/manage-services.sh" stop
