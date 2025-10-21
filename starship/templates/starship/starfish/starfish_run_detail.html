@@ -6,15 +6,16 @@
 {% block body %}
 <div class="container-fluid">
     <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
+        <div class="col-xs-12">
+            <div class="row">
+                <div class="col-sm-6">
                     <h1>{{ run.run_name }}</h1>
                     {% if run.description %}
                         <p class="text-muted">{{ run.description }}</p>
                     {% endif %}
                 </div>
-                <div class="btn-group" role="group">
+                <div class="col-sm-6">
+                    <div class="btn-group" role="group">
                     {% if run.status == 'pending' %}
                         <a href="{% url 'starfish:starfish_run_update' run.pk %}" class="btn btn-outline-secondary">
                             <i class="fas fa-edit"></i> Edit
@@ -63,26 +64,27 @@
                             <i class="fas fa-trash"></i> Delete
                         </a>
                     {% endif %}
+                    </div>
                 </div>
             </div>
             
             <!-- Status and Progress -->
             <div class="row mb-4">
                 <div class="col-md-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Run Status</h5>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h5>Run Status</h5>
                         </div>
-                        <div class="card-body">
+                        <div class="panel-body">
                             <div class="row">
                                 <div class="col-md-6">
                                     <strong>Status:</strong>
-                                    <span class="badge 
-                                        {% if run.status == 'completed' %}bg-success
-                                        {% elif run.status == 'running' %}bg-warning
-                                        {% elif run.status == 'failed' %}bg-danger
-                                        {% elif run.status == 'cancelled' %}bg-secondary
-                                        {% else %}bg-info{% endif %} ms-2">
+                                    <span class="label 
+                                        {% if run.status == 'completed' %}label-success
+                                        {% elif run.status == 'running' %}label-warning
+                                        {% elif run.status == 'failed' %}label-danger
+                                        {% elif run.status == 'cancelled' %}label-default
+                                        {% else %}label-info{% endif %}">
                                         {{ run.get_status_display }}
                                     </span>
                                 </div>
@@ -122,17 +124,17 @@
                 </div>
                 
                 <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Statistics</h5>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h5>Statistics</h5>
                         </div>
-                        <div class="card-body">
+                        <div class="panel-body">
                             <div class="row text-center">
-                                <div class="col-6">
+                                <div class="col-xs-6">
                                     <h3 class="text-primary">{{ run.num_genomes|default:"0" }}</h3>
                                     <small class="text-muted">Genomes</small>
                                 </div>
-                                <div class="col-6">
+                                <div class="col-xs-6">
                                     <h3 class="text-success">{{ run.num_elements_found|default:"0" }}</h3>
                                     <small class="text-muted">Elements Found</small>
                                 </div>
@@ -143,13 +145,13 @@
             </div>
             
             <!-- Run Configuration -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Run Configuration</h5>
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h5>Run Configuration</h5>
                         </div>
-                        <div class="card-body">
+                        <div class="panel-body">
                             <div class="row">
                                 <div class="col-md-3">
                                     <strong>Model:</strong> {{ run.model }}
@@ -184,40 +186,39 @@
             </div>
             
             <!-- Navigation Tabs -->
-            <ul class="nav nav-tabs" id="runTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="genomes-tab" data-bs-toggle="tab" 
-                            data-bs-target="#genomes" type="button" role="tab">
-                        <i class="fas fa-dna"></i> Genomes ({{ run.genomes.count }})
-                    </button>
+            <ul class="nav nav-tabs" id="runTabs">
+                <li class="active">
+                    <a href="#genomes" data-toggle="tab">
+                        <i class="fa fa-dna"></i> Genomes ({{ run.genomes.count }})
+                    </a>
                 </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="elements-tab" data-bs-toggle="tab" 
-                            data-bs-target="#elements" type="button" role="tab">
-                        <i class="fas fa-search"></i> Elements ({{ run.elements.count }})
-                    </button>
+                <li>
+                    <a href="#elements" data-toggle="tab">
+                        <i class="fa fa-search"></i> Elements ({{ run.elements.count }})
+                    </a>
                 </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="logs-tab" data-bs-toggle="tab" 
-                            data-bs-target="#logs" type="button" role="tab">
-                        <i class="fas fa-file-alt"></i> Logs
-                    </button>
+                <li>
+                    <a href="#logs" data-toggle="tab">
+                        <i class="fa fa-file-text-o"></i> Logs
+                    </a>
                 </li>
             </ul>
             
-            <div class="tab-content" id="runTabsContent">
+            <div class="tab-content">
                 <!-- Genomes Tab -->
-                <div class="tab-pane fade show active" id="genomes" role="tabpanel">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5>Genomes in this Run</h5>
-                                <div>
-                                    <a href="{% url 'starfish:starfish_genome_create' run.pk %}" class="btn btn-outline-primary btn-sm">
-                                        <i class="fas fa-plus"></i> Add Genome
+                <div class="tab-pane active" id="genomes">
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <h5>Genomes in this Run</h5>
+                                </div>
+                                <div class="col-sm-6 text-right">
+                                    <a href="{% url 'starfish:starfish_genome_create' run.pk %}" class="btn btn-primary btn-sm">
+                                        <i class="fa fa-plus"></i> Add Genome
                                     </a>
-                                    <a href="{% url 'starfish:starfish_samplesheet_upload' run.pk %}" class="btn btn-outline-secondary btn-sm">
-                                        <i class="fas fa-upload"></i> Bulk Upload CSV
+                                    <a href="{% url 'starfish:starfish_samplesheet_upload' run.pk %}" class="btn btn-default btn-sm">
+                                        <i class="fa fa-upload"></i> Bulk Upload CSV
                                     </a>
                                 </div>
                             </div>
@@ -240,11 +241,11 @@
                                                 <td>{{ genome.genome_id }}</td>
                                                 <td>{{ genome.tax_id|default:"-" }}</td>
                                                 <td>
-                                                    <span class="badge 
-                                                        {% if genome.status == 'completed' %}bg-success
-                                                        {% elif genome.status == 'running' %}bg-warning
-                                                        {% elif genome.status == 'failed' %}bg-danger
-                                                        {% else %}bg-info{% endif %}">
+                                                    <span class="label 
+                                                        {% if genome.status == 'completed' %}label-success
+                                                        {% elif genome.status == 'running' %}label-warning
+                                                        {% elif genome.status == 'failed' %}label-danger
+                                                        {% else %}label-info{% endif %}">
                                                         {{ genome.get_status_display }}
                                                     </span>
                                                 </td>
@@ -272,15 +273,19 @@
                 </div>
                 
                 <!-- Elements Tab -->
-                <div class="tab-pane fade" id="elements" role="tabpanel">
-                    <div class="card">
-                        <div class="card-body">
+                <div class="tab-pane" id="elements">
+                    <div class="panel panel-default">
+                        <div class="panel-body">
                             {% if run.elements.exists %}
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h5>Found Elements ({{ run.elements.count }})</h5>
-                                    <a href="{% url 'starfish:starfish_element_list' run.pk %}" class="btn btn-outline-primary btn-sm">
-                                        View All Elements
-                                    </a>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <h5>Found Elements ({{ run.elements.count }})</h5>
+                                    </div>
+                                    <div class="col-sm-6 text-right">
+                                        <a href="{% url 'starfish:starfish_element_list' run.pk %}" class="btn btn-primary btn-sm">
+                                            View All Elements
+                                        </a>
+                                    </div>
                                 </div>
                                 
                                 <div class="table-responsive">
@@ -316,7 +321,7 @@
                                 
                                 {% if run.elements.count > 10 %}
                                     <div class="text-center mt-3">
-                                        <a href="{% url 'starfish:starfish_element_list' run.pk %}" class="btn btn-outline-primary">
+                                        <a href="{% url 'starfish:starfish_element_list' run.pk %}" class="btn btn-primary">
                                             View All {{ run.elements.count }} Elements
                                         </a>
                                     </div>
@@ -331,12 +336,12 @@
                 </div>
                 
                 <!-- Logs Tab -->
-                <div class="tab-pane fade" id="logs" role="tabpanel">
-                    <div class="card">
-                        <div class="card-body">
+                <div class="tab-pane" id="logs">
+                    <div class="panel panel-default">
+                        <div class="panel-body">
                             <h5>Run Logs</h5>
                             {% if run.log_file and run.log_file != "" %}
-                                <div class="bg-dark text-light p-3 rounded" style="max-height: 400px; overflow-y: auto;">
+                                <div class="well" style="max-height: 400px; overflow-y: auto; background-color: #333; color: #fff;">
                                     <pre id="log-content">Loading logs...</pre>
                                 </div>
                             {% else %}

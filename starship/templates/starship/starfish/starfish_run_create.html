@@ -7,21 +7,21 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h4><i class="fas fa-play"></i> Create New Starfish Run</h4>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4><i class="fa fa-play"></i> Create New Starfish Run</h4>
                 </div>
-                <div class="card-body">
+                <div class="panel-body">
                     <form method="post">
                         {% csrf_token %}
                         {{ form|crispy }}
                         
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Create Run
+                                <i class="fa fa-save"></i> Create Run
                             </button>
-                            <a href="{% url 'starfish:starfish_run_list' %}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancel
+                            <a href="{% url 'starfish:starfish_run_list' %}" class="btn btn-default">
+                                <i class="fa fa-times"></i> Cancel
                             </a>
                         </div>
                     </form>

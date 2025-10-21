@@ -7,21 +7,21 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h4><i class="fas fa-upload"></i> Bulk Upload Genomes for Run: {{ run.run_name }}</h4>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4><i class="fa fa-upload"></i> Bulk Upload Genomes for Run: {{ run.run_name }}</h4>
                 </div>
-                <div class="card-body">
+                <div class="panel-body">
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ form|crispy }}
                         
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-upload"></i> Upload Samplesheet
+                                <i class="fa fa-upload"></i> Upload Samplesheet
                             </button>
-                            <a href="{% url 'starfish:starfish_genome_list' run.pk %}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancel
+                            <a href="{% url 'starfish:starfish_genome_list' run.pk %}" class="btn btn-default">
+                                <i class="fa fa-times"></i> Cancel
                             </a>
                         </div>
                     </form>
@@ -31,15 +31,15 @@
         
         <div class="col-md-4">
             <div class="alert alert-info">
-                <h6><i class="fas fa-info-circle"></i> Alternative Method</h6>
+                <h6><i class="fa fa-info-circle"></i> Alternative Method</h6>
                 <p class="small">This is an alternative to adding genomes one by one. For single genomes, use the "Add Genome" button instead.</p>
             </div>
             
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="fas fa-file-csv"></i> Samplesheet Format</h5>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h5><i class="fa fa-file-csv"></i> Samplesheet Format</h5>
                 </div>
-                <div class="card-body">
+                <div class="panel-body">
                     <p class="small">The samplesheet should be a CSV file with the following columns:</p>
                     
                     <h6>Required Columns:</h6>
@@ -68,14 +68,14 @@
                 </div>
             </div>
             
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h5><i class="fas fa-download"></i> Download Template</h5>
+            <div class="panel panel-default" style="margin-top: 15px;">
+                <div class="panel-heading">
+                    <h5><i class="fa fa-download"></i> Download Template</h5>
                 </div>
-                <div class="card-body">
+                <div class="panel-body">
                     <p class="small">Download a template CSV file to get started:</p>
-                    <button class="btn btn-outline-primary btn-sm" onclick="downloadTemplate()">
-                        <i class="fas fa-download"></i> Download Template
+                    <button class="btn btn-primary btn-sm" onclick="downloadTemplate()">
+                        <i class="fa fa-download"></i> Download Template
                     </button>
                 </div>
             </div>

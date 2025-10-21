@@ -6,11 +6,11 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h4><i class="fas fa-dna"></i> Element: {{ element.element_id }}</h4>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4><i class="fa fa-dna"></i> Element: {{ element.element_id }}</h4>
                 </div>
-                <div class="card-body">
+                <div class="panel-body">
                     <div class="row">
                         <div class="col-md-6">
                             <h6>Genomic Information</h6>
@@ -38,7 +38,7 @@
                                 <tr>
                                     <td><strong>Strand:</strong></td>
                                     <td>
-                                        <span class="badge badge-{% if element.strand == '+' %}success{% else %}info{% endif %}">
+                                        <span class="label label-{% if element.strand == '+' %}success{% else %}info{% endif %}">
                                             {{ element.strand }}
                                         </span>
                                     </td>
@@ -59,7 +59,7 @@
                                 <tr>
                                     <td><strong>Status:</strong></td>
                                     <td>
-                                        <span class="badge badge-{% if element.run.status == 'completed' %}success{% elif element.run.status == 'failed' %}danger{% else %}warning{% endif %}">
+                                        <span class="label label-{% if element.run.status == 'completed' %}success{% elif element.run.status == 'failed' %}danger{% else %}warning{% endif %}">
                                             {{ element.run.get_status_display }}
                                         </span>
                                     </td>
@@ -75,9 +75,9 @@
                     {% if element.sequence %}
                         <div class="mt-4">
                             <h6>Sequence</h6>
-                            <div class="card">
-                                <div class="card-body">
-                                    <pre class="mb-0" style="font-size: 12px; max-height: 300px; overflow-y: auto;">{{ element.sequence }}</pre>
+                            <div class="panel panel-default">
+                                <div class="panel-body">
+                                    <pre style="font-size: 12px; max-height: 300px; overflow-y: auto;">{{ element.sequence }}</pre>
                                 </div>
                             </div>
                         </div>
@@ -94,11 +94,11 @@
         </div>
 
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="fas fa-info-circle"></i> Element Details</h5>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h5><i class="fa fa-info-circle"></i> Element Details</h5>
                 </div>
-                <div class="card-body">
+                <div class="panel-body">
                     <p><strong>Element ID:</strong> {{ element.element_id }}</p>
                     <p><strong>Genome:</strong> {{ element.genome.genome_id }}</p>
                     <p><strong>Contig:</strong> {{ element.contig_id }}</p>
@@ -108,16 +108,16 @@
                 </div>
             </div>
             
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h5><i class="fas fa-cog"></i> Actions</h5>
+            <div class="panel panel-default" style="margin-top: 15px;">
+                <div class="panel-heading">
+                    <h5><i class="fa fa-cog"></i> Actions</h5>
                 </div>
-                <div class="card-body">
-                    <a href="{% url 'starfish:starfish_element_list' element.run.pk %}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-list"></i> All Elements
+                <div class="panel-body">
+                    <a href="{% url 'starfish:starfish_element_list' element.run.pk %}" class="btn btn-primary btn-sm">
+                        <i class="fa fa-list"></i> All Elements
                     </a>
-                    <a href="{% url 'starfish:starfish_run_detail' element.run.pk %}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-arrow-left"></i> Back to Run
+                    <a href="{% url 'starfish:starfish_run_detail' element.run.pk %}" class="btn btn-default btn-sm">
+                        <i class="fa fa-arrow-left"></i> Back to Run
                     </a>
                 </div>
             </div>

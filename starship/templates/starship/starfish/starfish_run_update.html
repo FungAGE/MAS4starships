@@ -7,21 +7,21 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h4><i class="fas fa-edit"></i> Edit Starfish Run: {{ run.run_name }}</h4>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4><i class="fa fa-edit"></i> Edit Starfish Run: {{ run.run_name }}</h4>
                 </div>
-                <div class="card-body">
+                <div class="panel-body">
                     <form method="post">
                         {% csrf_token %}
                         {{ form|crispy }}
 
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Update Run
+                                <i class="fa fa-save"></i> Update Run
                             </button>
-                            <a href="{% url 'starfish:starfish_run_detail' run.pk %}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancel
+                            <a href="{% url 'starfish:starfish_run_detail' run.pk %}" class="btn btn-default">
+                                <i class="fa fa-times"></i> Cancel
                             </a>
                         </div>
                     </form>
@@ -30,11 +30,11 @@
         </div>
 
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="fas fa-info-circle"></i> Run Information</h5>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h5><i class="fa fa-info-circle"></i> Run Information</h5>
                 </div>
-                <div class="card-body">
+                <div class="panel-body">
                     <p><strong>Status:</strong> {{ run.get_status_display }}</p>
                     <p><strong>Created:</strong> {{ run.created_at|date:"M d, Y H:i" }}</p>
                     {% if run.started_at %}

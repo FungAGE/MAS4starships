@@ -7,21 +7,21 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h4><i class="fas fa-dna"></i> Add Genome to Run: {{ run.run_name }}</h4>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4><i class="fa fa-dna"></i> Add Genome to Run: {{ run.run_name }}</h4>
                 </div>
-                <div class="card-body">
+                <div class="panel-body">
                     <form method="post">
                         {% csrf_token %}
                         {{ form|crispy }}
                         
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Add Genome
+                                <i class="fa fa-plus"></i> Add Genome
                             </button>
-                            <a href="{% url 'starfish:starfish_genome_list' run.pk %}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancel
+                            <a href="{% url 'starfish:starfish_genome_list' run.pk %}" class="btn btn-default">
+                                <i class="fa fa-times"></i> Cancel
                             </a>
                         </div>
                     </form>
@@ -30,11 +30,11 @@
         </div>
         
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="fas fa-info-circle"></i> Required Files</h5>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h5><i class="fa fa-info-circle"></i> Required Files</h5>
                 </div>
-                <div class="card-body">
+                <div class="panel-body">
                     <h6>Genome Assembly (FASTA):</h6>
                     <p class="small">The genome assembly file in FASTA format. This should contain the complete genome sequence.</p>
                     
@@ -57,28 +57,28 @@
                 </div>
             </div>
             
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h5><i class="fas fa-upload"></i> Alternative: Bulk Upload</h5>
+            <div class="panel panel-default" style="margin-top: 15px;">
+                <div class="panel-heading">
+                    <h5><i class="fa fa-upload"></i> Alternative: Bulk Upload</h5>
                 </div>
-                <div class="card-body">
+                <div class="panel-body">
                     <p class="small">For multiple genomes, you can upload a CSV samplesheet instead.</p>
-                    <a href="{% url 'starfish:starfish_samplesheet_upload' run.pk %}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-upload"></i> Upload CSV Samplesheet
+                    <a href="{% url 'starfish:starfish_samplesheet_upload' run.pk %}" class="btn btn-primary btn-sm">
+                        <i class="fa fa-upload"></i> Upload CSV Samplesheet
                     </a>
                 </div>
             </div>
             
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h5><i class="fas fa-check-circle"></i> File Validation</h5>
+            <div class="panel panel-default" style="margin-top: 15px;">
+                <div class="panel-heading">
+                    <h5><i class="fa fa-check-circle"></i> File Validation</h5>
                 </div>
-                <div class="card-body">
+                <div class="panel-body">
                     <p class="small">The form will automatically validate that:</p>
                     <ul class="list-unstyled small">
-                        <li><i class="fas fa-check text-success"></i> Files exist at the specified paths</li>
-                        <li><i class="fas fa-check text-success"></i> Files are readable by the system</li>
-                        <li><i class="fas fa-check text-success"></i> Required fields are not empty</li>
+                        <li><i class="fa fa-check text-success"></i> Files exist at the specified paths</li>
+                        <li><i class="fa fa-check text-success"></i> Files are readable by the system</li>
+                        <li><i class="fa fa-check text-success"></i> Required fields are not empty</li>
                     </ul>
                 </div>
             </div>
