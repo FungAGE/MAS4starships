@@ -2,13 +2,13 @@
 block css %} <link rel="stylesheet" href="{% static "starship/starship.css" %}"> {%
 endblock %} {% block head %}
 <meta charset="UTF-8" />
-<title>MAS | Phage Delete</title>
+<title>MAS | Starship Delete</title>
 {% endblock %} {% block body %}
 <div class="block">
-  <h1>Delete Starships</h1>
-  {% if phage_form %}
+  <h1>Delete Starship from Database</h1>
+  {% if starship_form %}
   <form method="get" action="{% url 'starship:confirm_starship_delete' %}">
-    {% csrf_token %} {{ phage_form|crispy }}
+    {% csrf_token %} {{ starship_form|crispy }}
     <button class="btn btn-success button" type="submit">Delete</button>
   </form>
   <br /><br /><br />
@@ -20,7 +20,7 @@ endblock %} {% block head %}
 <script>
   $(document).ready(function() {
       $('#id_starship').select2({
-          placeholder: 'Select phages to delete'
+          placeholder: 'Select starships to delete'
           {#dropdownAutoWidth: true#}
       });
   });

@@ -264,7 +264,7 @@ class StarshipUploadForm(forms.Form):
         return name
 
 class Starship_Delete(forms.Form):
-    starship = forms.ModelChoiceField(queryset=starship_models.JoinedShips.objects.all())
+    starship = forms.ModelMultipleChoiceField(queryset=starship_models.JoinedShips.objects.all())
 
 # A single form for manual entry of starship data across multiple models
 class ComprehensiveDataForm(CrispyModelForm):
@@ -371,7 +371,7 @@ class BulkDataUploadForm(forms.Form):
     )
 
     def __init__(self, *args, **kwargs):
-        super(Starship_Delete, self).__init__(*args, **kwargs)
+        super(BulkDataUploadForm, self).__init__(*args, **kwargs)
         self.helper = CrispyHorizontalFormHelper()
         self.helper.form_tag = False
         self.helper.disable_csrf = True
