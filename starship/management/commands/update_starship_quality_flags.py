@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from starship.models import JoinedShips
+from starship.starbase_models import JoinedShips
 
 
 class Command(BaseCommand):

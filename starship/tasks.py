@@ -22,7 +22,8 @@ from starship.genomic_loci_conversions import *
 from starship import gene_calling
 from starship import models as starship_models
 from starship.forms import parse_prots_from_coords
-from starship.models import JoinedShips, StarfishRun, StarfishRunGenome, StarfishElement
+from starship.models import StarfishRun, StarfishRunGenome, StarfishElement
+from starship.starbase_models import JoinedShips
 from MAS.celery import app
 
 logger = logging.getLogger(__name__)

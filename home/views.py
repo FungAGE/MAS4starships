@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from django.views import generic
 
 from result_viewer.views import MixinForBaseTemplate
-from starship.models import Annotation
-from starship.models import JoinedShips, StagingStarship
+from starship.models import Annotation, StagingStarship
+from starship.starbase_models import JoinedShips
 
 
 class HomePageView(MixinForBaseTemplate, generic.TemplateView):

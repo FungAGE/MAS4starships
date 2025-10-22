@@ -33,6 +33,10 @@ from starship import create_deliverables
 from starship.forms import get_file_handle, StarshipUploadForm
 from starship import forms as starship_forms
 from starship import models as starship_models
+from starship.starbase_models import (
+    Accessions, Ships, Captains, Taxonomy, Genome, Papers,
+    FamilyNames, StarshipFeatures, Navis, Haplotype, Gff, JoinedShips
+)
 from starship.tasks import create_CDS_annotations, create_trna_annotations, add_annotations_and_features_to_db, create_custom_CDS_annotations
 
 # Derived from stackoverflow.com/questions/4727327/
@@ -499,13 +503,13 @@ class StarshipUpload(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTe
 
 # returns the list of starships
 class Starship_List(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
-    model = starship_models.JoinedShips
+    model = JoinedShips
     context_object_name = 'starships'
     template_name = 'starship/starship_list.html'
 
     def get_context_data(self,  **kwargs):
         context = super(Starship_List, self).get_context_data(**kwargs)
-        starships = starship_models.JoinedShips.objects.all().prefetch_related(
+        starships = JoinedShips.objects.all().prefetch_related(
             'feature_set__annotation')
 
         # calculate number of unpolished CDS in starship
@@ -521,7 +525,7 @@ class Starship_List(LoginRequiredMixin, MixinForBaseTemplate, generic.TemplateVi
 # used for starship detail page
 # @cache_page(60 * 15)
 class Starship_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailView):
-    model = starship_models.JoinedShips
+    model = JoinedShips
     context_object_name = 'starship'
     template_name = 'starship/starship_detail.html'
     starship_dict = {}
@@ -533,7 +537,7 @@ class Starship_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailVi
         starship = self.get_object()
         
         # Calculate starship length - get elementBegin and elementEnd from StarshipFeatures
-        starship_features = starship_models.StarshipFeatures.objects.filter(
+        starship_features = StarshipFeatures.objects.filter(
             ship=starship.ship
         ).first()
         
@@ -652,9 +656,9 @@ class Annotation_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.Detail
 
     def get_context_data(self, **kwargs):
         context = super(Annotation_Detail, self).get_context_data(**kwargs)
-        starships = starship_models.JoinedShips.objects.none()
+        starships = JoinedShips.objects.none()
         for feature in context['annotation'].feature_set.all():
-            starships = starships | starship_models.JoinedShips.objects.filter(id=feature.starship_id)
+            starships = starships | JoinedShips.objects.filter(id=feature.starship_id)
         context['starship_info'] = get_starship_data_dicts(starships)
 
         context['exact_names'] = starship_models.Annotation.objects.filter(
@@ -671,7 +675,7 @@ class Get_Starship(LoginRequiredMixin, generic.View):
         starship_id = request.GET.get('starship_id', None)
         context = {}
         if starship_id:
-            context['starship'] = starship_models.JoinedShips.objects.get(pk=starship_id)
+            context['starship'] = JoinedShips.objects.get(pk=starship_id)
             # context['features'] = starship.feature_set.all()
             print(starship_id)
         return render(request, 'starship/starship_sequence.html', context)
@@ -712,7 +716,7 @@ class Get_Feature_Sequence(LoginRequiredMixin, generic.View):
 
 # loads the delete starship page
 class Starship_Delete(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTemplate, generic.ListView):
-    model = starship_models.JoinedShips
+    model = JoinedShips
     context_object_name = 'starship'
     template_name = 'starship/starship_delete.html'
     permission_required = 'starship.starship_delete'
@@ -755,7 +759,7 @@ class Confirm_Starship_Delete(LoginRequiredMixin, PermissionRequiredMixin, Mixin
         features = starship_models.Feature.objects.filter(starship__in=starships)
         annotations = starship_models.Annotation.objects.filter(feature__in=features)
 
-        starships_not_being_deleted = starship_models.JoinedShips.objects.all().exclude(pk__in=starships)
+        starships_not_being_deleted = JoinedShips.objects.all().exclude(pk__in=starships)
         annotations_to_keep = annotations.filter(feature__starship__in=list(starships_not_being_deleted)).distinct()
 
         annotations = annotations.exclude(pk__in=annotations_to_keep) # difference(annotations_to_keep) <- can't do this because can't filter resulting QS
@@ -1117,7 +1121,7 @@ def get_annotation_editors():
 def starship_download_fasta(request, starship_id):
     if request.user.is_authenticated:
         context = {}
-        starship = starship_models.JoinedShips.objects.get(pk=starship_id)
+        starship = JoinedShips.objects.get(pk=starship_id)
         starship_name = starship.starship_name
         nucleotide = starship.starship_sequence
         sequence = SeqRecord(
@@ -1140,7 +1144,7 @@ def starship_download_fasta(request, starship_id):
 # Will download the fasta file of users desired starship
 def download_deliverables(request, starship_id):
     if request.user.is_authenticated:
-        starship_name = starship_models.JoinedShips.objects.get(pk=starship_id).starship_name
+        starship_name = JoinedShips.objects.get(pk=starship_id).starship_name
 
         with TemporaryDirectory() as tempdir:
             # Create deliverables in temp directory
@@ -1215,7 +1219,7 @@ def get_dna_sequence(start, stop, strand, sequence):
 
 class AccessionsList(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
     """View for listing all accessions"""
-    model = starship_models.Accessions
+    model = Accessions
     template_name = 'starship/accessions_list.html'
     context_object_name = 'accessions'
     paginate_by = 25
@@ -1223,14 +1227,14 @@ class AccessionsList(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView)
 
 class AccessionDetail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailView):
     """View for displaying accession details"""
-    model = starship_models.Accessions
+    model = Accessions
     template_name = 'starship/accession_detail.html'
     context_object_name = 'accession'
 
 
 class AccessionCreate(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTemplate, generic.CreateView):
     """View for creating new accessions"""
-    model = starship_models.Accessions
+    model = Accessions
     form_class = starship_forms.AccessionForm
     template_name = 'starship/accession_form.html'
     permission_required = 'starship.add_accessions'
@@ -1239,20 +1243,20 @@ class AccessionCreate(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseT
 
 class JoinedShipsList(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
     """View for listing comprehensive starship data"""
-    model = starship_models.JoinedShips
+    model = JoinedShips
     template_name = 'starship/joined_ships_list.html'
     context_object_name = 'joined_ships'
     paginate_by = 25
 
     def get_queryset(self):
-        return starship_models.JoinedShips.objects.select_related(
+        return JoinedShips.objects.select_related(
             'ship_family', 'ship'
         ).order_by('starshipID')
 
 
 class JoinedShipDetail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailView):
     """View for displaying comprehensive starship details"""
-    model = starship_models.JoinedShips
+    model = JoinedShips
     template_name = 'starship/joined_ship_detail.html'
     context_object_name = 'joined_ship'
 
@@ -1266,7 +1270,7 @@ class StarshipQualityOverview(LoginRequiredMixin, MixinForBaseTemplate, generic.
         
         # Get flag distribution
         from django.db.models import Count
-        flag_distribution = starship_models.JoinedShips.objects.values(
+        flag_distribution = JoinedShips.objects.values(
             'quality_flag'
         ).annotate(
             count=Count('quality_flag')
@@ -1276,16 +1280,16 @@ class StarshipQualityOverview(LoginRequiredMixin, MixinForBaseTemplate, generic.
         flag_stats = {}
         for item in flag_distribution:
             flag_value = item['quality_flag']
-            flag_display = dict(starship_models.JoinedShips.QUALITY_FLAG_CHOICES)[flag_value]
+            flag_display = dict(JoinedShips.QUALITY_FLAG_CHOICES)[flag_value]
             flag_stats[flag_display] = item['count']
         
         context['flag_stats'] = flag_stats
-        context['total_starships'] = starship_models.JoinedShips.objects.count()
+        context['total_starships'] = JoinedShips.objects.count()
         
         # Get some examples of each flag type
         context['flag_examples'] = {}
-        for flag_value, flag_display in starship_models.JoinedShips.QUALITY_FLAG_CHOICES:
-            examples = starship_models.JoinedShips.objects.filter(
+        for flag_value, flag_display in JoinedShips.QUALITY_FLAG_CHOICES:
+            examples = JoinedShips.objects.filter(
                 quality_flag=flag_value
             )[:3]  # Get first 3 examples
             context['flag_examples'][flag_display] = examples
@@ -1295,7 +1299,7 @@ class StarshipQualityOverview(LoginRequiredMixin, MixinForBaseTemplate, generic.
 
 class TaxonomyList(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
     """View for listing taxonomy data"""
-    model = starship_models.Taxonomy
+    model = Taxonomy
     template_name = 'starship/taxonomy_list.html'
     context_object_name = 'taxonomies'
     paginate_by = 25
@@ -1303,13 +1307,13 @@ class TaxonomyList(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
 
 class PapersList(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
     """View for listing research papers"""
-    model = starship_models.Papers
+    model = Papers
     template_name = 'starship/papers_list.html'
     context_object_name = 'papers'
     paginate_by = 25
 
     def get_queryset(self):
-        return starship_models.Papers.objects.order_by('-PublicationYear', 'Author')
+        return Papers.objects.order_by('-PublicationYear', 'Author')
 
 
 class BulkDataUpload(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTemplate, generic.View):
@@ -1435,17 +1439,18 @@ class BulkDataUpload(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTe
     def bulk_create_records(self, data_type, columns, rows):
         """Create Django model records from imported data"""
         model_mapping = {
-            'accessions': starship_models.Accessions,
-            'ships': starship_models.Ships,
-            'captains': starship_models.Captains,
-            'taxonomy': starship_models.Taxonomy,
-            'genomes': starship_models.Genome,
-            'papers': starship_models.Papers,
-            'family_names': starship_models.FamilyNames,
-            'starship_features': starship_models.StarshipFeatures,
-            'navis_haplotype': starship_models.NavisHaplotype,
-            'gff': starship_models.Gff,
-            'joined_ships': starship_models.JoinedShips,
+            'accessions': Accessions,
+            'ships': Ships,
+            'captains': Captains,
+            'taxonomy': Taxonomy,
+            'genomes': Genome,
+            'papers': Papers,
+            'family_names': FamilyNames,
+            'starship_features': StarshipFeatures,
+            'navis_names': Navis,
+            'haplotype_names': Haplotype,
+            'gff': Gff,
+            'joined_ships': JoinedShips,
         }
         
         model_class = model_mapping.get(data_type)
@@ -1967,7 +1972,7 @@ class StagingSubmissionApproveView(LoginRequiredMixin, generic.View):
             print(f"Starting migration for submission {pk}: {submission.starshipID}")  # Debug logging
             
             # Check if already exists in main database
-            existing_starships = starship_models.JoinedShips.objects.filter(starshipID=submission.starshipID)
+            existing_starships = JoinedShips.objects.filter(starshipID=submission.starshipID)
             if existing_starships.exists():
                 messages.warning(request, f"A starship with ID '{submission.starshipID}' already exists in the main database.")
                 return redirect('starship:staging_submission_detail', pk=pk)
@@ -2022,14 +2027,14 @@ class StagingSubmissionDebugView(LoginRequiredMixin, generic.View):
         }
         
         # Check if already in main database
-        main_starships = starship_models.JoinedShips.objects.filter(starshipID=submission.starshipID)
+        main_starships = JoinedShips.objects.filter(starshipID=submission.starshipID)
         debug_info['main_db_count'] = main_starships.count()
         debug_info['main_db_ids'] = list(main_starships.values_list('id', flat=True))
         
         # Test basic database operations
         try:
             # Test if we can create a simple Accessions object
-            test_accession = starship_models.Accessions(
+            test_accession = Accessions(
                 ship_name=f"test_{submission.id}",
                 accession_tag=f"test_{submission.id}",
                 version_tag="1.0"

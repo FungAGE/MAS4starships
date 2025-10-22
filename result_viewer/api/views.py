@@ -16,7 +16,8 @@ from rest_framework.parsers import FormParser
 from result_viewer.api.serializers import *
 from result_viewer.api.tasks import run_single_search, run_multiple_search
 
-from starship.models import JoinedShips, Annotation, Feature
+from starship.models import Annotation, Feature
+from starship.starbase_models import JoinedShips
 
 class RunSearchAjaxView(APIView):
     '''

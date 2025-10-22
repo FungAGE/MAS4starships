@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
-from starship.models import StagingStarship, JoinedShips, Accessions, Ships
+from starship.models import StagingStarship
+from starship.starbase_models import JoinedShips, Accessions, Ships
 from django.contrib.auth.models import User
 
 class Command(BaseCommand):

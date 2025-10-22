@@ -21,6 +21,10 @@ from Bio.Data.CodonTable import TranslationError
 import pandas as pd
 
 from starship import models as starship_models
+from starship.starbase_models import (
+    Accessions, Ships, Captains, Taxonomy, Genome, Papers,
+    FamilyNames, StarshipFeatures, Navis, Haplotype, Gff, JoinedShips
+)
 from starship.genomic_loci_conversions import *
 
 # TODO: add/update validation methods that already exist in starbase
@@ -113,7 +117,7 @@ def parse_prots_from_coords(cds_fh, starship_rec, selected_table):
 
 
 def get_set_of_used_speciess():
-    return tuple((x, x) for x in starship_models.JoinedShips.objects.all().values_list('species', flat=True).distinct())
+    return tuple((x, x) for x in JoinedShips.objects.all().values_list('species', flat=True).distinct())
 
 ### START classes moved from home.forms in LIMS ###
 class CrispyModelForm(forms.ModelForm):
@@ -257,14 +261,13 @@ class StarshipUploadForm(forms.Form):
                 )
         
         # Check for duplicate names
-        from starship.models import JoinedShips
         if JoinedShips.objects.filter(starshipID=name).exists():
             raise forms.ValidationError("%s is already a Starship name." % name)
             
         return name
 
 class Starship_Delete(forms.Form):
-    starship = forms.ModelMultipleChoiceField(queryset=starship_models.JoinedShips.objects.all())
+    starship = forms.ModelMultipleChoiceField(queryset=JoinedShips.objects.all())
 
 # A single form for manual entry of starship data across multiple models
 class ComprehensiveDataForm(CrispyModelForm):
@@ -301,7 +304,7 @@ class ComprehensiveDataForm(CrispyModelForm):
     def save(self):
         """Custom save method to create records across multiple models"""
         # Create Accession
-        accession = starship_models.Accessions.objects.create(
+        accession = Accessions.objects.create(
             accession_tag=self.cleaned_data['accession_tag'],
             ship_name=self.cleaned_data['ship_name'],
             version_tag=self.cleaned_data['version_tag']
@@ -415,7 +418,7 @@ class Upload_Annotation(forms.Form):
 class AccessionForm(CrispyModelForm):
     """Form for creating/editing Accessions"""
     class Meta:
-        model = starship_models.Accessions
+        model = Accessions
         fields = ['ship_name', 'accession_tag', 'version_tag']
 
 

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from result_viewer.models import *
-from starship.models import Accessions
+from starship.starbase_models import Accessions, JoinedShips, Taxonomy, StarshipFeatures
+from result_viewer.models import Annotation, Blastp_Result, HHSearch_Result, RPSBlast_Result, search_status_options
 
 
 class ProteinSeqSerializer(serializers.ModelSerializer):

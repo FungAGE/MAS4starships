@@ -6,7 +6,7 @@ if os.getenv("DEVELOPER_MODE") == "TRUE":
 else:
     from .settings_files.production import *
 
-BASE_DIR = BASE_DIR
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # KEEP SECRET
 SECRET_KEY = (
@@ -17,28 +17,27 @@ SECRET_KEY = (
 
 if os.getenv("CELERY_WORKER") == "TRUE" and os.getenv("DEVELOPER_MODE") != "TRUE":
     # Celery workers (running in Docker)
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.mysql",
-            "NAME": "mas",
-            "USER": "root",
-            "PASSWORD": os.getenv("MYSQL_ROOT_PASSWORD"),
-            "HOST": "mas-sql-server",
-            "PORT": "3306",
-        }
-    }
+    host = "mas-sql-server"
+    port = "3306"
 else:
     # Local development server or development Celery worker
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'mas',
-            'USER': 'root',
-            'PASSWORD': os.getenv('MYSQL_ROOT_PASSWORD'),
-            'HOST': '127.0.0.1',
-            'PORT': '3307',
-        }
+    host = "127.0.0.1"
+    port = "3307"
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "mas",
+        "USER": "root",
+        "PASSWORD": os.getenv("MYSQL_ROOT_PASSWORD"),
+        "HOST": host,
+        "PORT": port,
+    },
+    "starbase": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": os.path.join(BASE_DIR, 'starbase.sqlite'),
     }
+}
 
 ROOT_URLCONF = "MAS.urls"
 
