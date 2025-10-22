@@ -24,6 +24,13 @@ urlpatterns = [
     path('annotation/download/excel/', views.download_excel_annotations, name='download_excel_annotations'),
     path('annotation/download/excel_template/', views.download_excel_template, name='download_excel_template'),
     path('annotation/download/excel/unannotated_annotations/', views.download_unannotated_annotations, name='download_unannotated_annotations'),
+    
+    # Staging submission URLs
+    path('staging/submissions/', views.StagingSubmissionListView.as_view(), name='staging_submission_list'),
+    path('staging/submissions/<int:pk>/', views.StagingSubmissionDetailView.as_view(), name='staging_submission_detail'),
+    path('staging/submissions/<int:pk>/approve/', views.StagingSubmissionApproveView.as_view(), name='staging_submission_approve'),
+    path('staging/submissions/<int:pk>/reject/', views.StagingSubmissionRejectView.as_view(), name='staging_submission_reject'),
+    path('staging/submissions/<int:pk>/debug/', views.StagingSubmissionDebugView.as_view(), name='staging_submission_debug'),
 
     # ajax url used for nucleotide sequence drop down
     path('ajax/starship/get', views.Get_Starship.as_view(), name='get_starship'),

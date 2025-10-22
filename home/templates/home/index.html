@@ -66,6 +66,34 @@
               </div>
             </div>
           </div>
+          
+          {% if pending_submissions > 0 %}
+          <div class="row" style="margin-top: 20px">
+            <div class="col-md-12">
+              <div class="alert alert-info">
+                <h4><i class="fa fa-exclamation-triangle"></i> {{ pending_submissions }} Submission{{ pending_submissions|pluralize }} Awaiting Review</h4>
+                <p>There {{ pending_submissions|pluralize:"is,are" }} {{ pending_submissions }} starship submission{{ pending_submissions|pluralize }} waiting for review and approval.</p>
+                <a href="{% url 'starship:staging_submission_list' %}" class="btn btn-info">
+                  <i class="fa fa-eye"></i> Review Submissions
+                </a>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          {% if user_pending_submissions > 0 %}
+          <div class="row" style="margin-top: 20px">
+            <div class="col-md-12">
+              <div class="alert alert-warning">
+                <h4><i class="fa fa-clock-o"></i> Your Submissions Status</h4>
+                <p>You have {{ user_pending_submissions }} submission{{ user_pending_submissions|pluralize }} pending review.</p>
+                <a href="{% url 'starship:staging_submission_list' %}" class="btn btn-warning">
+                  <i class="fa fa-eye"></i> View Your Submissions
+                </a>
+              </div>
+            </div>
+          </div>
+          {% endif %}
 
           <div style="margin-top: 30px">
             <h2>Quick Actions:</h2>
@@ -108,6 +136,17 @@
                   class="btn btn-default btn-block"
                 >
                   <i class="fa fa-file-excel-o"></i> Upload Annotations
+                </a>
+              </div>
+              <div class="col-md-3">
+                <a
+                  href="{% url 'starship:staging_submission_list' %}"
+                  class="btn btn-info btn-block"
+                >
+                  <i class="fa fa-eye"></i> Review Submissions
+                  {% if pending_submissions > 0 %}
+                    <span class="badge">{{ pending_submissions }}</span>
+                  {% endif %}
                 </a>
               </div>
             </div>

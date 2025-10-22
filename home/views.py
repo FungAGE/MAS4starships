@@ -4,7 +4,7 @@ from django.views import generic
 
 from result_viewer.views import MixinForBaseTemplate
 from starship.models import Annotation
-from starship.models import JoinedShips
+from starship.models import JoinedShips, StagingStarship
 
 
 class HomePageView(MixinForBaseTemplate, generic.TemplateView):
@@ -38,5 +38,16 @@ class HomePageView(MixinForBaseTemplate, generic.TemplateView):
 
             ship_count = JoinedShips.objects.count()
             context["ship_count"] = ship_count
+            
+            # Add staging submission counts
+            pending_submissions = StagingStarship.objects.filter(status='pending').count()
+            context["pending_submissions"] = pending_submissions
+            
+            # Check if user has any submissions pending review
+            user_pending_submissions = StagingStarship.objects.filter(
+                status='pending',
+                submitted_by=self.request.user
+            ).count()
+            context["user_pending_submissions"] = user_pending_submissions
 
         return context

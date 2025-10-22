@@ -686,31 +686,44 @@ class StagingStarship(models.Model):
     
     def migrate_to_main_database(self):
         """Migrate this staging entry to the main JoinedShips database"""
-        # Create the main JoinedShips entry
-        main_starship = JoinedShips(
-            starshipID=self.starshipID,
-            evidence=self.evidence,
-            source=self.source,
-            curated_status='staged_import'
-        )
-        main_starship.save()
+        from django.utils import timezone
         
-        # Create related Accessions and Ships objects
-        accession = Accessions(
-            ship_name=self.starshipID,
-            accession_tag=f"{self.starshipID}_{main_starship.id}",
-            version_tag="1.0"
-        )
-        accession.save()
-        
-        ship = Ships(
-            sequence=self.sequence,
-            accession=accession
-        )
-        ship.save()
-        
-        # Link the main starship to the ship
-        main_starship.ship = ship
-        main_starship.save()
-        
-        return main_starship
+        try:
+            print(f"Creating Accessions for {self.starshipID}")
+            # Create Accessions object first
+            accession = Accessions(
+                ship_name=self.starshipID,
+                accession_tag=f"{self.starshipID}_{timezone.now().strftime('%Y%m%d_%H%M%S')}",
+                version_tag="1.0"
+            )
+            accession.save()
+            print(f"Accession created with ID: {accession.id}")
+            
+            print(f"Creating Ships for {self.starshipID}")
+            # Create Ships object with the sequence
+            ship = Ships(
+                sequence=self.sequence,
+                accession=accession
+            )
+            ship.save()
+            print(f"Ship created with ID: {ship.id}")
+            
+            print(f"Creating JoinedShips for {self.starshipID}")
+            # Create the main JoinedShips entry
+            main_starship = JoinedShips(
+                starshipID=self.starshipID,
+                evidence=self.evidence,
+                source=self.source,
+                curated_status='staged_import',
+                ship=ship
+            )
+            main_starship.save()
+            print(f"JoinedShips created with ID: {main_starship.id}")
+            
+            return main_starship
+            
+        except Exception as e:
+            print(f"Error in migrate_to_main_database: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
+            raise e

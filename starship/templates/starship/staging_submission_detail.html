@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>Review Submission: {{ submission.starshipID }} - MAS</title>
+{% endblock %}
+
+{% block body %}
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+<div class="block">
+  <div style="padding: 20px 40px">
+    <h2>Review Submission: {{ submission.starshipID }}</h2>
+    <p>Review this starship submission and decide whether to approve or reject it.</p>
+  </div>
+</div>
+
+<div class="block">
+  <div style="padding: 20px 40px">
+    <div class="row">
+      <div class="col-md-6">
+        <h3>Basic Information</h3>
+        <table class="table table-bordered">
+          <tr>
+            <th>Starship ID</th>
+            <td>{{ submission.starshipID }}</td>
+          </tr>
+          <tr>
+            <th>Species</th>
+            <td>{{ submission.species }}</td>
+          </tr>
+          <tr>
+            <th>Evidence</th>
+            <td>{{ submission.evidence|default:"Not provided" }}</td>
+          </tr>
+          <tr>
+            <th>Source</th>
+            <td>{{ submission.source|default:"Not provided" }}</td>
+          </tr>
+          <tr>
+            <th>Notes</th>
+            <td>{{ submission.notes|default:"None" }}</td>
+          </tr>
+        </table>
+      </div>
+      
+      <div class="col-md-6">
+        <h3>Submission Details</h3>
+        <table class="table table-bordered">
+          <tr>
+            <th>Submitted By</th>
+            <td>{{ submission.submitted_by.username }}</td>
+          </tr>
+          <tr>
+            <th>Submitted At</th>
+            <td>{{ submission.submitted_at|date:"M d, Y H:i" }}</td>
+          </tr>
+          <tr>
+            <th>Status</th>
+            <td>
+              {% if submission.status == 'pending' %}
+                <span class="label label-warning">Pending</span>
+              {% elif submission.status == 'approved' %}
+                <span class="label label-success">Approved</span>
+              {% elif submission.status == 'rejected' %}
+                <span class="label label-danger">Rejected</span>
+              {% elif submission.status == 'needs_revision' %}
+                <span class="label label-info">Needs Revision</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% if submission.reviewed_by %}
+          <tr>
+            <th>Reviewed By</th>
+            <td>{{ submission.reviewed_by.username }}</td>
+          </tr>
+          <tr>
+            <th>Reviewed At</th>
+            <td>{{ submission.reviewed_at|date:"M d, Y H:i" }}</td>
+          </tr>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+    
+    <div class="row" style="margin-top: 20px">
+      <div class="col-md-12">
+        <h3>Sequence Information</h3>
+        <div class="well">
+          <p><strong>Sequence Length:</strong> {{ submission.sequence|length }} bp</p>
+          {% if submission.terminal_repeat_length %}
+            <p><strong>Terminal Repeat Length:</strong> {{ submission.terminal_repeat_length }} bp</p>
+          {% endif %}
+          {% if submission.terminal_repeat_sequence %}
+            <p><strong>Terminal Repeat Sequence:</strong> {{ submission.terminal_repeat_sequence }}</p>
+          {% endif %}
+        </div>
+        
+        <h4>Sequence Preview</h4>
+        <div class="well" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;">
+          {{ submission.sequence|truncatechars:500 }}
+          {% if submission.sequence|length > 500 %}
+            <br><em>... (truncated, full sequence is {{ submission.sequence|length }} bp)</em>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    {% if submission.annotation_file_name %}
+    <div class="row" style="margin-top: 20px">
+      <div class="col-md-12">
+        <h3>Annotation File</h3>
+        <div class="well">
+          <p><strong>File Name:</strong> {{ submission.annotation_file_name }}</p>
+          {% if submission.annotation_file_content %}
+            <p><strong>Content Preview:</strong></p>
+            <div style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; background: #f5f5f5; padding: 10px;">
+              {{ submission.annotation_file_content|truncatechars:1000 }}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if submission.review_notes %}
+    <div class="row" style="margin-top: 20px">
+      <div class="col-md-12">
+        <h3>Review Notes</h3>
+        <div class="alert alert-info">
+          {{ submission.review_notes }}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    
+    <div class="row" style="margin-top: 20px">
+      <div class="col-md-12">
+        <div class="alert alert-info">
+          <strong>Current Status:</strong> {{ submission.status|title }}
+          {% if submission.reviewed_by %}
+            <br><strong>Reviewed by:</strong> {{ submission.reviewed_by.username }} on {{ submission.reviewed_at|date:"M d, Y H:i" }}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    {% if submission.status == 'pending' %}
+    <div class="row" style="margin-top: 30px">
+      <div class="col-md-12">
+        <h3>Review Actions</h3>
+        <div class="btn-group">
+          <form method="post" action="{% url 'starship:staging_submission_approve' submission.pk %}" style="display: inline;">
+            {% csrf_token %}
+            <div class="form-group">
+              <label for="approve_notes">Approval Notes (optional):</label>
+              <textarea name="notes" id="approve_notes" class="form-control" rows="3" placeholder="Add any notes about this approval..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('Approve this submission and migrate it to the main database?')">
+              <i class="fa fa-check"></i> Approve Submission
+            </button>
+          </form>
+        </div>
+        
+        <div style="margin-top: 20px">
+          <form method="post" action="{% url 'starship:staging_submission_reject' submission.pk %}" style="display: inline;">
+            {% csrf_token %}
+            <div class="form-group">
+              <label for="reject_notes">Rejection Notes (required):</label>
+              <textarea name="notes" id="reject_notes" class="form-control" rows="3" placeholder="Please explain why this submission is being rejected..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('Reject this submission?')">
+              <i class="fa fa-times"></i> Reject Submission
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    
+    <div class="row" style="margin-top: 30px">
+      <div class="col-md-12">
+        <a href="{% url 'starship:staging_submission_list' %}" class="btn btn-default">
+          <i class="fa fa-arrow-left"></i> Back to Submissions List
+        </a>
+        <a href="{% url 'starship:starship_list' %}" class="btn btn-default">
+          <i class="fa fa-list"></i> View Main Starship List
+        </a>
+        <a href="{% url 'starship:staging_submission_debug' submission.pk %}" class="btn btn-info" target="_blank">
+          <i class="fa fa-bug"></i> Debug Info
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

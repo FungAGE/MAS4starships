@@ -334,7 +334,7 @@ class StarshipUpload(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTe
                     # Send success message
                     messages.success(request, f"Starship '{name}' has been submitted for review. You will be notified when it's approved.")
 
-            return redirect('starship:starship_list')
+            return redirect('starship:staging_submission_list')
         
         context = self.get_context_data()
         context['upload_form'] = upload_form
@@ -1933,7 +1933,15 @@ class StagingSubmissionListView(LoginRequiredMixin, generic.ListView):
     paginate_by = 20
     
     def get_queryset(self):
-        return starship_models.StagingStarship.objects.all().order_by('-submitted_at')
+        try:
+            submissions = starship_models.StagingStarship.objects.all().order_by('-submitted_at')
+            print(f"Found {submissions.count()} staging submissions")
+            return submissions
+        except Exception as e:
+            print(f"Error accessing staging submissions: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
+            return starship_models.StagingStarship.objects.none()
 
 
 class StagingSubmissionDetailView(LoginRequiredMixin, generic.DetailView):
@@ -1951,12 +1959,36 @@ class StagingSubmissionApproveView(LoginRequiredMixin, generic.View):
         notes = request.POST.get('notes', '')
         
         try:
-            # Migrate to main database
-            main_starship = submission.migrate_to_main_database()
-            submission.approve(request.user, notes)
-            messages.success(request, f"Submission '{submission.starshipID}' approved and migrated to main database.")
+            # Check if already approved
+            if submission.status == 'approved':
+                messages.warning(request, f"Submission '{submission.starshipID}' is already approved.")
+                return redirect('starship:staging_submission_detail', pk=pk)
+            
+            print(f"Starting migration for submission {pk}: {submission.starshipID}")  # Debug logging
+            
+            # Check if already exists in main database
+            existing_starships = starship_models.JoinedShips.objects.filter(starshipID=submission.starshipID)
+            if existing_starships.exists():
+                messages.warning(request, f"A starship with ID '{submission.starshipID}' already exists in the main database.")
+                return redirect('starship:staging_submission_detail', pk=pk)
+            
+            # Use database transaction to ensure atomicity
+            with transaction.atomic():
+                # Migrate to main database
+                main_starship = submission.migrate_to_main_database()
+                print(f"Migration successful, created starship {main_starship.id}")  # Debug logging
+                
+                # Update submission status
+                submission.approve(request.user, notes)
+                print(f"Submission approved successfully")  # Debug logging
+                
+                messages.success(request, f"Submission '{submission.starshipID}' approved and migrated to main database. New starship ID: {main_starship.id}")
+            
         except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
             messages.error(request, f"Error approving submission: {str(e)}")
+            print(f"Error approving submission {pk}: {error_details}")  # Debug logging
         
         return redirect('starship:staging_submission_detail', pk=pk)
 
@@ -1972,3 +2004,42 @@ class StagingSubmissionRejectView(LoginRequiredMixin, generic.View):
         messages.success(request, f"Submission '{submission.starshipID}' rejected.")
         
         return redirect('starship:staging_submission_detail', pk=pk)
+
+
+class StagingSubmissionDebugView(LoginRequiredMixin, generic.View):
+    """Debug view to check submission status and test migration"""
+    
+    def get(self, request, pk):
+        submission = get_object_or_404(starship_models.StagingStarship, pk=pk)
+        
+        debug_info = {
+            'submission_id': submission.id,
+            'starship_id': submission.starshipID,
+            'status': submission.status,
+            'sequence_length': len(submission.sequence) if submission.sequence else 0,
+            'submitted_by': submission.submitted_by.username,
+            'submitted_at': submission.submitted_at,
+        }
+        
+        # Check if already in main database
+        main_starships = starship_models.JoinedShips.objects.filter(starshipID=submission.starshipID)
+        debug_info['main_db_count'] = main_starships.count()
+        debug_info['main_db_ids'] = list(main_starships.values_list('id', flat=True))
+        
+        # Test basic database operations
+        try:
+            # Test if we can create a simple Accessions object
+            test_accession = starship_models.Accessions(
+                ship_name=f"test_{submission.id}",
+                accession_tag=f"test_{submission.id}",
+                version_tag="1.0"
+            )
+            test_accession.save()
+            debug_info['test_accession_created'] = True
+            debug_info['test_accession_id'] = test_accession.id
+            test_accession.delete()  # Clean up
+        except Exception as e:
+            debug_info['test_accession_error'] = str(e)
+        
+        from django.http import JsonResponse
+        return JsonResponse(debug_info)

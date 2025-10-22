@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>Review Submissions - MAS</title>
+{% endblock %}
+
+{% block body %}
+<div class="block">
+  <div style="padding: 20px 40px">
+    <h2>Review Submissions</h2>
+    <p>Review and approve or reject starship submissions.</p>
+  </div>
+</div>
+
+<div class="block">
+  <div style="padding: 20px 40px">
+    {% if submissions %}
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Starship ID</th>
+              <th>Species</th>
+              <th>Submitted By</th>
+              <th>Submitted At</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for submission in submissions %}
+            <tr>
+              <td>
+                <strong>{{ submission.starshipID }}</strong>
+                {% if submission.sequence %}
+                  <br><small class="text-muted">Sequence: {{ submission.sequence|length }} bp</small>
+                {% endif %}
+              </td>
+              <td>{{ submission.species }}</td>
+              <td>{{ submission.submitted_by.username }}</td>
+              <td>{{ submission.submitted_at|date:"M d, Y H:i" }}</td>
+              <td>
+                {% if submission.status == 'pending' %}
+                  <span class="label label-warning">Pending</span>
+                {% elif submission.status == 'approved' %}
+                  <span class="label label-success">Approved</span>
+                {% elif submission.status == 'rejected' %}
+                  <span class="label label-danger">Rejected</span>
+                {% elif submission.status == 'needs_revision' %}
+                  <span class="label label-info">Needs Revision</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{% url 'starship:staging_submission_detail' submission.pk %}" class="btn btn-sm btn-primary">
+                  <i class="fa fa-eye"></i> Review
+                </a>
+                {% if submission.status == 'pending' %}
+                  <form method="post" action="{% url 'starship:staging_submission_approve' submission.pk %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Approve this submission?')">
+                      <i class="fa fa-check"></i> Approve
+                    </button>
+                  </form>
+                  <form method="post" action="{% url 'starship:staging_submission_reject' submission.pk %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Reject this submission?')">
+                      <i class="fa fa-times"></i> Reject
+                    </button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      {% if is_paginated %}
+        <div class="text-center">
+          <ul class="pagination">
+            {% if page_obj.has_previous %}
+              <li><a href="?page={{ page_obj.previous_page_number }}">&laquo;</a></li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+              {% if page_obj.number == num %}
+                <li class="active"><span>{{ num }}</span></li>
+              {% else %}
+                <li><a href="?page={{ num }}">{{ num }}</a></li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+              <li><a href="?page={{ page_obj.next_page_number }}">&raquo;</a></li>
+            {% endif %}
+          </ul>
+        </div>
+      {% endif %}
+      
+    {% else %}
+      <div class="alert alert-info">
+        <h4>No Submissions Found</h4>
+        <p>There are currently no starship submissions to review.</p>
+        <a href="{% url 'starship:upload_starship' %}" class="btn btn-primary">
+          <i class="fa fa-upload"></i> Upload a Starship
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
