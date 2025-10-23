@@ -11,17 +11,19 @@ class DatabaseRouter:
     }
     
     def db_for_read(self, model, **hints):
-        # Check if model is in starbase_models or has starbase_ prefix in table name
-        if (model._meta.model_name in self.starbase_models or 
-            model._meta.db_table.startswith('starbase_')):
-            return 'starbase'
+        # Check if this is a starbase model by checking the app and model
+        if hasattr(model, '_meta') and model._meta.app_label == 'starship':
+            # Check if it's a starbase model by looking at the module path
+            if 'starbase_models' in str(model.__module__):
+                return 'starbase'
         return 'default'
 
     def db_for_write(self, model, **hints):
-        # Check if model is in starbase_models or has starbase_ prefix in table name
-        if (model._meta.model_name in self.starbase_models or 
-            model._meta.db_table.startswith('starbase_')):
-            return 'starbase'
+        # Check if this is a starbase model by checking the app and model
+        if hasattr(model, '_meta') and model._meta.app_label == 'starship':
+            # Check if it's a starbase model by looking at the module path
+            if 'starbase_models' in str(model.__module__):
+                return 'starbase'
         return 'default'
 
     def allow_relation(self, obj1, obj2, **hints):
