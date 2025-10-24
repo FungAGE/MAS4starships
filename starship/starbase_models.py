@@ -245,3 +245,19 @@ class JoinedShips(models.Model):
 
     def __str__(self):
         return f"{self.starshipID}"
+
+
+class ShipQualityTags(models.Model):
+    class Meta:
+        db_table = 'ship_quality_tags'
+        managed = False
+    
+    id = models.IntegerField(primary_key=True)
+    joined_ship_id = models.ForeignKey(JoinedShips, on_delete=models.CASCADE, related_name='quality_tags', db_column='joined_ship_id')
+    tag_type = models.CharField(max_length=50)
+    tag_value = models.CharField(max_length=100, null=True, blank=True)
+    created_at = models.DateTimeField()
+    created_by = models.CharField(max_length=50, null=True, blank=True, default='auto')
+
+    def __str__(self):
+        return f"{self.tag_type}: {self.tag_value or 'N/A'}"

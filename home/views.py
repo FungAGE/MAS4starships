@@ -4,7 +4,7 @@ from django.views import generic
 
 from result_viewer.views import MixinForBaseTemplate
 from starship.models import Annotation, StagingStarship
-from starship.starbase_models import JoinedShips, Accessions, Taxonomy, FamilyNames, ShipQualityTags
+from starship.starbase_models import JoinedShips, ShipQualityTags
 
 
 def get_starship_breakdown():
@@ -12,6 +12,7 @@ def get_starship_breakdown():
     Get breakdown statistics for starships similar to get_database_stats().
     Returns a dictionary with various counts and statistics.
     """
+    accepted_quality_tags = ["missing_direct_repeats","missing_tir","missing_boundaries","missing_genome_context","unannotated","missing_empty_site"]
     try:
         total_starships = JoinedShips.objects.count()
         curated_starships = JoinedShips.objects.filter(curated_status='curated').count()
@@ -36,6 +37,19 @@ def get_starship_breakdown():
             if source_type:
                 source_breakdown[source_type] = JoinedShips.objects.filter(source=source_type).count()
         
+        # Get quality tag breakdown
+        quality_tag_breakdown = {}
+        quality_tag_types = ShipQualityTags.objects.values_list('tag_type', flat=True).distinct()
+        for tag_type in quality_tag_types:
+            if tag_type and tag_type in accepted_quality_tags:
+                quality_tag_breakdown[tag_type] = ShipQualityTags.objects.filter(tag_type=tag_type).count()
+                
+        # Get total quality tags count
+        total_quality_tags = ShipQualityTags.objects.count()
+        
+        # Get ships with quality tags count
+        ships_with_quality_tags = JoinedShips.objects.filter(quality_tags__isnull=False).distinct().count()
+        
         return {
             'total_starships': total_starships,
             'curated_starships': curated_starships,
@@ -45,6 +59,9 @@ def get_starship_breakdown():
             'family_count': family_count,
             'evidence_breakdown': evidence_breakdown,
             'source_breakdown': source_breakdown,
+            'quality_tag_breakdown': quality_tag_breakdown,
+            'total_quality_tags': total_quality_tags,
+            'ships_with_quality_tags': ships_with_quality_tags,
         }
     except Exception as e:
         return {
@@ -56,6 +73,9 @@ def get_starship_breakdown():
             'family_count': 0,
             'evidence_breakdown': {},
             'source_breakdown': {},
+            'quality_tag_breakdown': {},
+            'total_quality_tags': 0,
+            'ships_with_quality_tags': 0,
         }
 
 
