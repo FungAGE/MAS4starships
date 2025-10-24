@@ -1873,6 +1873,41 @@ class StarfishElementDetailView(LoginRequiredMixin, MixinForBaseTemplate, generi
         return starship_models.StarfishElement.objects.filter(run__created_by=self.request.user)
 
 
+def starfish_element_download_fasta(request, element_id):
+    """Download FASTA file for a starfish element"""
+    if request.user.is_authenticated:
+        try:
+            element = starship_models.StarfishElement.objects.filter(
+                pk=element_id, 
+                run__created_by=request.user
+            ).first()
+            
+            if not element:
+                return HttpResponse("Element not found or access denied", status=404)
+            
+            # Create FASTA sequence
+            sequence = SeqRecord(
+                Seq(element.sequence),
+                id=element.element_id,
+                description=f"Starfish element from {element.genome.genome_id}",
+                annotations={"molecule_type": "DNA"}
+            )
+            
+            # Create response
+            response = HttpResponse(content_type='text/fasta')
+            response['Content-Disposition'] = f'attachment; filename="{element.element_id}.fasta"'
+            
+            # Write sequence to response
+            SeqIO.write(sequence, response, "fasta")
+            
+            return response
+            
+        except Exception as e:
+            return HttpResponse(f"Error generating FASTA: {str(e)}", status=500)
+    
+    return HttpResponse("Authentication required", status=401)
+
+
 class StarfishImportToMasView(LoginRequiredMixin, MixinForBaseTemplate, generic.View):
     """Import starfish elements to main MAS database"""
     
