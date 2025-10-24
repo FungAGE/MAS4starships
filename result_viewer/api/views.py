@@ -259,9 +259,9 @@ class StarshipData:
         self.num_green = getattr(starship, 'num_green', 0)
         self.num_yellow = getattr(starship, 'num_yellow', 0)
         self.num_red = getattr(starship, 'num_red', 0)
-        self.contigID = getattr(starship, 'contigID', 'N/A')
-        self.elementBegin = getattr(starship, 'elementBegin', 0)
-        self.elementEnd = getattr(starship, 'elementEnd', 0)
+        self.contigID = getattr(starship, 'contig_id', 'N/A')
+        self.elementBegin = getattr(starship, 'element_begin', 0)
+        self.elementEnd = getattr(starship, 'element_end', 0)
         self.starship_family = getattr(starship, 'starship_family', 'N/A')
         self.starship_navis = getattr(starship, 'starship_navis', 'N/A')
         self.starship_haplotype = getattr(starship, 'starship_haplotype', 'N/A')
@@ -278,7 +278,9 @@ class GetStarshipDataView(APIView):
     def get(self, request):
         params = self.read_parameters(request.GET)
 
-        # Query the starbase database for JoinedShips
+        from starship.models import Feature, Annotation
+
+        # Query the starbase database for JoinedShips (without feature counts)
         starships = JoinedShips.objects.select_related(
             'ship_family_id', 'tax_id', 'ship_navis_id', 'ship_haplotype_id', 'ship_id'
         ).annotate(
@@ -300,72 +302,75 @@ class GetStarshipDataView(APIView):
         starships = starships.filter(
             Q(starshipID__icontains=params['search_val']) |
             Q(tax_id__species__icontains=params['search_val'])
-        ).order_by(self.get_order_by_arg(params['order_col'], params['order_dir']))
+        )
 
         filtered_num_starships = starships.count()
+
+        # Apply ordering for database fields only
+        order_by = self.get_order_by_arg(params['order_col'], params['order_dir'])
+        if order_by and not self.needs_python_sorting(params['order_col']):
+            starships = starships.order_by(order_by)
+
+        # Apply pagination
         starships = starships[params['start'] : params['start']+params['length']]
 
-        # Now get the feature counts from the mas database
-        # Get the actual JoinedShips IDs from the starbase database
-        starship_joined_ids = [s.id for s in starships]  # These are the JoinedShips IDs
-        
-        # Query the mas database for features using the JoinedShips IDs directly
-        from starship.models import Feature, Annotation
-        
-        # Get feature counts for each starship
+        # Get feature counts from the MAS database (MySQL) for the paginated results
+        starship_ids = [s.id for s in starships]
         feature_counts = {}
-        for joined_id in starship_joined_ids:
-            # Count features by type - use the JoinedShips ID directly
-            cds_count = Feature.objects.filter(
-                starship_id=joined_id,
-                type='CDS'
-            ).count()
-            
-            gene_count = Feature.objects.filter(
-                starship_id=joined_id,
-                type='gene'
-            ).count()
-            
-            # Count annotations by flag
-            unannotated_count = Annotation.objects.filter(
-                feature__starship_id=joined_id,
-                flag=7
-            ).count()
-            
-            review_count = Annotation.objects.filter(
-                feature__starship_id=joined_id,
-                flag=3
-            ).count()
-            
-            green_count = Annotation.objects.filter(
-                feature__starship_id=joined_id,
-                flag=0
-            ).count()
-            
-            yellow_count = Annotation.objects.filter(
-                feature__starship_id=joined_id,
-                flag=1
-            ).count()
-            
-            red_count = Annotation.objects.filter(
-                feature__starship_id=joined_id,
-                flag=2
-            ).count()
-            
-            feature_counts[joined_id] = {
-                'num_cds': cds_count,
-                'num_gene': gene_count,
-                'num_unannotated': unannotated_count,
-                'num_review': review_count,
-                'num_green': green_count,
-                'num_yellow': yellow_count,
-                'num_red': red_count,
-            }
+        
+        if starship_ids:
+            # Get feature counts for each starship using the MAS database
+            for starship_id in starship_ids:
+                cds_count = Feature.objects.filter(
+                    starship_id=starship_id,
+                    type='CDS'
+                ).count()
+                
+                gene_count = Feature.objects.filter(
+                    starship_id=starship_id,
+                    type='gene'
+                ).count()
+                
+                # Count annotations by flag
+                unannotated_count = Annotation.objects.filter(
+                    feature__starship_id=starship_id,
+                    flag=7
+                ).count()
+                
+                review_count = Annotation.objects.filter(
+                    feature__starship_id=starship_id,
+                    flag=3
+                ).count()
+                
+                green_count = Annotation.objects.filter(
+                    feature__starship_id=starship_id,
+                    flag=0
+                ).count()
+                
+                yellow_count = Annotation.objects.filter(
+                    feature__starship_id=starship_id,
+                    flag=1
+                ).count()
+                
+                red_count = Annotation.objects.filter(
+                    feature__starship_id=starship_id,
+                    flag=2
+                ).count()
+                
+                feature_counts[starship_id] = {
+                    'num_cds': cds_count,
+                    'num_gene': gene_count,
+                    'num_unannotated': unannotated_count,
+                    'num_review': review_count,
+                    'num_green': green_count,
+                    'num_yellow': yellow_count,
+                    'num_red': red_count,
+                }
 
-        # Create starship data with feature counts
+        # Create starship data
         starship_data = []
         for starship in starships:
-            counts = feature_counts.get(starship.id, {  # Use starship.id instead of starship.starshipID
+            counts = feature_counts.get(starship.id, {
                 'num_cds': 0, 'num_gene': 0, 'num_unannotated': 0,
                 'num_review': 0, 'num_green': 0, 'num_yellow': 0, 'num_red': 0
             })
@@ -373,6 +378,10 @@ class GetStarshipDataView(APIView):
             # Create a combined object with both starbase and mas data
             combined_starship = CombinedStarshipData(starship.__dict__, counts)
             starship_data.append(StarshipData(combined_starship))
+
+        # Apply Python sorting if needed for calculated fields
+        if self.needs_python_sorting(params['order_col']):
+            starship_data = self.sort_starship_data(starship_data, params['order_col'], params['order_dir'])
 
         return response.Response(StarshipDataListSerializer({
             'data': starship_data,
@@ -392,37 +401,64 @@ class GetStarshipDataView(APIView):
             'search_val': query_dict.get('search[value]')
         }
 
+    def needs_python_sorting(self, order_col):
+        """Check if the ordering column requires Python sorting (calculated fields)"""
+        # Columns that need Python sorting because they're calculated from MAS database
+        python_sort_columns = {3, 4, 5, 6, 7, 8}  # num_gene, num_unannotated, num_review, num_green, num_yellow, num_red
+        return order_col in python_sort_columns
+
+    def sort_starship_data(self, starship_data, order_col, order_dir):
+        """Sort starship data in Python for calculated fields"""
+        reverse = order_dir == 'desc'
+        
+        if order_col == 3:
+            return sorted(starship_data, key=lambda x: x.num_gene or 0, reverse=reverse)
+        elif order_col == 4:
+            return sorted(starship_data, key=lambda x: x.num_unannotated or 0, reverse=reverse)
+        elif order_col == 5:
+            return sorted(starship_data, key=lambda x: x.num_review or 0, reverse=reverse)
+        elif order_col == 6:
+            return sorted(starship_data, key=lambda x: x.num_green or 0, reverse=reverse)
+        elif order_col == 7:
+            return sorted(starship_data, key=lambda x: x.num_yellow or 0, reverse=reverse)
+        elif order_col == 8:
+            return sorted(starship_data, key=lambda x: x.num_red or 0, reverse=reverse)
+        else:
+            return starship_data
+
     def get_order_by_arg(self, order_col, order_dir):
         if order_col == 0:
             return 'starshipID' if order_dir == 'asc' else '-starshipID'
         elif order_col == 1:
             return 'taxonomy_species' if order_dir == 'asc' else '-taxonomy_species'
         elif order_col == 2:
-            return Length('starship_sequence').asc() if order_dir == 'asc' else Length('starship_sequence').desc()
+            return 'starship_length' if order_dir == 'asc' else '-starship_length'
         elif order_col == 3:
-            return 'num_gene' if order_dir == 'asc' else '-num_gene'
+            return None
         elif order_col == 4:
-            return 'num_unannotated' if order_dir == 'asc' else '-num_unannotated'
+            return None
         elif order_col == 5:
-            return 'num_review' if order_dir == 'asc' else '-num_review'
+            return None
         elif order_col == 6:
-            return 'num_green' if order_dir == 'asc' else '-num_green'
+            return None
         elif order_col == 7:
-            return 'num_yellow' if order_dir == 'asc' else '-num_yellow'
+            return None
         elif order_col == 8:
-            return 'num_red' if order_dir == 'asc' else '-num_red'
+            return None
         elif order_col == 9:
-            return 'contigID' if order_dir == 'asc' else '-contigID'
+            return 'contig_id' if order_dir == 'asc' else '-contig_id'
         elif order_col == 10:
-            return 'elementBegin' if order_dir == 'asc' else '-elementBegin'
+            return 'element_begin' if order_dir == 'asc' else '-element_begin'
         elif order_col == 11:
-            return 'elementEnd' if order_dir == 'asc' else '-elementEnd'
+            return 'element_end' if order_dir == 'asc' else '-element_end'
         elif order_col == 12:
             return 'starship_family' if order_dir == 'asc' else '-starship_family'
         elif order_col == 13:
             return 'starship_navis' if order_dir == 'asc' else '-starship_navis'
         elif order_col == 14:
             return 'starship_haplotype' if order_dir == 'asc' else '-starship_haplotype'
+        else:
+            return None
         
 
 class AnnotationData:
