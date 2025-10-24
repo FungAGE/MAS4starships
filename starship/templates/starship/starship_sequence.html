@@ -6,7 +6,7 @@
 {% if genome %}
     <p>
     >{{ genome }}<br />
-    {{ starship.starship_sequence|add_sequence_breaks }}
+    {{ starship.ship_id.sequence|add_sequence_breaks }}
     </p>
 {% else %}
     <p>No genome information to show.</p>

@@ -156,7 +156,7 @@ def add_context_for_starship_viz(context, starship, current_annotation_id=None):
     :return: Updated context dictionary
     """
     context['starship_id'] = starship.id
-    context['starship_length'] = len(starship.starship_sequence)
+    context['starship_length'] = len(starship.ship_id.sequence)
     feature_objects = Feature.objects.filter(starship__id=starship.id)
     # current_annotation_id = int(self.kwargs['accession'], 36)
     features = []

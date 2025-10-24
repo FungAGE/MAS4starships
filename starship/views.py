@@ -367,10 +367,16 @@ class StarshipUpload(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTe
             strand='+',
             annotation=repeat_annotation
         )
+        # Get sequence length - handle both original model and JoinedShips
+        if hasattr(starship, 'starship_sequence'):
+            sequence = starship.starship_sequence
+        else:
+            sequence = starship.ship_id.sequence
+        
         last_feature_repeat = starship_models.Feature(
             genome=starship, 
-            start=len(starship.starship_sequence) - len(repeat_seq),
-            stop=len(starship.starship_sequence), 
+            start=len(sequence) - len(repeat_seq),
+            stop=len(sequence), 
             type='Repeat Region',
             strand='+',
             annotation=repeat_annotation
@@ -467,7 +473,7 @@ class StarshipUpload(LoginRequiredMixin, PermissionRequiredMixin, MixinForBaseTe
                                      gene_name, assign_to, new_annotations, new_features):
         """Helper method to create annotation and feature objects"""
         # Get the sequence for this feature
-        sequence = self._get_feature_sequence(starship.starship_sequence, start, end, strand)
+        sequence = self._get_feature_sequence(starship.ship_id.sequence, start, end, strand)
         
         # Create or get annotation
         if sequence in new_annotations:
@@ -538,7 +544,7 @@ class Starship_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailVi
         
         # Calculate starship length - get elementBegin and elementEnd from StarshipFeatures
         starship_features = StarshipFeatures.objects.filter(
-            ship=starship.ship
+            ship_id=starship.ship_id
         ).first()
         
         if starship_features and starship_features.elementEnd and starship_features.elementBegin:
@@ -559,8 +565,6 @@ class Starship_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailVi
         ).prefetch_related('feature_set__starship', 'feature_set').select_related('assigned_to')
 
         self.starship_dict['starship_name'] = starship.starshipID
-        # TODO: Fix sequence access - starship.starship_sequence doesn't exist in JoinedShips
-        # self.starship_dict['starship'] = starship.starship_sequence
         context['starship_data'] = self.starship_dict
 
         upload_form = starship_forms.Starship_Upload_Form
@@ -708,7 +712,7 @@ class Get_Feature_Sequence(LoginRequiredMixin, generic.View):
 
             context['feature'] = feature
             context['feature_sequence'] = get_dna_sequence(
-                feature.start, feature.stop, feature.strand, Seq(feature.starship.starship_sequence)
+                feature.start, feature.stop, feature.strand, Seq(feature.starship.ship_id.sequence)
             )
 
         return render(request, 'starship/feature_sequence.html', context)
@@ -1067,32 +1071,50 @@ def get_starship_data_dicts(starships):
         starship_dict = {}
         starship_dict['pk'] = starship.pk
         starship_dict['starship_name'] = starship.starshipID  # Using starshipID field
-        starship_dict['species'] = starship.species
-        starship_dict['contigID'] = starship.contigID
-        starship_dict['elementBegin'] = starship.elementBegin
-        element_begin = int(starship.elementBegin) if starship.elementBegin else 0
-        starship_dict['elementEnd'] = starship.elementEnd
-        element_end = int(starship.elementEnd) if starship.elementEnd else 0
-        starship_dict["starship_family"] = starship.ship_family.familyName if starship.ship_family else ''
-        starship_dict["starship_navis"] = starship.navis_name or ''
-        starship_dict["starship_haplotype"] = starship.haplotype_name or ''
+        starship_dict['species'] = getattr(starship, 'taxonomy_species', 'N/A')
+        starship_dict['contigID'] = getattr(starship, 'contig_id', 'N/A')
+        starship_dict['elementBegin'] = getattr(starship, 'element_begin', 0)
+        element_begin = int(starship_dict['elementBegin']) if starship_dict['elementBegin'] else 0
+        starship_dict['elementEnd'] = getattr(starship, 'element_end', 0)
+        element_end = int(starship_dict['elementEnd']) if starship_dict['elementEnd'] else 0
+        starship_dict["starship_family"] = getattr(starship, 'starship_family', 'N/A')
+        starship_dict["starship_navis"] = getattr(starship, 'starship_navis', 'N/A')
+        starship_dict["starship_haplotype"] = getattr(starship, 'starship_haplotype', 'N/A')
         
-        # Add quality flag information
-        starship_dict['quality_flag'] = starship.get_quality_flag_display()
-        starship_dict['quality_flag_value'] = starship.quality_flag
-        starship_dict['missing_data'] = starship.get_missing_data_summary()
-        gene = starship.feature_set.filter(type='gene').count()
-        gene_features = starship.feature_set.filter(type='gene')
-        # Derived from stackoverflow.com/questions/4727327/
-        flag_options_reverse = dict((v, k) for k, v in starship_models.Annotation.flag_options)
-        annotations = starship_models.Annotation.objects.filter(feature__in=gene_features)
-        starship_dict['unpolished_gene_count'] = annotations.filter(flag=flag_options_reverse['UNANNOTATED']).count()
-        starship_dict['green_gene_count'] = annotations.filter(flag=flag_options_reverse['GREEN']).count()
-        starship_dict['yellow_gene_count'] = annotations.filter(flag=flag_options_reverse['YELLOW']).count()
-        starship_dict['red_gene_count'] = annotations.filter(flag=flag_options_reverse['RED']).count()
-        starship_dict['review_name_gene_count'] = annotations.filter(flag=flag_options_reverse['REVIEW NAME']).count()
-        starship_dict['gene_count'] = gene
-        starship_dict['is_annotated'] = starship_dict['gene_count'] > 0
+        # Add quality flag information (handle missing methods gracefully)
+        try:
+            starship_dict['quality_flag'] = starship.get_quality_flag_display()
+            starship_dict['quality_flag_value'] = starship.quality_flag
+            starship_dict['missing_data'] = starship.get_missing_data_summary()
+        except AttributeError:
+            starship_dict['quality_flag'] = 'N/A'
+            starship_dict['quality_flag_value'] = None
+            starship_dict['missing_data'] = 'N/A'
+        
+        # Get feature counts from the MAS database
+        try:
+            gene = starship_models.Feature.objects.filter(starship_id=starship.id, type='gene').count()
+            gene_features = starship_models.Feature.objects.filter(starship_id=starship.id, type='gene')
+            # Derived from stackoverflow.com/questions/4727327/
+            flag_options_reverse = dict((v, k) for k, v in starship_models.Annotation.flag_options)
+            annotations = starship_models.Annotation.objects.filter(feature__in=gene_features)
+            starship_dict['unpolished_gene_count'] = annotations.filter(flag=flag_options_reverse['UNANNOTATED']).count()
+            starship_dict['green_gene_count'] = annotations.filter(flag=flag_options_reverse['GREEN']).count()
+            starship_dict['yellow_gene_count'] = annotations.filter(flag=flag_options_reverse['YELLOW']).count()
+            starship_dict['red_gene_count'] = annotations.filter(flag=flag_options_reverse['RED']).count()
+            starship_dict['review_name_gene_count'] = annotations.filter(flag=flag_options_reverse['REVIEW NAME']).count()
+            starship_dict['gene_count'] = gene
+            starship_dict['is_annotated'] = starship_dict['gene_count'] > 0
+        except Exception:
+            # If there's any error getting feature counts, set defaults
+            starship_dict['unpolished_gene_count'] = 0
+            starship_dict['green_gene_count'] = 0
+            starship_dict['yellow_gene_count'] = 0
+            starship_dict['red_gene_count'] = 0
+            starship_dict['review_name_gene_count'] = 0
+            starship_dict['gene_count'] = 0
+            starship_dict['is_annotated'] = False
+        
         starship_dict['starship_length'] = (element_end + 1) - element_begin
         objects.append(starship_dict)
     return objects
@@ -1122,8 +1144,8 @@ def starship_download_fasta(request, starship_id):
     if request.user.is_authenticated:
         context = {}
         starship = JoinedShips.objects.get(pk=starship_id)
-        starship_name = starship.starship_name
-        nucleotide = starship.starship_sequence
+        starship_name = starship.starshipID
+        nucleotide = starship.ship_id.sequence
         sequence = SeqRecord(
             Seq(nucleotide),
             id=starship_name,
@@ -1250,7 +1272,7 @@ class JoinedShipsList(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView
 
     def get_queryset(self):
         return JoinedShips.objects.select_related(
-            'ship_family', 'ship'
+            'ship_family_id', 'ship_id'
         ).order_by('starshipID')
 
 

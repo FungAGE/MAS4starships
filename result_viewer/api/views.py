@@ -181,7 +181,7 @@ class GetStarshipView(PipelineAPIMixin, APIView):
 
         s = StarshipSeqSerializer({
             'starship_name': starship.starshipID,
-            'starship_sequence': starship.starship_sequence,
+            'starship_sequence': starship.ship_id.sequence,
             'num_cds': counts['cds'],
             'num_gene': counts['gene'],
             'num_trna': counts['tRNAs'],

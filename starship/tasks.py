@@ -78,9 +78,9 @@ def create_internal_nucleotide_blastdb():
         starship_list = []
         for starship in starships:
             sequence = SeqRecord(
-                Seq(starship.starship_sequence),
-                id=starship.starship_name,
-                description=starship.starship_name,
+                Seq(starship.ship_id.sequence),
+                id=starship.starshipID,
+                description=starship.starshipID,
             )
             starship_list.append(sequence)
 

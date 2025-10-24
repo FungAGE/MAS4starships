@@ -26,8 +26,8 @@ class Command(BaseCommand):
         starships = starship_models.JoinedShips.objects.all()
         starship_list = []
         for starship in starships:
-            sequence = SeqRecord(Seq(starship.starship_sequence), id=starship.starship_name,
-                               description=starship.starship_name)
+            sequence = SeqRecord(Seq(starship.ship_id.sequence), id=starship.starshipID,
+                               description=starship.starshipID)
             starship_list.append(sequence)
 
         SeqIO.write(starship_list, file_path, "fasta")
