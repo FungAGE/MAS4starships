@@ -199,6 +199,11 @@
                     </a>
                 </li>
                 <li>
+                    <a href="#visualizations" data-toggle="tab">
+                        <i class="fa fa-bar-chart"></i> Visualizations
+                    </a>
+                </li>
+                <li>
                     <a href="#logs" data-toggle="tab">
                         <i class="fa fa-file-text-o"></i> Logs
                     </a>
@@ -347,6 +352,20 @@
                     </div>
                 </div>
                 
+                <!-- Visualizations Tab -->
+                <div class="tab-pane" id="visualizations">
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <h5>Pipeline Visualizations</h5>
+                            <div id="visualizations-content">
+                                <div class="text-center">
+                                    <i class="fa fa-spinner fa-spin"></i> Loading visualizations...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Logs Tab -->
                 <div class="tab-pane" id="logs">
                     <div class="panel panel-default">
@@ -403,6 +422,144 @@ fetch('{% url "starfish:starfish_run_log" run.pk %}')
     });
 </script>
 {% endif %}
+
+<script>
+// Load visualizations when tab is clicked
+$('a[href="#visualizations"]').on('shown.bs.tab', function (e) {
+    if (document.getElementById('visualizations-content').innerHTML.includes('Loading visualizations...')) {
+        loadVisualizations();
+    }
+});
+
+function loadVisualizations() {
+    fetch('{% url "starfish:starfish_run_visualizations" run.pk %}')
+        .then(response => response.json())
+        .then(data => {
+            displayVisualizations(data);
+        })
+        .catch(error => {
+            document.getElementById('visualizations-content').innerHTML = 
+                '<div class="alert alert-danger">Error loading visualizations: ' + error.message + '</div>';
+        });
+}
+
+function displayVisualizations(data) {
+    let content = '';
+    
+    if (!data.locusViz_exists && !data.pairViz_exists) {
+        content = '<div class="alert alert-info"><p>No visualization outputs found yet. Visualizations will appear here once the pipeline completes the locusViz and pairViz steps.</p></div>';
+    } else {
+        content = '<div class="row">';
+        
+        if (data.locusViz_exists) {
+            content += '<div class="col-md-6">';
+            content += '<h6><i class="fa fa-bar-chart"></i> Locus Visualizations</h6>';
+            content += '<div class="list-group">';
+            data.locusViz_files.forEach(file => {
+                const fileUrl = '/media/starfish_runs/' + data.run_name + '/results/' + data.run_name + '/locusViz/' + file;
+                content += '<a href="#" class="list-group-item viz-file-link" data-file-url="' + fileUrl + '" data-file-name="' + file + '">';
+                content += '<i class="fa fa-file-image-o"></i> ' + file;
+                content += '</a>';
+            });
+            content += '</div></div>';
+        }
+        
+        if (data.pairViz_exists) {
+            content += '<div class="col-md-6">';
+            content += '<h6><i class="fa fa-line-chart"></i> Pair Visualizations</h6>';
+            content += '<div class="list-group">';
+            data.pairViz_files.forEach(file => {
+                const fileUrl = '/media/starfish_runs/' + data.run_name + '/results/' + data.run_name + '/pairViz/' + file;
+                content += '<a href="#" class="list-group-item viz-file-link" data-file-url="' + fileUrl + '" data-file-name="' + file + '">';
+                content += '<i class="fa fa-file-image-o"></i> ' + file;
+                content += '</a>';
+            });
+            content += '</div></div>';
+        }
+        
+        content += '</div>';
+        
+        // Add image viewer modal
+        content += '<div class="modal fade" id="vizModal" tabindex="-1" role="dialog">';
+        content += '<div class="modal-dialog modal-lg" role="document">';
+        content += '<div class="modal-content">';
+        content += '<div class="modal-header">';
+        content += '<button type="button" class="close" data-dismiss="modal">&times;</button>';
+        content += '<h4 class="modal-title" id="vizModalTitle">Visualization</h4>';
+        content += '</div>';
+        content += '<div class="modal-body text-center">';
+        content += '<div id="vizLoading" class="text-center" style="display: none;">';
+        content += '<i class="fa fa-spinner fa-spin"></i> Loading image...';
+        content += '</div>';
+        content += '<img id="vizImage" class="img-responsive" style="max-width: 100%; max-height: 70vh;" />';
+        content += '</div>';
+        content += '<div class="modal-footer">';
+        content += '<a id="vizDownloadLink" href="#" class="btn btn-primary" download>';
+        content += '<i class="fa fa-download"></i> Download';
+        content += '</a>';
+        content += '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>';
+        content += '</div>';
+        content += '</div>';
+        content += '</div>';
+        content += '</div>';
+    }
+    
+    document.getElementById('visualizations-content').innerHTML = content;
+    
+    // Add click handlers for file links
+    document.querySelectorAll('.viz-file-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const fileUrl = this.getAttribute('data-file-url');
+            const fileName = this.getAttribute('data-file-name');
+            showVisualization(fileUrl, fileName);
+        });
+    });
+}
+
+function showVisualization(fileUrl, fileName) {
+    // Show modal
+    $('#vizModal').modal('show');
+    
+    // Update modal title
+    document.getElementById('vizModalTitle').textContent = fileName;
+    
+    // Show loading spinner
+    document.getElementById('vizLoading').style.display = 'block';
+    document.getElementById('vizImage').style.display = 'none';
+    
+    // Create new image to load
+    const img = new Image();
+    img.onload = function() {
+        // Hide loading spinner
+        document.getElementById('vizLoading').style.display = 'none';
+        
+        // Show image
+        const vizImage = document.getElementById('vizImage');
+        vizImage.src = fileUrl;
+        vizImage.style.display = 'block';
+        
+        // Update download link
+        const downloadLink = document.getElementById('vizDownloadLink');
+        downloadLink.href = fileUrl;
+        downloadLink.download = fileName;
+    };
+    
+    img.onerror = function() {
+        // Hide loading spinner
+        document.getElementById('vizLoading').style.display = 'none';
+        
+        // Show error message
+        const vizImage = document.getElementById('vizImage');
+        vizImage.style.display = 'block';
+        vizImage.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNWY1Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkVycm9yIGxvYWRpbmcgaW1hZ2U8L3RleHQ+PC9zdmc+';
+        vizImage.alt = 'Error loading image';
+    };
+    
+    // Start loading the image
+    img.src = fileUrl;
+}
+</script>
 
 <script>
 // Function to remove a genome from the run

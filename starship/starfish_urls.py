@@ -29,4 +29,7 @@ urlpatterns = [
     path('<int:run_id>/elements/', views.StarfishElementListView.as_view(), name='starfish_element_list'),
     path('elements/<int:pk>/', views.StarfishElementDetailView.as_view(), name='starfish_element_detail'),
     path('elements/<int:element_id>/download/', views.starfish_element_download_fasta, name='starfish_element_download'),
+    
+    # Starfish visualizations
+    path('<int:run_id>/visualizations/', views.starfish_run_visualizations, name='starfish_run_visualizations'),
 ]

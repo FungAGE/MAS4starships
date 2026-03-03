@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views import generic
 from django.urls import reverse_lazy
 from django.forms import modelformset_factory, formset_factory
@@ -1906,6 +1906,58 @@ def starfish_element_download_fasta(request, element_id):
             return HttpResponse(f"Error generating FASTA: {str(e)}", status=500)
     
     return HttpResponse("Authentication required", status=401)
+
+
+def starfish_run_visualizations(request, run_id):
+    """Serve visualization files for a starfish run"""
+    if not request.user.is_authenticated:
+        return HttpResponse("Authentication required", status=401)
+    
+    try:
+        run = starship_models.StarfishRun.objects.filter(
+            pk=run_id, 
+            created_by=request.user
+        ).first()
+        
+        if not run:
+            return HttpResponse("Run not found or access denied", status=404)
+        
+        # Check if visualization directories exist
+        import os
+        from django.conf import settings
+        
+        viz_data = {
+            'run_name': run.run_name,
+            'locusViz_exists': False,
+            'pairViz_exists': False,
+            'locusViz_files': [],
+            'pairViz_files': []
+        }
+        
+        # Check for locusViz directory
+        locusViz_path = os.path.join(settings.MEDIA_ROOT, 'starfish_runs', run.run_name, 'results', run.run_name, 'locusViz')
+        if os.path.exists(locusViz_path):
+            viz_data['locusViz_exists'] = True
+            try:
+                viz_data['locusViz_files'] = [f for f in os.listdir(locusViz_path) 
+                                            if os.path.isfile(os.path.join(locusViz_path, f))]
+            except PermissionError:
+                viz_data['locusViz_files'] = []
+        
+        # Check for pairViz directory  
+        pairViz_path = os.path.join(settings.MEDIA_ROOT, 'starfish_runs', run.run_name, 'results', run.run_name, 'pairViz')
+        if os.path.exists(pairViz_path):
+            viz_data['pairViz_exists'] = True
+            try:
+                viz_data['pairViz_files'] = [f for f in os.listdir(pairViz_path) 
+                                           if os.path.isfile(os.path.join(pairViz_path, f))]
+            except PermissionError:
+                viz_data['pairViz_files'] = []
+        
+        return JsonResponse(viz_data)
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 class StarfishImportToMasView(LoginRequiredMixin, MixinForBaseTemplate, generic.View):
