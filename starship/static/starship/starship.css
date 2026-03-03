@@ -41,3 +41,17 @@ table.dataTable tbody th,
 table.dataTable tbody td {
   padding: 8px 5px;
 }
+
+/* Starship feature viewer tooltip and zoom controls */
+.starship-feature-tooltip {
+  white-space: pre-line;
+  line-height: 1.4;
+}
+
+.starship-zoom-controls:hover rect {
+  fill: #eee;
+}
+
+.starship-zoom-controls {
+  cursor: pointer;
+}

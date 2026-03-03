@@ -95,6 +95,20 @@
     display: block;
 }
 
+/* Starship feature viewer tooltip and controls */
+.starship-feature-tooltip {
+    white-space: pre-line;
+    line-height: 1.4;
+}
+
+.starship-zoom-controls:hover rect {
+    fill: #eee;
+}
+
+.starship-zoom-controls {
+    cursor: pointer;
+}
+
 #queryRect {
     fill: darkred;
 }

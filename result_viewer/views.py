@@ -308,9 +308,8 @@ class ViewResults(LoginRequiredMixin, MixinForBaseTemplate, generic.UpdateView):
         if context['navigator']['type'] == 'GenomeNavigator':
             starship = JoinedShips.objects.get(starship_name=self.kwargs['nav_arg'])
             context['starship_id'] = starship.id
-            if starship.feature_set.count() < 1000:
-                current_annotation_id = int(self.kwargs['accession'], 36)
-                context = add_context_for_starship_viz(context, starship, current_annotation_id)
+            current_annotation_id = int(self.kwargs['accession'], 36)
+            context = add_context_for_starship_viz(context, starship, current_annotation_id)
 
         # Disable form fields if user has no permission to edit
         if not self.request.user.has_perm('starship.change_annotation'):
