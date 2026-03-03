@@ -1,0 +1,2 @@
+[console_scripts]
+starbase-validate = starbase_validation.pipeline:main
