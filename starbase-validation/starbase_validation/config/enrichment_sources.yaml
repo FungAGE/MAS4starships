@@ -1,0 +1,9 @@
+# External sources for metadata enrichment (future use)
+# NCBI, etc.
+
+enrichment_sources:
+  ncbi:
+    enabled: false
+    email: null
+    api_key: null
+  # Add other sources as needed

@@ -1,4 +1,3 @@
-README.md
 setup.py
 starbase_validation/__init__.py
 starbase_validation/pipeline.py
@@ -12,16 +11,13 @@ starbase_validation/config/__init__.py
 starbase_validation/config/enrichment_sources.yaml
 starbase_validation/config/quality_rules.yaml
 starbase_validation/extractors/__init__.py
-starbase_validation/extractors/mysql_extractor.py
+starbase_validation/extractors/sqlite_extractor.py
 starbase_validation/loaders/__init__.py
 starbase_validation/loaders/sqlite_loader.py
-starbase_validation/loaders/version_manager.py
 starbase_validation/reporters/__init__.py
-starbase_validation/reporters/issue_exporter.py
 starbase_validation/reporters/validation_report.py
 starbase_validation/transformers/__init__.py
 starbase_validation/transformers/normalizer.py
-starbase_validation/transformers/taxonomy_enricher.py
 starbase_validation/validators/__init__.py
 starbase_validation/validators/classification_validator.py
 starbase_validation/validators/genome_validator.py
