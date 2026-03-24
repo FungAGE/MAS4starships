@@ -291,9 +291,9 @@ class GetStarshipDataView(APIView):
             starship_navis=F('ship_navis_id__navis_name'),
             starship_haplotype=F('ship_haplotype_id__haplotype_name'),
             starship_length=Length('ship_id__sequence'),
-            contig_id=F('ship_id__starshipfeatures__contigID'),
-            element_begin=F('ship_id__starshipfeatures__elementBegin'),
-            element_end=F('ship_id__starshipfeatures__elementEnd'),
+            contig_id=F('ship_id__starship_features__contigID'),
+            element_begin=F('ship_id__starship_features__elementBegin'),
+            element_end=F('ship_id__starship_features__elementEnd'),
         )
 
         total_num_starships = starships.count()
@@ -445,17 +445,22 @@ class GetStarshipDataView(APIView):
             return None
         elif order_col == 8:
             return None
+        # Columns 9–10: download / navigator (not orderable in DataTables)
         elif order_col == 9:
-            return 'contig_id' if order_dir == 'asc' else '-contig_id'
+            return None
         elif order_col == 10:
-            return 'element_begin' if order_dir == 'asc' else '-element_begin'
+            return None
         elif order_col == 11:
-            return 'element_end' if order_dir == 'asc' else '-element_end'
+            return 'contig_id' if order_dir == 'asc' else '-contig_id'
         elif order_col == 12:
-            return 'starship_family' if order_dir == 'asc' else '-starship_family'
+            return 'element_begin' if order_dir == 'asc' else '-element_begin'
         elif order_col == 13:
-            return 'starship_navis' if order_dir == 'asc' else '-starship_navis'
+            return 'element_end' if order_dir == 'asc' else '-element_end'
         elif order_col == 14:
+            return 'starship_family' if order_dir == 'asc' else '-starship_family'
+        elif order_col == 15:
+            return 'starship_navis' if order_dir == 'asc' else '-starship_navis'
+        elif order_col == 16:
             return 'starship_haplotype' if order_dir == 'asc' else '-starship_haplotype'
         else:
             return None
