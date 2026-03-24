@@ -4,6 +4,7 @@ $(document).ready(function() {
         lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
         scrollY: "100%",
         scrollX: true,
+        fixedHeader: true,
         footer: true,
         buttons: [
             {

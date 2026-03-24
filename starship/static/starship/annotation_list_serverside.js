@@ -4,6 +4,8 @@ $(document).ready(function() {
         orderClasses: false,
         serverSide: true,
         processing: true,
+        scrollX: true,
+        fixedHeader: true,
         ajax: {
             url: GET_ANNO_DATA_URL,
             type: "GET",

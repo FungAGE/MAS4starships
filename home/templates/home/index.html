@@ -44,14 +44,76 @@
       <div class="block">
         <div style="padding: 20px 40px">
           <h2>Welcome, <b>{{ user.username }}!</b></h2>
+          <p class="lead text-muted" style="margin-top: 12px; margin-bottom: 8px;">
+            Continue annotation work or open a list to pick up where you left off.
+          </p>
         </div>
-        <div style="padding: 20px 40px">
+
+        <div style="padding: 0 40px 24px">
+          <h3 style="margin-top: 0; font-size: 18px;">Start here</h3>
+          <div class="row" style="margin-top: 10px">
+            <div class="col-md-3 col-sm-6" style="margin-bottom: 10px">
+              <a href="{% url 'starship:annotation_list' %}" class="btn btn-primary btn-block">
+                <i class="fa fa-tags"></i> Annotation list
+              </a>
+            </div>
+            <div class="col-md-3 col-sm-6" style="margin-bottom: 10px">
+              <a href="{% url 'starship:starship_list' %}" class="btn btn-primary btn-block">
+                <i class="fa fa-list"></i> Starship list
+              </a>
+            </div>
+            <div class="col-md-3 col-sm-6" style="margin-bottom: 10px">
+              <a href="{% url 'starship:upload_starship' %}" class="btn btn-default btn-block">
+                <i class="fa fa-upload"></i> Upload starship
+              </a>
+            </div>
+            <div class="col-md-3 col-sm-6" style="margin-bottom: 10px">
+              <a href="{% url 'starship:staging_submission_list' %}" class="btn btn-info btn-block">
+                <i class="fa fa-eye"></i> Review submissions
+                {% if pending_submissions > 0 %}
+                  <span class="badge">{{ pending_submissions }}</span>
+                {% endif %}
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {% if pending_submissions > 0 %}
+        <div class="row" style="margin: 0 25px 10px">
+          <div class="col-md-12">
+            <div class="alert alert-info">
+              <h4><i class="fa fa-exclamation-triangle"></i> {{ pending_submissions }} Submission{{ pending_submissions|pluralize }} Awaiting Review</h4>
+              <p>There {{ pending_submissions|pluralize:"is,are" }} {{ pending_submissions }} starship submission{{ pending_submissions|pluralize }} waiting for review and approval.</p>
+              <a href="{% url 'starship:staging_submission_list' %}" class="btn btn-info">
+                <i class="fa fa-eye"></i> Review Submissions
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if user_pending_submissions > 0 %}
+        <div class="row" style="margin: 0 25px 10px">
+          <div class="col-md-12">
+            <div class="alert alert-warning">
+              <h4><i class="fa fa-clock-o"></i> Your Submissions Status</h4>
+              <p>You have {{ user_pending_submissions }} submission{{ user_pending_submissions|pluralize }} pending review.</p>
+              <a href="{% url 'starship:staging_submission_list' %}" class="btn btn-warning">
+                <i class="fa fa-eye"></i> View Your Submissions
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div style="padding: 10px 40px 20px">
+          <h3 class="text-muted" style="font-size: 16px; margin-bottom: 16px;">Overview</h3>
           <div class="row">
             <div class="col-md-4">
               <div class="well text-center">
                 <h2>{{ ship_count }}</h2>
                 <h4>Total Starships</h4>
-                <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                <div class="text-muted small" style="margin-top: 10px;">
                   <div>Curated: {{ starship_breakdown.curated_starships }}</div>
                   <div>Uncurated: {{ starship_breakdown.uncurated_starships }}</div>
                 </div>
@@ -171,87 +233,18 @@
               {% endif %}
             </div>
           </div>
-          
-          {% if pending_submissions > 0 %}
-          <div class="row" style="margin-top: 20px">
-            <div class="col-md-12">
-              <div class="alert alert-info">
-                <h4><i class="fa fa-exclamation-triangle"></i> {{ pending_submissions }} Submission{{ pending_submissions|pluralize }} Awaiting Review</h4>
-                <p>There {{ pending_submissions|pluralize:"is,are" }} {{ pending_submissions }} starship submission{{ pending_submissions|pluralize }} waiting for review and approval.</p>
-                <a href="{% url 'starship:staging_submission_list' %}" class="btn btn-info">
-                  <i class="fa fa-eye"></i> Review Submissions
-                </a>
-              </div>
-            </div>
-          </div>
-          {% endif %}
-          
-          {% if user_pending_submissions > 0 %}
-          <div class="row" style="margin-top: 20px">
-            <div class="col-md-12">
-              <div class="alert alert-warning">
-                <h4><i class="fa fa-clock-o"></i> Your Submissions Status</h4>
-                <p>You have {{ user_pending_submissions }} submission{{ user_pending_submissions|pluralize }} pending review.</p>
-                <a href="{% url 'starship:staging_submission_list' %}" class="btn btn-warning">
-                  <i class="fa fa-eye"></i> View Your Submissions
-                </a>
-              </div>
-            </div>
-          </div>
-          {% endif %}
 
-          <div style="margin-top: 30px">
-            <h2>Quick Actions:</h2>
-            <div class="row" style="margin-top: 15px">
-              <div class="col-md-3">
-                <a
-                  href="{% url 'starship:upload_starship' %}"
-                  class="btn btn-primary btn-block"
-                >
-                  <i class="fa fa-upload"></i> Upload Starship
+          <div style="padding: 0 40px 30px">
+            <h3 style="font-size: 16px; margin-top: 24px;">More tools</h3>
+            <div class="row" style="margin-top: 10px">
+              <div class="col-md-3 col-sm-6" style="margin-bottom: 10px">
+                <a href="{% url 'starship:bulk_data_upload' %}" class="btn btn-default btn-block">
+                  <i class="fa fa-upload"></i> Bulk upload
                 </a>
               </div>
-              <div class="col-md-3">
-                <a
-                  href="{% url 'starship:bulk_data_upload' %}"
-                  class="btn btn-warning btn-block"
-                >
-                  <i class="fa fa-upload"></i> Bulk Upload
-                </a>
-              </div>
-              <div class="col-md-3">
-                <a
-                  href="{% url 'starship:starship_list' %}"
-                  class="btn btn-default btn-block"
-                >
-                  <i class="fa fa-list"></i> View Starship List
-                </a>
-              </div>
-              <div class="col-md-3">
-                <a
-                  href="{% url 'starship:annotation_list' %}"
-                  class="btn btn-default btn-block"
-                >
-                  <i class="fa fa-tags"></i> View Annotations
-                </a>
-              </div>
-              <div class="col-md-3">
-                <a
-                  href="{% url 'starship:upload_annotations' %}"
-                  class="btn btn-default btn-block"
-                >
-                  <i class="fa fa-file-excel-o"></i> Upload Annotations
-                </a>
-              </div>
-              <div class="col-md-3">
-                <a
-                  href="{% url 'starship:staging_submission_list' %}"
-                  class="btn btn-info btn-block"
-                >
-                  <i class="fa fa-eye"></i> Review Submissions
-                  {% if pending_submissions > 0 %}
-                    <span class="badge">{{ pending_submissions }}</span>
-                  {% endif %}
+              <div class="col-md-3 col-sm-6" style="margin-bottom: 10px">
+                <a href="{% url 'starship:upload_annotations' %}" class="btn btn-default btn-block">
+                  <i class="fa fa-file-excel-o"></i> Upload annotations
                 </a>
               </div>
             </div>

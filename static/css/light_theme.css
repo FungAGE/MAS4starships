@@ -93,6 +93,16 @@ div.details-control.shown {
     color: #337ab7;
 }
 
+.navbar-worker-warning {
+    color: #c9302c;
+    margin-bottom: 0;
+}
+
+.auth-form-wrap {
+    padding: 10px 0 30px 40px;
+    max-width: 440px;
+}
+
 .navbar-brand {
     font-weight: bold;
     font-size: 28px;

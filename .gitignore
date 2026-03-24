@@ -18,6 +18,8 @@ databases/**
 backup.sh
 .env
 static-files/**
+!static-files/css/
+!static-files/css/**
 !static-files/result_viewer/
 !static-files/result_viewer/**
 celerybeat-*

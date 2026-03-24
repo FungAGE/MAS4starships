@@ -6,12 +6,42 @@
 
 {% block body %}
     <div class="block">
-        <div style="padding: 10px 0px 30px 40px">
+        <div class="auth-form-wrap">
             <h2>Login</h2>
-            <form method="post">
+            <p class="text-muted">Sign in to Manual Annotation Studio.</p>
+            <form method="post" class="form-auth" role="form" autocomplete="on">
                 {% csrf_token %}
-                {{ form.as_p }}
-                <button type="submit">Login</button>
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+                <div class="form-group{% if form.username.errors %} has-error{% endif %}">
+                    <label for="{{ form.username.id_for_label }}">Username</label>
+                    <input type="text"
+                           name="{{ form.username.name }}"
+                           id="{{ form.username.id_for_label }}"
+                           class="form-control"
+                           value="{{ form.username.value|default:'' }}"
+                           maxlength="150"
+                           required
+                           autofocus>
+                    {% for err in form.username.errors %}
+                        <span class="help-block">{{ err }}</span>
+                    {% endfor %}
+                </div>
+                <div class="form-group{% if form.password.errors %} has-error{% endif %}">
+                    <label for="{{ form.password.id_for_label }}">Password</label>
+                    <input type="password"
+                           name="{{ form.password.name }}"
+                           id="{{ form.password.id_for_label }}"
+                           class="form-control"
+                           required>
+                    {% for err in form.password.errors %}
+                        <span class="help-block">{{ err }}</span>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
             </form>
         </div>
     </div>

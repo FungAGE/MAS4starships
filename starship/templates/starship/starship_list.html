@@ -7,6 +7,11 @@
 {% endblock %} {% block body %}
 <div class="block wide-block">
   <h1>Starships</h1>
+  <p class="text-muted small">Wide tables: use <strong>Summary columns</strong> to hide locus details, or <strong>All columns</strong> to restore.</p>
+  <div class="btn-group table-column-presets" role="group" aria-label="Column visibility" style="margin-bottom: 12px;">
+    <button type="button" class="btn btn-default btn-sm" id="starship-cols-summary">Summary columns</button>
+    <button type="button" class="btn btn-default btn-sm" id="starship-cols-all">All columns</button>
+  </div>
   <table
     id="starship-table"
     class="display table-hover table-striped"
@@ -15,7 +20,7 @@
     <thead>
       <tr>
         <th>Starship Name</th>
-        <th>species</th>
+        <th>Species</th>
         <th>Starship Length</th>
         <th># Genes</th>
         <th># Genes Unannotated</th>
@@ -28,15 +33,15 @@
         <th>Starship Contig</th>
         <th>Start Coordinates</th>
         <th>End Coordinates</th>
-        <th>Starship family</th>
-        <th>Starship navis</th>
-        <th>Starship haplotype</th>
+        <th>Starship Family</th>
+        <th>Starship Navis</th>
+        <th>Starship Haplotype</th>
       </tr>
     </thead>
     <tfoot>
       <tr>
         <th>Starship Name</th>
-        <th>species</th>
+        <th>Species</th>
         <th>Starship Length</th>
         <th># Genes</th>
         <th># Genes Unannotated</th>
@@ -49,9 +54,9 @@
         <th>Starship Contig</th>
         <th>Start Coordinates</th>
         <th>End Coordinates</th>
-        <th>Starship family</th>
-        <th>Starship navis</th>
-        <th>Starship haplotype</th>
+        <th>Starship Family</th>
+        <th>Starship Navis</th>
+        <th>Starship Haplotype</th>
       </tr>
     </tfoot>
   </table>
@@ -63,11 +68,13 @@
 ></script>
 <script>
   $(document).ready(function() {
-      $('#starship-table').DataTable({
+      var starshipTable = $('#starship-table').DataTable({
           pageLength: 25,
           serverSide: true,
           processing: true,
           bSortClasses: false,
+          scrollX: true,
+          fixedHeader: true,
           ajax: {
               url: "{% url 'get_starship_data' %}",
               type: "GET"
@@ -101,6 +108,16 @@
               { className: "yellow-flag", targets: [ 7 ] },
               { className: "red-flag", targets: [ 8 ] }
           ]
+      });
+
+      var starshipDetailCols = [11, 12, 13, 14, 15, 16];
+      $('#starship-cols-summary').on('click', function() {
+          starshipTable.columns(starshipDetailCols).visible(false);
+          starshipTable.fixedHeader.adjust();
+      });
+      $('#starship-cols-all').on('click', function() {
+          starshipTable.columns().visible(true);
+          starshipTable.fixedHeader.adjust();
       });
   });
 </script>
