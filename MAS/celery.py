@@ -1,6 +1,7 @@
 import os
 
 from celery import Celery
+from celery.schedules import crontab
 
 
 # set the default Django settings module for the 'celery' program.
@@ -28,7 +29,13 @@ app.conf.beat_schedule = {
         "task": "result_viewer.api.tasks.database_maintenance",
         "schedule": 60.0 * 60.0 * 2.0,  # runs ever two hours
         'args': (12,)
-    }
+    },
+    # Weekly read-only Starbase validation (SQLite); safe default dry_run=True in task
+    "weekly-starbase-validation": {
+        "task": "starship.tasks.run_starbase_validation_export",
+        "schedule": crontab(hour=2, minute=0, day_of_week=0),
+        "kwargs": {"dry_run": True, "skip_accessions": True},
+    },
 }
 
 # Using a string here means the worker doesn't have to serialize

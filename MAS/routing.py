@@ -6,8 +6,9 @@ class DatabaseRouter:
     
     # Models that should use the starbase database (SQLite)
     starbase_models = {
-        'accessions', 'ships', 'captains', 'taxonomy', 'genome', 'papers',
-        'familynames', 'starshipfeatures', 'navis', 'haplotype', 'gff', 'joinedships'
+        'accessions', 'ships', 'shipaccessions', 'captains', 'taxonomy', 'genome', 'papers',
+        'familynames', 'starshipfeatures', 'navis', 'haplotype', 'gff', 'joinedships',
+        'shipqualitytags',
     }
     
     def db_for_read(self, model, **hints):

@@ -273,10 +273,9 @@ class Starship_Delete(forms.Form):
 class ComprehensiveDataForm(CrispyModelForm):
     """Single form for manual entry of starship data across multiple models"""
     
-    # Accession fields
+    # Accession fields (display names live on joined_ships / ships, not accessions)
     accession_tag = forms.CharField(max_length=255, required=True)
-    ship_name = forms.CharField(max_length=255, required=False)
-    version_tag = forms.CharField(max_length=255, required=False)
+    version_tag = forms.IntegerField(required=False, initial=1, min_value=1)
     
     # Basic starship info (JoinedShips key fields)
     starshipID = forms.CharField(max_length=255, required=True)
@@ -303,43 +302,32 @@ class ComprehensiveDataForm(CrispyModelForm):
     
     def save(self):
         """Custom save method to create records across multiple models"""
-        # Create Accession
+        vt = self.cleaned_data.get("version_tag")
+        if vt is None:
+            vt = 1
         accession = Accessions.objects.create(
-            accession_tag=self.cleaned_data['accession_tag'],
-            ship_name=self.cleaned_data['ship_name'],
-            version_tag=self.cleaned_data['version_tag']
+            accession_tag=self.cleaned_data["accession_tag"],
+            version_tag=vt,
         )
-        
-        # Create Ship if sequence provided
-        if self.cleaned_data['ship_sequence']:
+        ship = None
+        captain = None
+        if self.cleaned_data.get("ship_sequence"):
             ship = Ships.objects.create(
-                sequence=self.cleaned_data['ship_sequence'],
-                accession=accession
+                sequence=self.cleaned_data["ship_sequence"],
+                accession=accession,
             )
-        
-        # Create Captain if provided
-        if self.cleaned_data['captainID']:
+        if self.cleaned_data.get("captainID") and ship is not None:
             captain = Captains.objects.create(
-                captainID=self.cleaned_data['captainID'],
-                sequence=self.cleaned_data['captain_sequence'] or '',
-                ship=accession
+                captainID=self.cleaned_data["captainID"],
+                sequence=self.cleaned_data.get("captain_sequence") or "",
+                ship_id=ship,
             )
-        
-        # Create JoinedShips record
         joined_ship = JoinedShips.objects.create(
-            starshipID=self.cleaned_data['starshipID'],
-            genus=self.cleaned_data['genus'],
-            species=self.cleaned_data['species'],
-            strain=self.cleaned_data['strain'],
-            captainID=self.cleaned_data['captainID'],
-            contigID=self.cleaned_data['contigID'],
-            elementBegin=self.cleaned_data['elementBegin'],
-            elementEnd=self.cleaned_data['elementEnd'],
-            navis_name=self.cleaned_data['navis_name'],
-            haplotype_name=self.cleaned_data['haplotype_name'],
-            ship=accession
+            starshipID=self.cleaned_data["starshipID"],
+            accession_id=accession,
+            ship_id=ship,
+            captain_id=captain,
         )
-        
         return joined_ship
 
 # Bulk upload forms for SQLite data import
@@ -419,7 +407,7 @@ class AccessionForm(CrispyModelForm):
     """Form for creating/editing Accessions"""
     class Meta:
         model = Accessions
-        fields = ['ship_name', 'accession_tag', 'version_tag']
+        fields = ["accession_tag", "version_tag"]
 
 
 class Confirm_Upload_Annotation(forms.Form):

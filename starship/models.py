@@ -344,9 +344,8 @@ class StagingStarship(models.Model):
             print(f"Creating Accessions for {self.starshipID}")
             # Create Accessions object first
             accession = Accessions(
-                ship_name=self.starshipID,
                 accession_tag=f"{self.starshipID}_{timezone.now().strftime('%Y%m%d_%H%M%S')}",
-                version_tag="1.0"
+                version_tag=1,
             )
             accession.save()
             print(f"Accession created with ID: {accession.id}")
@@ -355,7 +354,7 @@ class StagingStarship(models.Model):
             # Create Ships object with the sequence
             ship = Ships(
                 sequence=self.sequence,
-                accession=accession
+                accession=accession,
             )
             ship.save()
             print(f"Ship created with ID: {ship.id}")
@@ -367,7 +366,8 @@ class StagingStarship(models.Model):
                 evidence=self.evidence,
                 source=self.source,
                 curated_status='staged_import',
-                ship=ship
+                ship_id=ship,
+                accession_id=accession,
             )
             main_starship.save()
             print(f"JoinedShips created with ID: {main_starship.id}")
@@ -379,3 +379,59 @@ class StagingStarship(models.Model):
             import traceback
             print(traceback.format_exc())
             raise e
+
+
+class ValidationRun(models.Model):
+    """Tracks runs of the Starbase validation / comprehensive cleanup pipeline."""
+
+    STATUS_CHOICES = (
+        ("running", "Running"),
+        ("passed", "Passed"),
+        ("failed", "Failed"),
+        ("warning", "Warning"),
+    )
+
+    started_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="running")
+    db_version = models.CharField(max_length=64, blank=True, default="")
+    total_issues = models.IntegerField(default=0)
+    blocking_issues = models.IntegerField(default=0)
+    report_path = models.CharField(max_length=512, blank=True, default="")
+    error_message = models.TextField(blank=True, default="")
+    dry_run = models.BooleanField(default=True)
+    notes = models.TextField(blank=True, default="")
+
+    class Meta:
+        ordering = ["-started_at"]
+
+    def __str__(self):
+        return f"ValidationRun {self.pk} {self.status} @ {self.started_at}"
+
+
+class ValidationIssue(models.Model):
+    """Individual issues recorded from a validation run (curator follow-up)."""
+
+    SEVERITY_CHOICES = (
+        ("blocking", "Blocking"),
+        ("warning", "Warning"),
+        ("info", "Info"),
+    )
+
+    run = models.ForeignKey(
+        ValidationRun, on_delete=models.CASCADE, related_name="issues"
+    )
+    issue_type = models.CharField(max_length=200)
+    table_name = models.CharField(max_length=200, blank=True, default="")
+    record_id = models.IntegerField(null=True, blank=True)
+    severity = models.CharField(
+        max_length=20, choices=SEVERITY_CHOICES, default="warning"
+    )
+    details = models.TextField(blank=True, default="")
+    resolved = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["run", "id"]
+
+    def __str__(self):
+        return f"{self.issue_type} ({self.severity})"

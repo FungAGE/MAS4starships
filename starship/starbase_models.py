@@ -1,52 +1,88 @@
 """
 Starbase models for connecting to the SQLite starbase database.
 
-This file contains the models that connect directly to the SQLite starbase database.
+Schema source of truth: ``starbase_schema.py`` (SQLAlchemy reference at repo root).
+Keep this file aligned with that schema and the live ``starbase.sqlite`` DDL.
 """
 
 from django.db import models
 
+
 class Accessions(models.Model):
     class Meta:
-        db_table = 'accessions'
+        db_table = "accessions"
         managed = False
-    
+
     id = models.IntegerField(primary_key=True)
-    ship_name = models.CharField(max_length=255, null=True, blank=True)
     accession_tag = models.CharField(max_length=255, unique=True)
-    version_tag = models.IntegerField(null=True, blank=True)
+    version_tag = models.IntegerField(default=1)
 
     def __str__(self):
-        return f"{self.accession_tag} - {self.ship_name}"
-
+        return str(self.accession_tag)
 
 
 class Ships(models.Model):
     class Meta:
-        db_table = 'ships'
+        db_table = "ships"
         managed = False
-    
+
     id = models.IntegerField(primary_key=True)
     sequence = models.TextField(null=True, blank=True)
     md5 = models.CharField(max_length=32, null=True, blank=True)
+    sequence_length = models.IntegerField(null=True, blank=True)
+    header = models.CharField(max_length=255, null=True, blank=True)
     rev_comp_md5 = models.CharField(max_length=32, null=True, blank=True)
-    accession_id = models.ForeignKey(Accessions, on_delete=models.CASCADE, related_name='ships', db_column='accession_id')
+    accession = models.ForeignKey(
+        Accessions,
+        on_delete=models.CASCADE,
+        related_name="ships",
+        db_column="accession_id",
+        null=True,
+        blank=True,
+    )
+    type_ship = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
-        return f"Ship {self.id} - {self.accession_id.accession_tag}"
+        if self.accession_id is None:
+            return f"Ship {self.id}"
+        return f"Ship {self.id} - {self.accession.accession_tag}"
 
+
+class ShipAccessions(models.Model):
+    """Per-ship accession display tags (separate from global ``accessions``)."""
+
+    class Meta:
+        db_table = "ship_accessions"
+        managed = False
+
+    id = models.IntegerField(primary_key=True)
+    ship_accession_tag = models.CharField(max_length=255, unique=True)
+    ship_version_tag = models.IntegerField(default=1)
+    ship_accession_display = models.CharField(max_length=255, null=True, blank=True)
+    ship_id = models.OneToOneField(
+        Ships,
+        on_delete=models.CASCADE,
+        db_column="ship_id",
+        related_name="ship_accession_row",
+    )
 
 
 class Captains(models.Model):
     class Meta:
-        db_table = 'captains'
+        db_table = "captains"
         managed = False
-    
+
     id = models.IntegerField(primary_key=True)
     captainID = models.CharField(max_length=255, unique=True)
     sequence = models.TextField(null=True, blank=True)
-    ship_id = models.ForeignKey(Ships, on_delete=models.CASCADE, related_name='captains', db_column='ship_id')
+    ship_id = models.ForeignKey(
+        Ships,
+        on_delete=models.CASCADE,
+        related_name="captains",
+        db_column="ship_id",
+    )
     reviewed = models.CharField(max_length=255, null=True, blank=True)
+    evidence = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return self.captainID
@@ -54,10 +90,10 @@ class Captains(models.Model):
 
 class Taxonomy(models.Model):
     class Meta:
-        db_table = 'taxonomy'
+        db_table = "taxonomy"
         managed = False
 
-    id = models.IntegerField(primary_key=True)    
+    id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=255, null=True, blank=True)
     taxID = models.CharField(max_length=255, null=True, blank=True)
     superkingdom = models.CharField(max_length=255, null=True, blank=True)
@@ -66,7 +102,7 @@ class Taxonomy(models.Model):
     subkingdom = models.CharField(max_length=255, null=True, blank=True)
     phylum = models.CharField(max_length=255, null=True, blank=True)
     subphylum = models.CharField(max_length=255, null=True, blank=True)
-    class_name = models.CharField(max_length=255, null=True, blank=True, db_column='class')
+    class_name = models.CharField(max_length=255, null=True, blank=True, db_column="class")
     subclass = models.CharField(max_length=255, null=True, blank=True)
     order = models.CharField(max_length=255, null=True, blank=True)
     suborder = models.CharField(max_length=255, null=True, blank=True)
@@ -81,19 +117,27 @@ class Taxonomy(models.Model):
     def __str__(self):
         return f"{self.name} ({self.taxID})"
 
+
 class Genome(models.Model):
     class Meta:
-        db_table = 'genomes'
+        db_table = "genomes"
         managed = False
-    
+
     id = models.IntegerField(primary_key=True)
     ome = models.CharField(max_length=50, null=True, blank=True)
-    taxonomy_id = models.ForeignKey(Taxonomy, on_delete=models.CASCADE, related_name='genomes', null=True, blank=True, db_column='taxonomy_id')
+    taxonomy_id = models.ForeignKey(
+        Taxonomy,
+        on_delete=models.CASCADE,
+        related_name="genomes",
+        null=True,
+        blank=True,
+        db_column="taxonomy_id",
+    )
     version = models.CharField(max_length=50, null=True, blank=True)
     genomeSource = models.CharField(max_length=50, null=True, blank=True)
     citation = models.CharField(max_length=50, null=True, blank=True)
     biosample = models.CharField(max_length=50, null=True, blank=True)
-    acquisition_date = models.CharField(max_length=255, null=True, blank=True)
+    acquisition_date = models.IntegerField(null=True, blank=True)
     assembly_accession = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
@@ -102,9 +146,9 @@ class Genome(models.Model):
 
 class Papers(models.Model):
     class Meta:
-        db_table = 'papers'
+        db_table = "papers"
         managed = False
-    
+
     id = models.IntegerField(primary_key=True)
     Key = models.CharField(max_length=255, null=True, blank=True)
     ItemType = models.CharField(max_length=255, null=True, blank=True)
@@ -120,11 +164,12 @@ class Papers(models.Model):
     typePaper = models.CharField(max_length=255, null=True, blank=True)
     shortCitation = models.CharField(max_length=255, null=True, blank=True)
 
+
 class FamilyNames(models.Model):
     class Meta:
-        db_table = 'family_names'
+        db_table = "family_names"
         managed = False
-    
+
     id = models.IntegerField(primary_key=True)
     longFamilyID = models.CharField(max_length=255, null=True, blank=True)
     oldFamilyID = models.CharField(max_length=255, null=True, blank=True)
@@ -134,26 +179,48 @@ class FamilyNames(models.Model):
     type_element_reference = models.CharField(max_length=255, null=True, blank=True)
     notes = models.CharField(max_length=255, null=True, blank=True)
     otherFamilyID = models.CharField(max_length=255, null=True, blank=True)
-    paper_id = models.ForeignKey(Papers, on_delete=models.CASCADE, related_name='family_names', db_column='paper_id')
-    
+    paper_id = models.ForeignKey(
+        Papers,
+        on_delete=models.CASCADE,
+        related_name="family_names",
+        db_column="paper_id",
+    )
+
+
 class StarshipFeatures(models.Model):
     class Meta:
-        db_table = 'starship_features'
+        db_table = "starship_features"
         managed = False
 
     id = models.IntegerField(primary_key=True)
+    accession_id = models.ForeignKey(
+        Accessions,
+        on_delete=models.CASCADE,
+        related_name="starship_features_by_accession",
+        null=True,
+        blank=True,
+        db_column="accession_id",
+    )
+    ship_id = models.ForeignKey(
+        Ships,
+        on_delete=models.CASCADE,
+        related_name="starship_features",
+        null=True,
+        blank=True,
+        db_column="ship_id",
+    )
     contigID = models.CharField(max_length=255, null=True, blank=True)
     starshipID = models.CharField(max_length=255, null=True, blank=True)
     captainID = models.CharField(max_length=255, null=True, blank=True)
-    elementBegin = models.CharField(max_length=255, null=True, blank=True)
-    elementEnd = models.CharField(max_length=255, null=True, blank=True)
-    elementLength = models.CharField(max_length=255, null=True, blank=True)
+    elementBegin = models.IntegerField(null=True, blank=True)
+    elementEnd = models.IntegerField(null=True, blank=True)
+    elementLength = models.IntegerField(null=True, blank=True)
     strand = models.CharField(max_length=255, null=True, blank=True)
     boundaryType = models.CharField(max_length=255, null=True, blank=True)
     emptySiteID = models.CharField(max_length=255, null=True, blank=True)
     emptyContig = models.CharField(max_length=255, null=True, blank=True)
-    emptyBegin = models.CharField(max_length=255, null=True, blank=True)
-    emptyEnd = models.CharField(max_length=255, null=True, blank=True)
+    emptyBegin = models.IntegerField(null=True, blank=True)
+    emptyEnd = models.IntegerField(null=True, blank=True)
     emptySeq = models.CharField(max_length=255, null=True, blank=True)
     upDR = models.CharField(max_length=255, null=True, blank=True)
     downDR = models.CharField(max_length=255, null=True, blank=True)
@@ -163,8 +230,21 @@ class StarshipFeatures(models.Model):
     TIRedit = models.CharField(max_length=255, null=True, blank=True)
     nestedInside = models.CharField(max_length=255, null=True, blank=True)
     containNested = models.CharField(max_length=255, null=True, blank=True)
-    ship_id = models.ForeignKey(Ships, on_delete=models.CASCADE, null=True, blank=True, db_column='ship_id')
-    captain_id = models.ForeignKey(Captains, on_delete=models.CASCADE, null=True, blank=True, db_column='captain_id')
+    dr = models.CharField(max_length=255, null=True, blank=True)
+    tir = models.CharField(max_length=255, null=True, blank=True)
+    target = models.CharField(max_length=255, null=True, blank=True)
+    spok = models.CharField(max_length=255, null=True, blank=True)
+    ars = models.CharField(max_length=255, null=True, blank=True)
+    other = models.CharField(max_length=255, null=True, blank=True)
+    hgt = models.CharField(max_length=255, null=True, blank=True)
+    captain_id = models.ForeignKey(
+        Captains,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        db_column="captain_id",
+        related_name="captain_starship_features",
+    )
 
     def __str__(self):
         return f"Feature {self.starshipID} - {self.captainID}"
@@ -172,13 +252,21 @@ class StarshipFeatures(models.Model):
 
 class Navis(models.Model):
     class Meta:
-        db_table = 'navis_names'
+        db_table = "navis_names"
         managed = False
-    
+
     id = models.IntegerField(primary_key=True)
     navis_name = models.CharField(max_length=255, null=True, blank=True)
     previous_navis_name = models.CharField(max_length=255, null=True, blank=True)
-    ship_family_id = models.ForeignKey(FamilyNames, on_delete=models.CASCADE, related_name='navis', null=True, blank=True, db_column='ship_family_id')
+    ship_family_id = models.ForeignKey(
+        FamilyNames,
+        on_delete=models.CASCADE,
+        related_name="navis",
+        null=True,
+        blank=True,
+        db_column="ship_family_id",
+    )
+    activity = models.IntegerField(null=True, blank=True, default=1)
 
     def __str__(self):
         return self.navis_name or f"Navis {self.id}"
@@ -186,14 +274,29 @@ class Navis(models.Model):
 
 class Haplotype(models.Model):
     class Meta:
-        db_table = 'haplotype_names'
+        db_table = "haplotype_names"
         managed = False
-    
+
     id = models.IntegerField(primary_key=True)
     haplotype_name = models.CharField(max_length=255, null=True, blank=True)
     previous_haplotype_name = models.CharField(max_length=255, null=True, blank=True)
-    navis_id = models.ForeignKey(Navis, on_delete=models.CASCADE, related_name='haplotype', null=True, blank=True, db_column='navis_id')
-    ship_family_id = models.ForeignKey(FamilyNames, on_delete=models.CASCADE, related_name='haplotype', null=True, blank=True, db_column='ship_family_id')
+    navis_id = models.ForeignKey(
+        Navis,
+        on_delete=models.CASCADE,
+        related_name="haplotype",
+        null=True,
+        blank=True,
+        db_column="navis_id",
+    )
+    ship_family_id = models.ForeignKey(
+        FamilyNames,
+        on_delete=models.CASCADE,
+        related_name="haplotype",
+        null=True,
+        blank=True,
+        db_column="ship_family_id",
+    )
+    activity = models.IntegerField(null=True, blank=True, default=1)
 
     def __str__(self):
         return self.haplotype_name or f"Haplotype {self.id}"
@@ -201,20 +304,36 @@ class Haplotype(models.Model):
 
 class Gff(models.Model):
     class Meta:
-        db_table = 'gff'
+        db_table = "gff"
         managed = False
-    
+
     id = models.IntegerField(primary_key=True)
-    accession_id = models.ForeignKey(Accessions, on_delete=models.CASCADE, related_name='gff', null=True, blank=True, db_column='accession_id')
+    accession_id = models.ForeignKey(
+        Accessions,
+        on_delete=models.CASCADE,
+        related_name="gff",
+        null=True,
+        blank=True,
+        db_column="accession_id",
+    )
     source = models.CharField(max_length=255, null=True, blank=True)
-    type = models.CharField(max_length=255, null=True, blank=True)
+    feature_type = models.CharField(
+        max_length=255, null=True, blank=True, db_column="type"
+    )
     start = models.IntegerField(null=True, blank=True)
     end = models.IntegerField(null=True, blank=True)
     phase = models.IntegerField(null=True, blank=True)
     strand = models.CharField(max_length=255, null=True, blank=True)
     score = models.CharField(max_length=255, null=True, blank=True)
     attributes = models.CharField(max_length=255, null=True, blank=True)
-    ship_id = models.ForeignKey(Ships, on_delete=models.CASCADE, related_name='gff', null=True, blank=True, db_column='ship_id')
+    ship_id = models.ForeignKey(
+        Ships,
+        on_delete=models.CASCADE,
+        related_name="gff",
+        null=True,
+        blank=True,
+        db_column="ship_id",
+    )
 
     def __str__(self):
         return f"GFF {self.start}-{self.end}"
@@ -222,26 +341,94 @@ class Gff(models.Model):
 
 class JoinedShips(models.Model):
     class Meta:
-        db_table = 'joined_ships'
+        db_table = "joined_ships"
         managed = False
-    
+
     id = models.IntegerField(primary_key=True)
-    starshipID = models.CharField(max_length=255, null=True, blank=True)
+    starshipID = models.CharField(max_length=255)
     evidence = models.CharField(max_length=255, null=True, blank=True)
     source = models.CharField(max_length=255, null=True, blank=True)
     curated_status = models.CharField(max_length=255, null=True, blank=True)
-    
-    accession_id = models.ForeignKey(Accessions, on_delete=models.CASCADE, related_name='joined_ships', null=True, blank=True, db_column='accession_id')
-    ship_id = models.ForeignKey(Ships, on_delete=models.CASCADE, related_name='joined_ships', null=True, blank=True, db_column='ship_id')
-    ship_family_id = models.ForeignKey(FamilyNames, on_delete=models.CASCADE, related_name='joined_ships', null=True, blank=True, db_column='ship_family_id')
-    tax_id = models.ForeignKey(Taxonomy, on_delete=models.CASCADE, related_name='joined_ships', null=True, blank=True, db_column='tax_id')
-    genome_id = models.ForeignKey(Genome, on_delete=models.CASCADE, related_name='joined_ships', null=True, blank=True, db_column='genome_id')
-    captain_id = models.ForeignKey(Captains, on_delete=models.CASCADE, related_name='joined_ships', null=True, blank=True, db_column='captain_id')
-    ship_navis_id = models.ForeignKey(Navis, on_delete=models.CASCADE, related_name='joined_ships', null=True, blank=True, db_column='ship_navis_id')
-    ship_haplotype_id = models.ForeignKey(Haplotype, on_delete=models.CASCADE, related_name='joined_ships', null=True, blank=True, db_column='ship_haplotype_id')
-    
-    created_at = models.CharField(max_length=255, null=True, blank=True)
-    updated_at = models.CharField(max_length=255, null=True, blank=True)
+
+    accession_id = models.ForeignKey(
+        Accessions,
+        on_delete=models.CASCADE,
+        related_name="joined_ships",
+        null=True,
+        blank=True,
+        db_column="accession_id",
+    )
+    ship_id = models.ForeignKey(
+        Ships,
+        on_delete=models.CASCADE,
+        related_name="joined_ships",
+        null=True,
+        blank=True,
+        db_column="ship_id",
+    )
+    ship_family_id = models.ForeignKey(
+        FamilyNames,
+        on_delete=models.CASCADE,
+        related_name="joined_ships",
+        null=True,
+        blank=True,
+        db_column="ship_family_id",
+    )
+    tax_id = models.ForeignKey(
+        Taxonomy,
+        on_delete=models.CASCADE,
+        related_name="joined_ships",
+        null=True,
+        blank=True,
+        db_column="tax_id",
+    )
+    genome_id = models.ForeignKey(
+        Genome,
+        on_delete=models.CASCADE,
+        related_name="joined_ships",
+        null=True,
+        blank=True,
+        db_column="genome_id",
+    )
+    captain_id = models.ForeignKey(
+        Captains,
+        on_delete=models.CASCADE,
+        related_name="joined_ships",
+        null=True,
+        blank=True,
+        db_column="captain_id",
+    )
+    ship_navis_id = models.ForeignKey(
+        Navis,
+        on_delete=models.CASCADE,
+        related_name="joined_ships",
+        null=True,
+        blank=True,
+        db_column="ship_navis_id",
+    )
+    ship_haplotype_id = models.ForeignKey(
+        Haplotype,
+        on_delete=models.CASCADE,
+        related_name="joined_ships",
+        null=True,
+        blank=True,
+        db_column="ship_haplotype_id",
+    )
+    created_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def starship_name(self):
+        """Alias for ``starshipID`` (templates and legacy code)."""
+        return self.starshipID
+
+    @property
+    def starship_sequence(self):
+        """Sequence from linked ``ships`` row, if any."""
+        ship = self.ship_id
+        if ship is None:
+            return None
+        return ship.sequence
 
     def __str__(self):
         return f"{self.starshipID}"
@@ -249,15 +436,20 @@ class JoinedShips(models.Model):
 
 class ShipQualityTags(models.Model):
     class Meta:
-        db_table = 'ship_quality_tags'
+        db_table = "ship_quality_tags"
         managed = False
-    
+
     id = models.IntegerField(primary_key=True)
-    joined_ship_id = models.ForeignKey(JoinedShips, on_delete=models.CASCADE, related_name='quality_tags', db_column='joined_ship_id')
+    joined_ship_id = models.ForeignKey(
+        JoinedShips,
+        on_delete=models.CASCADE,
+        related_name="quality_tags",
+        db_column="joined_ship_id",
+    )
     tag_type = models.CharField(max_length=50)
     tag_value = models.CharField(max_length=100, null=True, blank=True)
     created_at = models.DateTimeField()
-    created_by = models.CharField(max_length=50, null=True, blank=True, default='auto')
+    created_by = models.CharField(max_length=50, null=True, blank=True, default="auto")
 
     def __str__(self):
         return f"{self.tag_type}: {self.tag_value or 'N/A'}"

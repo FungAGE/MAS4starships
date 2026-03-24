@@ -39,6 +39,7 @@ DATABASES = {
     }
 }
 
+
 ROOT_URLCONF = "MAS.urls"
 
 TEMPLATES = [

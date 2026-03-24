@@ -156,7 +156,7 @@ def create_CDS_annotations(
     glimmer_results_file_path, genome, assign_to, new_annotations, new_features
 ):
     for cds in gene_calling.parse_glimmer_results(glimmer_results_file_path):
-        sequence = Seq(JoinedShips.objects.get(starship_name=genome).starship_sequence)
+        sequence = Seq(JoinedShips.objects.get(starshipID=genome).starship_sequence)
         protein = get_protein_sequence(cds.start, cds.stop, cds.strand, sequence)
 
         if starship_models.Annotation.objects.filter(sequence=protein).count() > 0:
@@ -183,7 +183,7 @@ def create_CDS_annotations(
 def create_custom_CDS_annotations(
     coordinate_file, translation_table, genome, assign_to, new_annotations, new_features
 ):
-    starship_sequence = Seq(JoinedShips.objects.get(starship_name=genome).starship_sequence)
+    starship_sequence = Seq(JoinedShips.objects.get(starshipID=genome).starship_sequence)
 
     for protein_sequence, cds in parse_prots_from_coords(
         coordinate_file, starship_sequence, translation_table
@@ -221,7 +221,7 @@ def create_trna_annotations(
     trnascan_results_file_path, genome, assign_to, new_annotations, new_features
 ):
     for tRNA in gene_calling.parse_trnascan_results(trnascan_results_file_path):
-        sequence = Seq(JoinedShips.objects.get(starship_name=genome).starship_sequence)
+        sequence = Seq(JoinedShips.objects.get(starshipID=genome).starship_sequence)
         rna = get_rna_sequence(tRNA.start, tRNA.stop, tRNA.strand, sequence)
 
         if starship_models.Annotation.objects.filter(sequence=rna).count() > 0:
@@ -610,9 +610,8 @@ def import_starfish_elements_to_mas(run_id):
                 accession, created = starship_models.Accessions.objects.get_or_create(
                     accession_tag=f"{run.run_name}_{element.element_id}",
                     defaults={
-                        'ship_name': element.element_id,
-                        'version_tag': run.run_name
-                    }
+                        'version_tag': 1,
+                    },
                 )
                 
                 # Create ship if sequence is available
@@ -649,3 +648,23 @@ def import_starfish_elements_to_mas(run_id):
         
     except Exception as e:
         logger.error(f"Error importing elements for run {run_id}: {str(e)}")
+
+
+@shared_task
+def run_starbase_validation_export(
+    dry_run=True, skip_accessions=False, no_record_issues=False
+):
+    """
+    Run the Starbase SQLite comprehensive validation pipeline via management command.
+
+    Default ``dry_run=True`` performs analysis only (safe for scheduled beat jobs).
+    Set ``dry_run=False`` to apply changes (use with care).
+    """
+    from django.core.management import call_command
+
+    call_command(
+        "validate_and_export",
+        apply=not dry_run,
+        skip_accessions=skip_accessions,
+        no_record_issues=no_record_issues,
+    )

@@ -306,7 +306,7 @@ class ViewResults(LoginRequiredMixin, MixinForBaseTemplate, generic.UpdateView):
 
         # Starship visualization
         if context['navigator']['type'] == 'GenomeNavigator':
-            starship = JoinedShips.objects.get(starship_name=self.kwargs['nav_arg'])
+            starship = JoinedShips.objects.get(starshipID=self.kwargs['nav_arg'])
             context['starship_id'] = starship.id
             current_annotation_id = int(self.kwargs['accession'], 36)
             context = add_context_for_starship_viz(context, starship, current_annotation_id)

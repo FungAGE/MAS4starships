@@ -2144,9 +2144,8 @@ class StagingSubmissionDebugView(LoginRequiredMixin, generic.View):
         try:
             # Test if we can create a simple Accessions object
             test_accession = Accessions(
-                ship_name=f"test_{submission.id}",
                 accession_tag=f"test_{submission.id}",
-                version_tag="1.0"
+                version_tag=1,
             )
             test_accession.save()
             debug_info['test_accession_created'] = True
