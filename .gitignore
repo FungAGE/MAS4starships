@@ -35,3 +35,7 @@ media/**
 *.sqlite*
 .cursorignore
 docs/
+
+# Local TLS for reverse proxy (mkcert); never commit keys
+scripts/reverse-proxy/certs/
+mkcert*

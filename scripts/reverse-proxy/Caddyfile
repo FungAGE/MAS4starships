@@ -1,0 +1,7 @@
+# TLS reverse proxy for local / LAN access. Run via scripts/reverse-proxy/run-caddy.sh
+# Requires: caddy, mkcert-issued certs (see issue-mkcert.sh)
+
+{$MAS_PUBLIC_HOST}:{$MAS_HTTPS_PORT} {
+	tls {$MAS_TLS_CERT} {$MAS_TLS_KEY}
+	reverse_proxy {$MAS_BACKEND_HOST}:{$MAS_BACKEND_PORT}
+}

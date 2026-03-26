@@ -97,3 +97,12 @@ TEMPLATES = [
 DEBUG_TOOLBAR_CONFIG = {
     'SHOW_TOOLBAR_CALLBACK': lambda request: DEBUG,
 }
+
+# HTTPS reverse proxy (Caddy/nginx): set MAS_BEHIND_HTTPS_PROXY=1 when Django sits behind TLS.
+# See scripts/reverse-proxy/run-caddy.sh
+if os.getenv('MAS_BEHIND_HTTPS_PROXY', '').lower() in ('1', 'true', 'yes'):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    USE_X_FORWARDED_HOST = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = False
