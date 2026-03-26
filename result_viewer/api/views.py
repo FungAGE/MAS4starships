@@ -17,7 +17,11 @@ from result_viewer.api.serializers import *
 from result_viewer.api.tasks import run_single_search, run_multiple_search
 
 from starship.models import Annotation, Feature
-from starship.starbase_models import JoinedShips
+from starship.starbase_models import (
+    JoinedShips,
+    joined_ship_nav_url_segment,
+    resolve_joined_ship_by_nav_arg,
+)
 
 class RunSearchAjaxView(APIView):
     '''
@@ -163,7 +167,7 @@ class GetStarshipView(PipelineAPIMixin, APIView):
 
     def get(self, request, starship_name, format=None):
         try:
-            starship = self.queryset.get(starshipID=starship_name)
+            starship = resolve_joined_ship_by_nav_arg(starship_name)
             starship_features = Feature.objects.filter(starship=starship)
             counts = starship_features.aggregate(
                 tRNAs=Count('id', filter=Q(type='tRNA')),
@@ -243,12 +247,14 @@ class CombinedStarshipData:
 
 
 class StarshipData:
-    def __init__(self, starship):
-        self.starship_name = '<a href="{url}">{name}</a>'.format(
-            url=reverse('starship:starship_detail', kwargs={'pk': starship.id}),
-            name=starship.starshipID
+    def __init__(self, starship_joined, starship):
+        ssb_label = starship_joined.ship_ssb_accession or "—"
+        self.ssb_accession = '<a href="{url}">{name}</a>'.format(
+            url=reverse('starship:starship_detail', kwargs={'pk': starship_joined.id}),
+            name=ssb_label,
         )
-        
+        self.starship_name = starship_joined.starshipID
+
         # Now we can use the aggregated counts from the query
         self.species = getattr(starship, 'taxonomy_species', 'N/A')
         self.starship_length = getattr(starship, 'starship_length', 0)
@@ -267,10 +273,13 @@ class StarshipData:
         self.starship_haplotype = getattr(starship, 'starship_haplotype', 'N/A')
         
         self.download = '<a href="{}">download fasta</a>'.format(
-            reverse('starship:starship_download_fasta', kwargs={'starship_id': starship.id})
+            reverse('starship:starship_download_fasta', kwargs={'starship_id': starship_joined.id})
         )
         self.navigator = '<a href="{}"><div class="glyphicon glyphicon-hand-right"></div></a>'.format(
-            reverse('starship-nav-redirect', kwargs={'starship_name': starship.starshipID})
+            reverse(
+                'starship-nav-redirect',
+                kwargs={'starship_name': joined_ship_nav_url_segment(starship_joined)},
+            )
         )
 
 
@@ -282,7 +291,12 @@ class GetStarshipDataView(APIView):
 
         # Query the starbase database for JoinedShips (without feature counts)
         starships = JoinedShips.objects.select_related(
-            'ship_family_id', 'tax_id', 'ship_navis_id', 'ship_haplotype_id', 'ship_id'
+            'ship_family_id',
+            'tax_id',
+            'ship_navis_id',
+            'ship_haplotype_id',
+            'ship_id',
+            'ship_id__ship_accession_row',
         ).annotate(
             # Get basic starship data
             starship_id=F('starshipID'),
@@ -300,8 +314,10 @@ class GetStarshipDataView(APIView):
 
         # Filter starships
         starships = starships.filter(
-            Q(starshipID__icontains=params['search_val']) |
-            Q(tax_id__species__icontains=params['search_val'])
+            Q(starshipID__icontains=params['search_val'])
+            | Q(tax_id__species__icontains=params['search_val'])
+            | Q(ship_id__ship_accession_row__ship_accession_display__icontains=params['search_val'])
+            | Q(ship_id__ship_accession_row__ship_accession_tag__icontains=params['search_val'])
         )
 
         filtered_num_starships = starships.count()
@@ -377,7 +393,7 @@ class GetStarshipDataView(APIView):
             
             # Create a combined object with both starbase and mas data
             combined_starship = CombinedStarshipData(starship.__dict__, counts)
-            starship_data.append(StarshipData(combined_starship))
+            starship_data.append(StarshipData(starship, combined_starship))
 
         # Apply Python sorting if needed for calculated fields
         if self.needs_python_sorting(params['order_col']):
@@ -404,37 +420,41 @@ class GetStarshipDataView(APIView):
     def needs_python_sorting(self, order_col):
         """Check if the ordering column requires Python sorting (calculated fields)"""
         # Columns that need Python sorting because they're calculated from MAS database
-        python_sort_columns = {3, 4, 5, 6, 7, 8}  # num_gene, num_unannotated, num_review, num_green, num_yellow, num_red
+        python_sort_columns = {4, 5, 6, 7, 8, 9}  # num_gene … num_red (after SSB + starship name cols)
         return order_col in python_sort_columns
 
     def sort_starship_data(self, starship_data, order_col, order_dir):
         """Sort starship data in Python for calculated fields"""
         reverse = order_dir == 'desc'
         
-        if order_col == 3:
+        if order_col == 4:
             return sorted(starship_data, key=lambda x: x.num_gene or 0, reverse=reverse)
-        elif order_col == 4:
-            return sorted(starship_data, key=lambda x: x.num_unannotated or 0, reverse=reverse)
         elif order_col == 5:
-            return sorted(starship_data, key=lambda x: x.num_review or 0, reverse=reverse)
+            return sorted(starship_data, key=lambda x: x.num_unannotated or 0, reverse=reverse)
         elif order_col == 6:
-            return sorted(starship_data, key=lambda x: x.num_green or 0, reverse=reverse)
+            return sorted(starship_data, key=lambda x: x.num_review or 0, reverse=reverse)
         elif order_col == 7:
-            return sorted(starship_data, key=lambda x: x.num_yellow or 0, reverse=reverse)
+            return sorted(starship_data, key=lambda x: x.num_green or 0, reverse=reverse)
         elif order_col == 8:
+            return sorted(starship_data, key=lambda x: x.num_yellow or 0, reverse=reverse)
+        elif order_col == 9:
             return sorted(starship_data, key=lambda x: x.num_red or 0, reverse=reverse)
         else:
             return starship_data
 
     def get_order_by_arg(self, order_col, order_dir):
         if order_col == 0:
-            return 'starshipID' if order_dir == 'asc' else '-starshipID'
+            return (
+                'ship_id__ship_accession_row__ship_accession_display'
+                if order_dir == 'asc'
+                else '-ship_id__ship_accession_row__ship_accession_display'
+            )
         elif order_col == 1:
-            return 'taxonomy_species' if order_dir == 'asc' else '-taxonomy_species'
+            return 'starshipID' if order_dir == 'asc' else '-starshipID'
         elif order_col == 2:
-            return 'starship_length' if order_dir == 'asc' else '-starship_length'
+            return 'taxonomy_species' if order_dir == 'asc' else '-taxonomy_species'
         elif order_col == 3:
-            return None
+            return 'starship_length' if order_dir == 'asc' else '-starship_length'
         elif order_col == 4:
             return None
         elif order_col == 5:
@@ -445,22 +465,24 @@ class GetStarshipDataView(APIView):
             return None
         elif order_col == 8:
             return None
-        # Columns 9–10: download / navigator (not orderable in DataTables)
         elif order_col == 9:
             return None
+        # Columns 10–11: download / navigator (not orderable in DataTables)
         elif order_col == 10:
             return None
         elif order_col == 11:
-            return 'contig_id' if order_dir == 'asc' else '-contig_id'
+            return None
         elif order_col == 12:
-            return 'element_begin' if order_dir == 'asc' else '-element_begin'
+            return 'contig_id' if order_dir == 'asc' else '-contig_id'
         elif order_col == 13:
-            return 'element_end' if order_dir == 'asc' else '-element_end'
+            return 'element_begin' if order_dir == 'asc' else '-element_begin'
         elif order_col == 14:
-            return 'starship_family' if order_dir == 'asc' else '-starship_family'
+            return 'element_end' if order_dir == 'asc' else '-element_end'
         elif order_col == 15:
-            return 'starship_navis' if order_dir == 'asc' else '-starship_navis'
+            return 'starship_family' if order_dir == 'asc' else '-starship_family'
         elif order_col == 16:
+            return 'starship_navis' if order_dir == 'asc' else '-starship_navis'
+        elif order_col == 17:
             return 'starship_haplotype' if order_dir == 'asc' else '-starship_haplotype'
         else:
             return None

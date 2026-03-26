@@ -19,7 +19,8 @@
   >
     <thead>
       <tr>
-        <th>Starship Name</th>
+        <th>SSB accession</th>
+        <th>Starship name</th>
         <th>Species</th>
         <th>Starship Length</th>
         <th># Genes</th>
@@ -40,7 +41,8 @@
     </thead>
     <tfoot>
       <tr>
-        <th>Starship Name</th>
+        <th>SSB accession</th>
+        <th>Starship name</th>
         <th>Species</th>
         <th>Starship Length</th>
         <th># Genes</th>
@@ -80,6 +82,7 @@
               type: "GET"
           },
           columns: [
+              { "data": "ssb_accession" },
               { "data": "starship_name" },
               { "data": "species" },
               { "data": "starship_length" },
@@ -100,17 +103,17 @@
           ],
           columnDefs: [
               {
-                  targets: [9, 10], /* column index */
+                  targets: [10, 11], /* column index */
                   orderable: false, /* true or false */
               },
-              { className: "review-flag", targets: [ 5 ] },
-              { className: "green-flag", targets: [ 6 ] },
-              { className: "yellow-flag", targets: [ 7 ] },
-              { className: "red-flag", targets: [ 8 ] }
+              { className: "review-flag", targets: [ 6 ] },
+              { className: "green-flag", targets: [ 7 ] },
+              { className: "yellow-flag", targets: [ 8 ] },
+              { className: "red-flag", targets: [ 9 ] }
           ]
       });
 
-      var starshipDetailCols = [11, 12, 13, 14, 15, 16];
+      var starshipDetailCols = [12, 13, 14, 15, 16, 17];
       $('#starship-cols-summary').on('click', function() {
           starshipTable.columns(starshipDetailCols).visible(false);
           starshipTable.fixedHeader.adjust();

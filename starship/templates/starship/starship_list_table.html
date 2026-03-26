@@ -3,7 +3,8 @@
 <table id="starship-table" class="table table-hover table-striped" width="100%">
   <thead>
     <tr>
-      <th>Starship Name</th>
+      <th>SSB accession</th>
+      <th>Starship name</th>
       <th>Quality</th>
       <th>Species</th>
       <th>Starship Length</th>
@@ -28,9 +29,10 @@
     <tr>
       <td>
         <a href="{% url 'starship:starship_detail' starship.pk %}"
-          >{{ starship.starship_name }}</a
+          >{{ starship.ssb_accession|default:"—" }}</a
         >
       </td>
+      <td>{{ starship.starship_name }}</td>
       <td>
         {% if starship.quality_flag_value == 0 %}
         <span class="label label-success" title="All critical information present">{{ starship.quality_flag }}</span>
@@ -60,7 +62,7 @@
         >
       </td>
       <td>
-        <a href="{% url 'starship-nav-redirect' starship.starship_name %}">
+        <a href="{% url 'starship-nav-redirect' starship.nav_arg %}">
           <div class="glyphicon glyphicon-hand-right"></div>
         </a>
       </td>

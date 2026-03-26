@@ -430,8 +430,19 @@ class JoinedShips(models.Model):
             return None
         return ship.sequence
 
-    def __str__(self):
-        return f"{self.starshipID}"
+    @property
+    def ship_ssb_accession(self):
+        """SSB accession from ``ship_accessions.ship_accession_display`` only; ``None`` if missing or blank."""
+        if not self.ship_id_id:
+            return None
+        try:
+            row = self.ship_id.ship_accession_row
+        except ShipAccessions.DoesNotExist:
+            return None
+        v = row.ship_accession_display
+        if v is None or not str(v).strip():
+            return None
+        return str(v).strip()
 
 
 class ShipQualityTags(models.Model):
@@ -453,3 +464,38 @@ class ShipQualityTags(models.Model):
 
     def __str__(self):
         return f"{self.tag_type}: {self.tag_value or 'N/A'}"
+
+
+def joined_ship_nav_url_segment(ship: "JoinedShips") -> str:
+    """URL segment for GenomeNavigator / starship-nav: SSB when set, else ``starshipID``."""
+    ssb = ship.ship_ssb_accession
+    return ssb if ssb else ship.starshipID
+
+
+def resolve_joined_ship_by_nav_arg(nav_arg: str) -> "JoinedShips":
+    """
+    Resolve a starship from the GenomeNavigator URL segment: legacy ``starshipID``,
+    ``ship_accessions.ship_accession_display`` (SSB), or ``ship_accession_tag``.
+    """
+    if not nav_arg:
+        raise JoinedShips.DoesNotExist
+    qs = JoinedShips.objects.select_related("ship_id__ship_accession_row")
+    try:
+        return qs.get(starshipID=nav_arg)
+    except JoinedShips.DoesNotExist:
+        pass
+    try:
+        sa = ShipAccessions.objects.select_related("ship_id").get(
+            ship_accession_display=nav_arg
+        )
+        return qs.get(ship_id=sa.ship_id_id)
+    except (ShipAccessions.DoesNotExist, JoinedShips.DoesNotExist):
+        pass
+    try:
+        sa = ShipAccessions.objects.select_related("ship_id").get(
+            ship_accession_tag=nav_arg
+        )
+        return qs.get(ship_id=sa.ship_id_id)
+    except (ShipAccessions.DoesNotExist, JoinedShips.DoesNotExist):
+        pass
+    raise JoinedShips.DoesNotExist

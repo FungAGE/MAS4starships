@@ -3,6 +3,11 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 
 from result_viewer.models import *
+from starship.starbase_models import (
+    JoinedShips,
+    joined_ship_nav_url_segment,
+    resolve_joined_ship_by_nav_arg,
+)
 
 
 class Navigator:
@@ -95,10 +100,12 @@ class GenomeNavigator(Navigator):
     def __init__(self, starship_name, accession=None):
         self.nav_arg = starship_name
 
-        starship_obj = JoinedShips.objects.get(starshipID=starship_name)
+        starship_obj = resolve_joined_ship_by_nav_arg(starship_name)
         self.queryset = Annotation.objects.filter(feature__starship=starship_obj).order_by('feature__start').distinct()
         self.size = self.queryset.count()
-        self.description = 'You are navigating {}'.format(starship_name)
+        self.description = 'You are navigating {}'.format(
+            joined_ship_nav_url_segment(starship_obj)
+        )
 
         if accession:
             pk = int(accession, 36)

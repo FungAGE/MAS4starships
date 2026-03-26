@@ -102,7 +102,7 @@ def GetFeatureTable(starship_name, genome):
 
     # Store data in a dataframe
     df = pd.DataFrame(data=features,
-                      columns=['Starship Name', 'Feature Start', 'Feature End', 'Strand', 'Feature Type', 'Gene Length',
+                      columns=['SSB accession', 'Feature Start', 'Feature End', 'Strand', 'Feature Type', 'Gene Length',
                                'Protein Length', 'Manual Annotation', 'Public Notes', 'Internal Notes', 'Flag',
                                'Gene Sequence', 'Protein Sequence', 'Internal BLASTp Hits']
                       )

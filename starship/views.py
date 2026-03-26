@@ -35,7 +35,8 @@ from starship import forms as starship_forms
 from starship import models as starship_models
 from starship.starbase_models import (
     Accessions, Ships, Captains, Taxonomy, Genome, Papers,
-    FamilyNames, StarshipFeatures, Navis, Haplotype, Gff, JoinedShips
+    FamilyNames, StarshipFeatures, Navis, Haplotype, Gff, JoinedShips,
+    joined_ship_nav_url_segment,
 )
 from starship.tasks import create_CDS_annotations, create_trna_annotations, add_annotations_and_features_to_db, create_custom_CDS_annotations
 
@@ -515,7 +516,9 @@ class Starship_List(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
 
     def get_context_data(self,  **kwargs):
         context = super(Starship_List, self).get_context_data(**kwargs)
-        starships = JoinedShips.objects.all().prefetch_related(
+        starships = JoinedShips.objects.all().select_related(
+            'ship_id__ship_accession_row'
+        ).prefetch_related(
             'feature_set__annotation')
 
         # calculate number of unpolished CDS in starship
@@ -536,6 +539,9 @@ class Starship_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailVi
     template_name = 'starship/starship_detail.html'
     starship_dict = {}
     features_dict = {}
+
+    def get_queryset(self):
+        return JoinedShips.objects.select_related('ship_id__ship_accession_row')
 
     def get_context_data(self, **kwargs):
         #get default context data
@@ -558,7 +564,7 @@ class Starship_Detail(LoginRequiredMixin, MixinForBaseTemplate, generic.DetailVi
 
         context['features'] = starship_models.Feature.objects.filter(
             starship=starship
-        ).prefetch_related('annotation', 'starship')
+        ).prefetch_related('annotation', 'starship__ship_id__ship_accession_row')
 
         context['annotations'] = starship_models.Annotation.objects.filter(
             feature__in=context['features']
@@ -591,8 +597,9 @@ class Feature_List(LoginRequiredMixin, MixinForBaseTemplate, generic.ListView):
 
     def get_context_data(self, **kwargs):
         context = super(Feature_List, self).get_context_data(**kwargs)
-        context['features'] = starship_models.Feature.objects.all().prefetch_related('starship', 'annotation')\
-            .order_by('start')
+        context['features'] = starship_models.Feature.objects.all().select_related(
+            'starship__ship_id__ship_accession_row'
+        ).prefetch_related('annotation').order_by('start')
         return context
 
 
@@ -601,6 +608,11 @@ class Feature_Detail(LoginRequiredMixin, generic.DetailView):
     model = starship_models.Feature
     context_object_name = 'feature'
     template_name = 'starship/feature_detail.html'
+
+    def get_queryset(self):
+        return starship_models.Feature.objects.select_related(
+            'starship__ship_id__ship_accession_row'
+        )
 
 
 # used for annotation list page
@@ -1070,7 +1082,9 @@ def get_starship_data_dicts(starships):
     for starship in starships:
         starship_dict = {}
         starship_dict['pk'] = starship.pk
-        starship_dict['starship_name'] = starship.starshipID  # Using starshipID field
+        starship_dict['ssb_accession'] = starship.ship_ssb_accession
+        starship_dict['starship_name'] = starship.starshipID
+        starship_dict['nav_arg'] = joined_ship_nav_url_segment(starship)
         starship_dict['species'] = getattr(starship, 'taxonomy_species', 'N/A')
         starship_dict['contigID'] = getattr(starship, 'contig_id', 'N/A')
         starship_dict['elementBegin'] = getattr(starship, 'element_begin', 0)

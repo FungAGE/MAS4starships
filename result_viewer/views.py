@@ -17,6 +17,7 @@ from result_viewer.hhsuite2_text import Hhsuite2TextParser
 from result_viewer.models import *
 from result_viewer.navigator import FlagNavigator, GenomeNavigator, AssignmentNavigator
 from starship.models import *
+from starship.starbase_models import joined_ship_nav_url_segment, resolve_joined_ship_by_nav_arg
 from result_viewer.utils import interproscan_xml_to_dict
 
 
@@ -197,7 +198,10 @@ def add_context_for_starship_viz(context, starship, current_annotation_id=None):
             f['annotation'] = feature.annotation.annotation
         except AttributeError:
             f['annotation'] = "nan"
-        f['href'] = reverse('view-results', args=(f['accession'], 'GenomeNavigator', starship.starship_name))
+        f['href'] = reverse(
+            'view-results',
+            args=(f['accession'], 'GenomeNavigator', joined_ship_nav_url_segment(starship)),
+        )
         if f['annotation_id'] == current_annotation_id:
             features_dict['feature_id'] = f['id']
 
@@ -306,7 +310,7 @@ class ViewResults(LoginRequiredMixin, MixinForBaseTemplate, generic.UpdateView):
 
         # Starship visualization
         if context['navigator']['type'] == 'GenomeNavigator':
-            starship = JoinedShips.objects.get(starshipID=self.kwargs['nav_arg'])
+            starship = resolve_joined_ship_by_nav_arg(self.kwargs['nav_arg'])
             context['starship_id'] = starship.id
             current_annotation_id = int(self.kwargs['accession'], 36)
             context = add_context_for_starship_viz(context, starship, current_annotation_id)

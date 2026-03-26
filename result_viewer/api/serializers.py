@@ -157,7 +157,8 @@ class StarshipDataSerializer(serializers.Serializer):
     """
     This is used to collect the data from different tables into a single serializer, then used to display the data in the table.
     """
-    starship_name = serializers.CharField(max_length=9)  # Using accession_tag field
+    ssb_accession = serializers.CharField(max_length=2000)
+    starship_name = serializers.CharField(max_length=255)
     species = serializers.CharField(max_length=Taxonomy._meta.get_field('species').max_length)
     starship_family = serializers.CharField(max_length=JoinedShips._meta.get_field('ship_family_id').max_length)
     starship_navis = serializers.CharField(max_length=JoinedShips._meta.get_field('ship_navis_id').max_length)

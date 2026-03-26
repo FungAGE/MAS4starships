@@ -87,7 +87,7 @@
                     {# Starfish Navigation #}
                     <li>
                         <a href="{% url 'starfish:starfish_run_list' %}">
-                            <i class="fa fa-dna"></i> Starfish
+                            <i class="fas fa-dna"></i> Starfish
                         </a>
                     </li>
 
@@ -199,19 +199,19 @@
                     });
                 });
 
-                var starship_nav = $('#id_search_genome')
+                var starship_nav = $('#id_search_starship')
 
                 starship_nav.select2({
                     multiple: false,
-                    placeholder: 'Navigate by Starship Name',
+                    placeholder: 'Navigate by SSB accession',
                     dropdownAutoWidth: true
                 });
 
                 starship_nav.change(function () {
                     console.log(this);
-                    var starship_name = $(this).children("option:selected").text();
+                    var ssb_accession = $(this).children("option:selected").text();
                     // Solution found on stackoverflow.com/questions/17832194/ to use javascript variable in Django URL
-                    location.href = "{% url 'starship-nav-redirect' 12345 %}".replace(/12345/, starship_name);
+                    location.href = "{% url 'starship-nav-redirect' 12345 %}".replace(/12345/, ssb_accession);
                     // location.href = '/viewer/GenomeNavigator-' + $(this).children("option:selected").text();
                 });
 

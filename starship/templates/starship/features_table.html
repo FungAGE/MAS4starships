@@ -4,7 +4,7 @@
   <thead>
     <tr>
       <th>Feature sequence</th>
-      <th>Starship Name</th>
+      <th>SSB accession</th>
       <th>Feature Type</th>
       <th>Strand</th>
       <th>Start</th>
@@ -24,7 +24,7 @@
       </td>
       <td>
         <a href="{% url 'starship:starship_detail' feature.starship.pk %}"
-          >{{ feature.genome|safe }}</a
+          >{{ feature.starship.ship_ssb_accession|default:"—"|safe }}</a
         >
       </td>
       <td>{{ feature.type|safe }}</td>
@@ -46,7 +46,7 @@
   <tfoot>
     <tr>
       <th>Feature sequence</th>
-      <th>Starship Name</th>
+      <th>SSB accession</th>
       <th>Feature Type</th>
       <th>Strand</th>
       <th>Start</th>

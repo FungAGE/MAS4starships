@@ -91,7 +91,7 @@ def write_faa(df, out_file, starship_name, only_annotated=False):
     :param starship_name: Name of starship
     :param only_annotated: Only output proteins which have an annotation
     '''
-    groupings = df.groupby('Feature Type')['Starship Name'].count()
+    groupings = df.groupby('Feature Type')['SSB accession'].count()
     # Skip writing of faa if there are no CDS
     if 'CDS' not in groupings:
         return

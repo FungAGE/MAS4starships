@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 
 # from result_viewer.models import Annotation, Starship
 from starship.models import Annotation
-from starship.starbase_models import JoinedShips, Accessions
+from starship.starbase_models import JoinedShips, joined_ship_nav_url_segment
 
 def is_ascii(string):
     '''
@@ -45,10 +45,19 @@ class AnnotationForm(forms.ModelForm):
 
 class GenomeSearchForm(forms.Form):
     search_starship = forms.ModelChoiceField(
-        queryset=Accessions.objects.order_by('accession_tag'),
+        queryset=JoinedShips.objects.none(),
         empty_label='',
-        required=False
+        required=False,
     )
 
     def __init__(self, *args, **kwargs):
         super(GenomeSearchForm, self).__init__(*args, **kwargs)
+        qs = JoinedShips.objects.select_related(
+            "ship_id__ship_accession_row"
+        ).order_by(
+            "ship_id__ship_accession_row__ship_accession_display",
+            "starshipID",
+        )
+        field = self.fields["search_starship"]
+        field.queryset = qs
+        field.label_from_instance = lambda obj: joined_ship_nav_url_segment(obj)
