@@ -1,0 +1,38 @@
+# Quality gates for Starbase publication (Phase 4 ETL pipeline)
+
+quality_gates:
+  taxonomy:
+    max_missing_species: 5%
+    max_missing_strain: 10%
+    require_genus: true
+    require_strain: false
+
+  genome:
+    max_missing_assembly: 10%
+    require_taxonomy_link: true
+
+  classification:
+    max_missing_family: 0%
+
+  sequences:
+    min_length: 5000
+    max_length: 300000
+
+blocking_issues:
+  - missing_family
+  - orphaned_foreign_keys
+  - duplicate_accessions
+  - broken_genome_taxonomy
+  - ship_id_mismatches
+
+warning_issues:
+  - missing_strain
+  - missing_biosample
+  - orphaned_taxonomy
+  - orphaned_genomes
+  - missing_taxonomy
+  - incomplete_taxonomy
+  - missing_navis
+  - missing_haplotype
+  - missing_sequence
+  - missing_boundaries
