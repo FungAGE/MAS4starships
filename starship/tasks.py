@@ -703,3 +703,20 @@ def export_starbase_quality_pipeline(
         kwargs["previous"] = previous_published_db
 
     call_command("export_to_starbase", **kwargs)
+
+
+@shared_task(bind=True)
+def run_metaeuk_annotation(self, accession_tag, target_db=None):
+    """
+    Run MetaEuk for a single Starbase accession; staging features go to MySQL.
+
+    ``target_db`` defaults to ``settings.METAEUK_TARGET_DB``.
+    """
+    from starship import metaeuk
+
+    run, n = metaeuk.run_metaeuk_for_accession(
+        accession_tag,
+        target_db=target_db,
+        celery_task_id=getattr(self.request, "id", "") or "",
+    )
+    return {"run_id": run.id, "staging_feature_count": n}

@@ -155,3 +155,8 @@ STARFISH_NEXTFLOW_PATH = os.getenv(
     "STARFISH_NEXTFLOW_PATH",
     "/mnt/sda/johannesson_lab/adrian/starfish_pipeline/starfish-nextflow"
 )
+
+# MetaEuk gene annotation (see starship.metaeuk, GeneAnnotationRun)
+METAEUK_BINARY = os.getenv("METAEUK_BINARY", "metaeuk")
+METAEUK_TARGET_DB = os.getenv("METAEUK_TARGET_DB", "")
+METAEUK_THREADS = int(os.getenv("METAEUK_THREADS", "4"))

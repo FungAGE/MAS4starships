@@ -36,3 +36,4 @@ warning_issues:
   - missing_haplotype
   - missing_sequence
   - missing_boundaries
+  - missing_gene_annotation

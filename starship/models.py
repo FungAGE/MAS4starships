@@ -435,3 +435,123 @@ class ValidationIssue(models.Model):
 
     def __str__(self):
         return f"{self.issue_type} ({self.severity})"
+
+
+class GeneAnnotationRun(models.Model):
+    """
+    Tracks computational gene annotation runs (e.g. MetaEuk) per Starbase accession.
+
+    Raw predictions are stored in :class:`StagingGffFeature`; reviewed rows are
+    promoted to Starbase SQLite ``gff`` via ``promote_gff_annotations``.
+    """
+
+    STATUS_CHOICES = (
+        ("pending", "Pending"),
+        ("running", "Running"),
+        ("completed", "Completed"),
+        ("failed", "Failed"),
+    )
+
+    class Meta:
+        db_table = "gene_annotation_run"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["accession_tag", "status"]),
+        ]
+
+    accession_tag = models.CharField(
+        max_length=255,
+        db_index=True,
+        help_text="Starbase accessions.accession_tag for the ship being annotated.",
+    )
+    tool = models.CharField(
+        max_length=64,
+        help_text="e.g. metaeuk, glimmer",
+    )
+    tool_version = models.CharField(max_length=32, blank=True, default="")
+    target_db = models.CharField(
+        max_length=512,
+        blank=True,
+        default="",
+        help_text="Path to MetaEuk/MMseqs2 target protein database.",
+    )
+    status = models.CharField(
+        max_length=16,
+        choices=STATUS_CHOICES,
+        default="pending",
+    )
+    gff3_path = models.CharField(
+        max_length=512,
+        blank=True,
+        default="",
+        help_text="Raw tool GFF3 output path on disk.",
+    )
+    faa_path = models.CharField(
+        max_length=512,
+        blank=True,
+        default="",
+        help_text="Predicted protein FASTA path, if produced.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    error_message = models.TextField(blank=True, default="")
+    celery_task_id = models.CharField(max_length=255, blank=True, default="")
+
+    def __str__(self):
+        return f"{self.tool} {self.accession_tag} ({self.status})"
+
+
+class StagingGffFeature(models.Model):
+    """Raw GFF3 features from a :class:`GeneAnnotationRun`, pending curator review."""
+
+    REVIEW_STATUS_CHOICES = (
+        ("pending", "Pending"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    )
+
+    class Meta:
+        db_table = "staging_gff_feature"
+        ordering = ["run", "id"]
+        indexes = [
+            models.Index(fields=["run", "review_status"]),
+        ]
+
+    run = models.ForeignKey(
+        GeneAnnotationRun,
+        on_delete=models.CASCADE,
+        related_name="staging_features",
+    )
+    accession_tag = models.CharField(
+        max_length=255,
+        help_text="Denormalized accessions.accession_tag for promotion lookups.",
+    )
+    source = models.CharField(max_length=255, default="metaeuk")
+    feature_type = models.CharField(max_length=255)
+    start = models.IntegerField()
+    end = models.IntegerField()
+    strand = models.CharField(max_length=1, blank=True, default="")
+    phase = models.IntegerField(null=True, blank=True)
+    score = models.CharField(max_length=64, blank=True, default="")
+    attributes = models.TextField(blank=True, default="")
+    review_status = models.CharField(
+        max_length=16,
+        choices=REVIEW_STATUS_CHOICES,
+        default="pending",
+    )
+    reviewed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_staging_gff_features",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    promoted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Set when this row was promoted into Starbase SQLite gff.",
+    )
+
+    def __str__(self):
+        return f"{self.feature_type} {self.start}-{self.end} ({self.review_status})"

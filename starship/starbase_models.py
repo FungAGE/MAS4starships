@@ -325,7 +325,7 @@ class Gff(models.Model):
     phase = models.IntegerField(null=True, blank=True)
     strand = models.CharField(max_length=255, null=True, blank=True)
     score = models.CharField(max_length=255, null=True, blank=True)
-    attributes = models.CharField(max_length=255, null=True, blank=True)
+    attributes = models.TextField(null=True, blank=True)
     ship_id = models.ForeignKey(
         Ships,
         on_delete=models.CASCADE,
@@ -334,6 +334,8 @@ class Gff(models.Model):
         blank=True,
         db_column="ship_id",
     )
+    # MySQL GeneAnnotationRun.id when this row was promoted from staging (informational only).
+    reviewed_run_id = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return f"GFF {self.start}-{self.end}"

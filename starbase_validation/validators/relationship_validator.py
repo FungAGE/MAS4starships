@@ -49,6 +49,12 @@ def validate_relationships(
         if (_g(t, "id") or _g(t, "taxonomy_id")) is not None
     }
 
+    gff_ship_ids: Set[Any] = set()
+    for gf in records.get("gff", []):
+        sid = _g(gf, "ship_id")
+        if sid is not None:
+            gff_ship_ids.add(sid)
+
     for js in records.get("joined_ships", []):
         jid = _g(js, "id")
         st = _g(js, "starshipID") or _g(js, "starship_id")
@@ -88,6 +94,18 @@ def validate_relationships(
                     jid,
                     st,
                     f"genome_id {gid} invalid",
+                ),
+                blocking,
+            )
+        if sid is not None and sid not in gff_ship_ids:
+            results.add_issue(
+                ValidationIssue(
+                    "missing_gene_annotation",
+                    "warning",
+                    "joined_ships",
+                    jid,
+                    st,
+                    f"ship_id {sid} has no gff rows",
                 ),
                 blocking,
             )
