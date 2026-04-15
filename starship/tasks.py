@@ -668,3 +668,38 @@ def run_starbase_validation_export(
         skip_accessions=skip_accessions,
         no_record_issues=no_record_issues,
     )
+
+
+@shared_task
+def export_starbase_quality_pipeline(
+    dry_run=True,
+    output_path=None,
+    bump="minor",
+    previous_published_db=None,
+    notes="",
+):
+    """
+    Run the quality-gate :class:`~starbase_validation.pipeline.ValidationPipeline`
+    via ``export_to_starbase`` (Phase 5).
+
+    Default ``dry_run=True`` only validates; set ``dry_run=False`` and pass
+    ``output_path`` to publish a versioned SQLite file (must pass validation).
+    Suitable for Celery Beat when wired with explicit paths in production.
+    """
+    if not dry_run and not output_path:
+        raise ValueError("export_starbase_quality_pipeline: output_path is required when dry_run=False")
+
+    from django.core.management import call_command
+
+    kwargs = {
+        "apply": not dry_run,
+        "bump": bump,
+        "notes": notes,
+        "no_tracking": False,
+    }
+    if output_path:
+        kwargs["output"] = output_path
+    if previous_published_db:
+        kwargs["previous"] = previous_published_db
+
+    call_command("export_to_starbase", **kwargs)
